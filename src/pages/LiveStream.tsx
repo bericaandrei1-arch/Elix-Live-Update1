@@ -597,7 +597,6 @@ export default function LiveStream() {
       setCoinBalance(prev => prev - gift.coins);
     }
 
-    addLiveLikes(gift.coins);
     maybeEnqueueUniverse(gift.name, viewerName);
 
     if (isBattleMode && battleTime > 0 && !battleWinner) {
@@ -769,7 +768,6 @@ export default function LiveStream() {
         setCoinBalance(prev => prev - lastSentGift.coins);
       }
 
-      addLiveLikes(lastSentGift.coins);
       maybeEnqueueUniverse(lastSentGift.name, viewerName);
 
       if (isBattleMode && battleTime > 0 && !battleWinner) {
@@ -1024,7 +1022,12 @@ export default function LiveStream() {
         ) : (
           <div
             className="relative w-full h-full"
-            onClick={() => {
+            onPointerDown={(e) => {
+              if (e.target instanceof Element) {
+                const interactive = e.target.closest('button, a, input, textarea, select, [role="button"]');
+                if (interactive) return;
+              }
+              addLiveLikes(1);
               const now = Date.now();
               const last = lastScreenTapRef.current;
               lastScreenTapRef.current = now;
