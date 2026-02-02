@@ -923,9 +923,10 @@ export default function LiveStream() {
                   setGiftTarget('me');
                   addLiveLikes(1);
                   if (battleTapScoreRemainingRef.current > 0) {
-                    awardBattlePoints('me', 1);
-                    battleTapScoreRemainingRef.current -= 1;
-                    setBattleTapScoreRemaining(battleTapScoreRemainingRef.current);
+                    const points = battleTapScoreRemainingRef.current;
+                    awardBattlePoints('me', points);
+                    battleTapScoreRemainingRef.current = 0;
+                    setBattleTapScoreRemaining(0);
                   }
                 }}
                 className={`w-1/2 h-full overflow-hidden relative border-r border-black/50 bg-black ${giftTarget === 'me' ? 'outline outline-2 outline-secondary/70' : ''}`}
@@ -946,9 +947,10 @@ export default function LiveStream() {
                   setGiftTarget('opponent');
                   addLiveLikes(1);
                   if (battleTapScoreRemainingRef.current > 0) {
-                    awardBattlePoints('opponent', 1);
-                    battleTapScoreRemainingRef.current -= 1;
-                    setBattleTapScoreRemaining(battleTapScoreRemainingRef.current);
+                    const points = battleTapScoreRemainingRef.current;
+                    awardBattlePoints('opponent', points);
+                    battleTapScoreRemainingRef.current = 0;
+                    setBattleTapScoreRemaining(0);
                   }
                 }}
                 className={`w-1/2 h-full bg-gray-900 relative overflow-hidden ${giftTarget === 'opponent' ? 'outline outline-2 outline-secondary/70' : ''}`}
