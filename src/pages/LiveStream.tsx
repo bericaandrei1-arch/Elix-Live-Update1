@@ -683,6 +683,10 @@ export default function LiveStream() {
 
     maybeEnqueueUniverse(gift.name, viewerName);
 
+    if (isBattleMode && battleTime > 0 && !battleWinner) {
+      awardBattlePoints(giftTarget, gift.coins);
+    }
+
     const newLevel = useRealApi ? userLevel : (() => {
       const xpGained = gift.coins;
       let newXP = userXP + xpGained;
@@ -850,6 +854,10 @@ export default function LiveStream() {
 
       maybeEnqueueUniverse(lastSentGift.name, viewerName);
 
+      if (isBattleMode && battleTime > 0 && !battleWinner) {
+        awardBattlePoints(giftTarget, lastSentGift.coins);
+      }
+
       const newLevel = useRealApi
         ? userLevel
         : (() => {
@@ -898,6 +906,11 @@ export default function LiveStream() {
       }
 
       maybeEnqueueUniverse(randomGift.name, randomUser);
+
+      if (isBattleMode && battleTime > 0 && !battleWinner) {
+        const target = Math.random() > 0.5 ? 'me' : 'opponent';
+        awardBattlePoints(target, randomGift.coins);
+      }
       
       const giftMsg = {
           id: Date.now().toString(),
