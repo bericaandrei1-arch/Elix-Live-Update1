@@ -1494,10 +1494,7 @@ export default function LiveStream() {
                     className="w-9 h-9 rounded-full object-cover border border-[#E6B36A]/50"
                   />
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <LevelBadge level={userLevel} size={10} layout="fixed" className="-mt-1" />
-                      <p className="font-extrabold text-[16px] truncate max-w-[170px]">{myCreatorName}</p>
-                    </div>
+                    <p className="font-extrabold text-[16px] truncate max-w-[170px]">{myCreatorName}</p>
                     <div className="flex items-center gap-2 text-[13px] font-semibold text-[#E6B36A]">
                       <Heart className="w-4 h-4" strokeWidth={2} />
                       <span>{liveLikes.toLocaleString()}</span>
@@ -1583,10 +1580,7 @@ export default function LiveStream() {
                 className="w-10 h-10 rounded-full object-cover border border-[#E6B36A]/50"
               />
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <LevelBadge level={userLevel} size={10} layout="fixed" className="-mt-1" />
-                  <p className="text-white font-extrabold text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
-                </div>
+                <p className="text-white font-extrabold text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
                 <p className="text-[#E6B36A]/80 text-[10px] font-extrabold tracking-widest">LIVE</p>
               </div>
             </button>
@@ -1743,7 +1737,15 @@ export default function LiveStream() {
                   <div className="min-w-0">
                     <div className="text-white font-black text-[16px] truncate">{miniProfile.username}</div>
                     <div className="text-white/70 text-[12px] font-bold">
-                      Level {miniProfile.level ?? '—'}{miniProfile.coins != null ? ` • 🪙 ${formatCoinsShort(miniProfile.coins)}` : ''}
+                      {typeof miniProfile.level === 'number' ? (
+                        <span className="inline-flex items-center gap-2">
+                          <LevelBadge level={miniProfile.level} size={10} layout="fixed" />
+                          <span>Level {miniProfile.level}</span>
+                        </span>
+                      ) : (
+                        'Level —'
+                      )}
+                      {miniProfile.coins != null ? ` • 🪙 ${formatCoinsShort(miniProfile.coins)}` : ''}
                     </div>
                   </div>
                 </div>
