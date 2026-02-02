@@ -599,10 +599,6 @@ export default function LiveStream() {
 
     maybeEnqueueUniverse(gift.name, viewerName);
 
-    if (isBattleMode && battleTime > 0 && !battleWinner) {
-      awardBattlePoints(giftTarget, gift.coins);
-    }
-
     const newLevel = useRealApi ? userLevel : (() => {
       const xpGained = gift.coins;
       let newXP = userXP + xpGained;
@@ -770,10 +766,6 @@ export default function LiveStream() {
 
       maybeEnqueueUniverse(lastSentGift.name, viewerName);
 
-      if (isBattleMode && battleTime > 0 && !battleWinner) {
-        awardBattlePoints(giftTarget, lastSentGift.coins);
-      }
-
       const newLevel = useRealApi
         ? userLevel
         : (() => {
@@ -925,7 +917,7 @@ export default function LiveStream() {
                 onClick={() => setGiftTarget('me')}
                 onPointerDown={() => {
                   setGiftTarget('me');
-                  awardBattlePoints('me', 5);
+                  awardBattlePoints('me', 3);
                   addLiveLikes(1);
                 }}
                 className={`w-1/2 h-full overflow-hidden relative border-r border-black/50 bg-black ${giftTarget === 'me' ? 'outline outline-2 outline-secondary/70' : ''}`}
@@ -944,7 +936,7 @@ export default function LiveStream() {
                 onClick={() => setGiftTarget('opponent')}
                 onPointerDown={() => {
                   setGiftTarget('opponent');
-                  awardBattlePoints('opponent', 5);
+                  awardBattlePoints('opponent', 3);
                   addLiveLikes(1);
                 }}
                 className={`w-1/2 h-full bg-gray-900 relative overflow-hidden ${giftTarget === 'opponent' ? 'outline outline-2 outline-secondary/70' : ''}`}
