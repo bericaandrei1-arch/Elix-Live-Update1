@@ -417,25 +417,7 @@ export default function LiveStream() {
   const handleBattleTap = (target: 'me' | 'opponent') => {
     setGiftTarget(target);
     if (!isBattleMode || battleTime <= 0 || battleWinner || battleCountdown != null) return;
-
-    const now = Date.now();
-    const triple = battleTripleTapRef.current;
-    if (triple.target !== target || now - triple.lastTapAt > 700) {
-      battleTripleTapRef.current = { target, lastTapAt: now, count: 1 };
-      return;
-    }
-    battleTripleTapRef.current = { target, lastTapAt: now, count: triple.count + 1 };
-    if (battleTripleTapRef.current.count < 3) return;
-    battleTripleTapRef.current = { target, lastTapAt: 0, count: 0 };
-
-    const windowStart = battleScoreTapWindowRef.current.windowStart;
-    if (windowStart === 0 || now - windowStart >= 1000) {
-      battleScoreTapWindowRef.current = { windowStart: now, count: 0 };
-    }
-    if (battleScoreTapWindowRef.current.count >= 5) return;
-    battleScoreTapWindowRef.current.count += 1;
-
-    awardBattlePoints(target, 5);
+    addLiveLikes(1);
   };
 
   useEffect(() => {
@@ -1129,7 +1111,7 @@ export default function LiveStream() {
                 onClick={() => setGiftTarget('me')}
                 onPointerDown={(e) => {
                   spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
-                  handleBattleTap('me');
+                  addLiveLikes(1);
                 }}
                 className={`w-1/2 h-full overflow-hidden relative border-r border-black/50 bg-black ${giftTarget === 'me' ? 'outline outline-2 outline-secondary/70' : ''}`}
               >
@@ -1147,7 +1129,7 @@ export default function LiveStream() {
                 onClick={() => setGiftTarget('opponent')}
                 onPointerDown={(e) => {
                   spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
-                  handleBattleTap('opponent');
+                  addLiveLikes(1);
                 }}
                 className={`w-1/2 h-full bg-gray-900 relative overflow-hidden ${giftTarget === 'opponent' ? 'outline outline-2 outline-secondary/70' : ''}`}
               >
