@@ -416,8 +416,7 @@ export default function LiveStream() {
 
   const handleBattleTap = (target: 'me' | 'opponent') => {
     setGiftTarget(target);
-    if (!isBattleMode || battleTime <= 0 || battleWinner) return;
-    addLiveLikes(1);
+    // Likes disconnected from battle tap/shortcuts
   };
 
   useEffect(() => {
@@ -1664,6 +1663,7 @@ export default function LiveStream() {
                     className="bg-transparent text-white text-sm outline-none flex-1 placeholder:text-gray-400"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
+                    onPointerDown={() => addLiveLikes(1)}
                 />
                 <button type="submit" className="text-white">
                     <Send size={18} />
