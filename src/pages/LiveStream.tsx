@@ -1133,14 +1133,6 @@ export default function LiveStream() {
     setBattleWinner(winner);
   };
 
-  const ejectOpponent = () => {
-    if (!isBattleMode) return;
-    setActiveBooster(null);
-    setBattleCountdown(null);
-    setBattleTime(0);
-    setBattleWinner('draw');
-  };
-
   const totalScore = myScore + opponentScore;
   const leftPctRaw = totalScore > 0 ? (myScore / totalScore) * 100 : 50;
   const leftPct = Math.max(3, Math.min(97, leftPctRaw));
@@ -1229,32 +1221,6 @@ export default function LiveStream() {
                   <div className="text-[12px] font-black leading-none">x{activeBooster.multiplier}</div>
                 </div>
               </motion.button>
-            )}
-
-            {isBroadcast && (
-              <div className="absolute right-3 top-3 z-[260] pointer-events-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={startBattleMatch}
-                  className="h-9 px-3 rounded-full bg-[#E6B36A] text-black text-xs font-black border border-white/15 shadow-[0_0_16px_rgba(230,179,106,0.18)]"
-                >
-                  Start
-                </button>
-                <button
-                  type="button"
-                  onClick={closeBattleMatch}
-                  className="h-9 px-3 rounded-full bg-black/60 text-white text-xs font-black border border-white/15"
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  onClick={ejectOpponent}
-                  className="h-9 px-3 rounded-full bg-red-950/70 text-white text-xs font-black border border-red-400/30"
-                >
-                  Eject
-                </button>
-              </div>
             )}
 
             <div className="relative w-full h-[56%] flex">
@@ -1563,6 +1529,25 @@ export default function LiveStream() {
                   <div className="text-[11px] font-black text-[#E6B36A] tabular-nums">{formatCoinsShort(top3.coins)} 🪙</div>
                 </button>
               </div>
+            </div>
+          )}
+
+          {isBattleMode && isBroadcast && (
+            <div className="mt-2 flex items-center justify-center gap-2 pointer-events-auto">
+              <button
+                type="button"
+                onClick={startBattleMatch}
+                className="h-7 px-2.5 rounded-full bg-[#E6B36A] text-black text-[10px] font-black border border-white/10"
+              >
+                Start game
+              </button>
+              <button
+                type="button"
+                onClick={closeBattleMatch}
+                className="h-7 px-2.5 rounded-full bg-black/55 text-white text-[10px] font-black border border-white/10"
+              >
+                End game
+              </button>
             </div>
           )}
           </div>
