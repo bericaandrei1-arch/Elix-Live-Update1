@@ -1877,7 +1877,10 @@ export default function LiveStream() {
               tabIndex={-1}
             >
               <div className="px-4 py-3 flex items-center justify-between text-[#E6B36A]">
-                <span className="font-extrabold">Live settings</span>
+                <div className="flex flex-col">
+                  <span className="font-extrabold">Live settings</span>
+                  <span className="text-[10px] text-white/40 font-mono">v1.5 (Clean UI)</span>
+                </div>
                 <button type="button" onClick={() => setIsLiveSettingsOpen(false)} className="p-2">
                   <X className="w-5 h-5" strokeWidth={2} />
                 </button>
