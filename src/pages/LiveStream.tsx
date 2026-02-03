@@ -1117,9 +1117,6 @@ export default function LiveStream() {
                   playsInline
                   muted
                 />
-                <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/55 text-white text-[11px] font-extrabold tracking-wide">
-                  WIN x0
-                </div>
               </button>
 
               <button
@@ -1140,9 +1137,6 @@ export default function LiveStream() {
                   playsInline
                   muted
                 />
-                <div className="absolute top-3 right-3 px-2 py-1 rounded-md bg-black/55 text-white text-[11px] font-extrabold tracking-wide">
-                  WIN x0
-                </div>
               </button>
 
               <button
