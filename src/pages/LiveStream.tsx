@@ -1340,27 +1340,12 @@ export default function LiveStream() {
                         <Heart className="w-4 h-4 text-red-500 fill-red-500" strokeWidth={2} />
                       </motion.div>
                       <span>{activeLikes.toLocaleString()}</span>
-                      <span className="text-[#E6B36A]/60">•</span>
-                      <Flame className="w-4 h-4" strokeWidth={2} />
-                      <span className="text-[12px] font-semibold whitespace-nowrap">Daily Ranking</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="pointer-events-auto flex items-center gap-2">
-                <div className="h-8 px-3 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1.5">
-                  <Cloud className="w-4 h-4 text-white" strokeWidth={2} />
-                  <span>0/20</span>
-                </div>
-                <div className="h-8 px-3 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1.5">
-                  <span>No. 99+</span>
-                  <img src={myAvatar} alt="rank" className="w-5 h-5 rounded-full" />
-                </div>
-                <div className="h-8 px-3 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1.5">
-                  <User className="w-4 h-4" strokeWidth={2} />
-                  <span>0</span>
-                </div>
                 <button
                   type="button"
                   onClick={stopBroadcast}
@@ -1393,21 +1378,9 @@ export default function LiveStream() {
                     <span className="text-black text-[11px] font-bold">7</span>
                   </span>
                 </div>
-                <div className="inline-flex items-center gap-2 text-white text-[11px] font-semibold">
-                  <Flame className="w-4 h-4 text-amber-400" strokeWidth={2} />
-                  <span>Daily Ranking</span>
-                </div>
               </div>
 
               <div className="pointer-events-auto flex items-center gap-2">
-                <div className="h-8 px-3 rounded-full bg-[#C9A26A]/60 text-white text-[11px] font-semibold flex items-center gap-1.5">
-                  <Cloud className="w-4 h-4 text-white" strokeWidth={2} />
-                  <span>0/20</span>
-                </div>
-                <div className="h-8 px-3 rounded-full bg-black/60 text-white text-[11px] font-semibold flex items-center gap-1.5">
-                  <User className="w-4 h-4" strokeWidth={2} />
-                  <span>0</span>
-                </div>
                 <button
                   type="button"
                   onClick={stopBroadcast}
@@ -1489,10 +1462,6 @@ export default function LiveStream() {
 
             <div className="pointer-events-auto flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                <div className="h-8 px-3 rounded-full bg-black/45 backdrop-blur-md border border-white/10 flex items-center gap-2">
-                  <User className="w-4 h-4 text-white" strokeWidth={2} />
-                  <span className="text-white font-extrabold text-xs">10.2k</span>
-                </div>
                 <button
                   type="button"
                   onClick={isBroadcast ? stopBroadcast : () => navigate('/')}

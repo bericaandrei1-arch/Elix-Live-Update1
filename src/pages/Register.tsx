@@ -28,7 +28,7 @@ export default function Register() {
     setIsSubmitting(false);
     if (res.error) {
       console.error('Registration error:', res.error);
-      setError(res.error);
+      setError(typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
       return;
     }
     if (res.needsEmailConfirmation) {

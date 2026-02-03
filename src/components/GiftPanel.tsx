@@ -613,4 +613,24 @@ export const GIFTS: GiftItem[] = [
     video: giftUrl('/gifts/Elix Gold Universe.webm'),
     preview: giftUrl('/gifts/Elix Gold Universe.png'),
   },
+  {
+    id: 'fly_love',
+    name: 'Fly Love',
+    coins: 130000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Fly Love.png'),
+    video: giftUrl('/gifts/Fly Love.png'),
+    preview: giftUrl('/gifts/Fly Love.png'),
+  },
+  {
+    id: 'lightning_hypercar',
+    name: 'Lightning Car',
+    coins: 150000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Lightning Hypercar.mp4'), // Using mp4 as icon if no png, or need to generate png
+    video: giftUrl('/gifts/Lightning Hypercar.mp4'),
+    preview: giftUrl('/gifts/Lightning Hypercar.mp4'),
+  },
 ];

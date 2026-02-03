@@ -351,6 +351,8 @@ export const useAuthStore = create<AuthStore>()(
         if (ALLOW_LOCAL_AUTH) {
            const localRes = localAuthSignUp(set, email, password, username);
            if (!localRes.error) return localRes;
+           // If local also fails, return the specific error from local auth (e.g. "Account already exists")
+           return { error: localRes.error, needsEmailConfirmation: false };
         }
 
         return { error: 'Signup failed (No user data returned). Please try again.', needsEmailConfirmation: false };
