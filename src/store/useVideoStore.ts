@@ -103,7 +103,7 @@ export const useVideoStore = create<VideoStore>()(
       videos: [
         {
           id: 't1',
-          url: '/gifts/Elix Royal Golden Lion.mp4',
+          url: '/gifts/Golden Rage Lion.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=11',
           duration: '0:15',
           user: {
@@ -142,7 +142,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 't2',
-          url: '/gifts/Eternal Guardian Chest (Phoenix + Wolf + Owl).mp4',
+          url: '/gifts/Legendary guardians of treasure chest .mp4',
           thumbnail: 'https://picsum.photos/400/600?random=12',
           duration: '0:15',
           user: {
@@ -181,7 +181,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 't3',
-          url: '/gifts/Lightning Hypercar.mp4',
+          url: '/gifts/Crystal Voyager Ship.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=13',
           duration: '0:15',
           user: {
@@ -221,7 +221,7 @@ export const useVideoStore = create<VideoStore>()(
         ,
         {
           id: 't4',
-          url: '/gifts/Emerald Colossus Rhino.mp4',
+          url: '/gifts/Earth Titan Gorilla.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=14',
           duration: '0:15',
           user: {
@@ -260,7 +260,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 't5',
-          url: '/gifts/Mythic Guardian Vault.mp4',
+          url: '/gifts/Mythic Beast Vault (Phoenix, Lion, Dragon, Bear, Wolf).mp4',
           thumbnail: 'https://picsum.photos/400/600?random=15',
           duration: '0:15',
           user: {

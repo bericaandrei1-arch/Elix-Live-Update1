@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { getStripeKey } from '@/config/stripe';
+import { getStripeKey, hasStripeKey } from '@/config/stripe';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { IS_STORE_BUILD } from '@/config/build';
 
-const stripePromise = loadStripe(getStripeKey());
+const stripePromise = hasStripeKey() ? loadStripe(getStripeKey()) : null;
 
 interface PaymentFormProps {
   amount: number;
@@ -47,7 +49,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ amount, coinPackage, onSucces
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         onSuccess(paymentIntent.id);
       }
-    } catch (err) {
+    } catch {
       onError('Payment processing failed');
     } finally {
       setLoading(false);
@@ -99,18 +101,36 @@ export const StripePaymentElement: React.FC<StripePaymentElementProps> = ({
   onSuccess, 
   onError 
 }) => {
+  const user = useAuthStore((s) => s.user);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (IS_STORE_BUILD) {
+      onError('Purchases are handled through the app store in native builds.');
+      setLoading(false);
+      return;
+    }
+    if (!user?.id) {
+      onError('You must be logged in to purchase coins.');
+      setLoading(false);
+      return;
+    }
+    if (!stripePromise) {
+      onError('Payments are not configured.');
+      setLoading(false);
+      return;
+    }
     // Create payment intent on backend
     fetch('/api/create-payment-intent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': user.id
       },
       body: JSON.stringify({
         amount: Math.round(coinPackage.price * 100), // Convert to cents
+        userId: user.id,
         coinPackage: {
           id: coinPackage.id,
           coins: coinPackage.coins,
@@ -128,7 +148,7 @@ export const StripePaymentElement: React.FC<StripePaymentElementProps> = ({
         onError('Failed to initialize payment');
         setLoading(false);
       });
-  }, [coinPackage]);
+  }, [coinPackage, user?.id]);
 
   const options = {
     clientSecret,

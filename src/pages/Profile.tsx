@@ -9,6 +9,7 @@ import { uploadAvatar } from '../lib/avatarUpload';
 export default function Profile() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuthStore();
+  const isDev = import.meta.env.DEV;
   const displayName = user?.name ?? 'User';
   const displayUsername = user?.username ?? 'user';
   const displayAvatar = user?.avatar ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
@@ -40,6 +41,7 @@ export default function Profile() {
 
   const handleDevTopUp = async () => {
     if (!user) return;
+    if (!isDev) return;
     if (!window.confirm('Recharge 999,999 coins for testing?')) return;
     
     try {
@@ -162,14 +164,16 @@ export default function Profile() {
           </button>
         </div>
 
-        <div className="px-4 mb-6">
-          <button
-            onClick={handleDevTopUp}
-            className="w-full p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 font-bold text-sm hover:bg-emerald-500/20 transition flex items-center justify-center gap-2"
-          >
-            <Sparkles size={16} /> DEV: Recharge 999,999 Coins
-          </button>
-        </div>
+        {isDev && (
+          <div className="px-4 mb-6">
+            <button
+              onClick={handleDevTopUp}
+              className="w-full p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 font-bold text-sm hover:bg-emerald-500/20 transition flex items-center justify-center gap-2"
+            >
+              <Sparkles size={16} /> DEV: Recharge 999,999 Coins
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="border-b border-gray-800 flex justify-around text-gray-500">

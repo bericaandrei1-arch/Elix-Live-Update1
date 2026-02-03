@@ -25,7 +25,16 @@ export default function Privacy() {
             We do not sell personal data. Data is used only to provide app functionality, improve the service, and ensure
             safety.
           </p>
-          <p>You may request account deletion at any time.</p>
+          <p>
+            You may request account deletion at any time from Settings.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/settings')}
+            className="mt-2 inline-flex items-center justify-center px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-xs font-bold"
+          >
+            Open Settings
+          </button>
         </div>
       </div>
     </div>

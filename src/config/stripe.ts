@@ -10,8 +10,7 @@ export const STRIPE_CONFIG = {
 };
 
 export const getStripeKey = () => {
-  if (!STRIPE_CONFIG.publishableKey) {
-    throw new Error('Stripe publishable key is not configured. Please add VITE_STRIPE_PUBLISHABLE_KEY to your environment variables.');
-  }
   return STRIPE_CONFIG.publishableKey;
 };
+
+export const hasStripeKey = () => !!STRIPE_CONFIG.publishableKey;

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import { useVideoStore } from '../store/useVideoStore';
 import { LivePromo, useLivePromoStore } from '../store/useLivePromoStore';
+import { useSafetyStore } from '../store/useSafetyStore';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,7 +59,8 @@ function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) 
 }
 
 export default function VideoFeed() {
-  const { videos } = useVideoStore();
+  const videos = useVideoStore((s) => s.videos);
+  const blockedUserIds = useSafetyStore((s) => s.blockedUserIds);
   const promoBattle = useLivePromoStore((s) => s.promoBattle);
   const promoLive = useLivePromoStore((s) => s.promoLive);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -68,7 +70,11 @@ export default function VideoFeed() {
   const promoCount = (promoBattle ? 1 : 0) + (promoLive ? 1 : 0);
   const [loopCount, setLoopCount] = useState(1);
 
-  const videoIds = Array.from({ length: loopCount }).flatMap(() => videos.map((v) => v.id));
+  const visibleVideos = blockedUserIds.length
+    ? videos.filter((v) => !blockedUserIds.includes(v.user.id))
+    : videos;
+
+  const videoIds = Array.from({ length: loopCount }).flatMap(() => visibleVideos.map((v) => v.id));
 
   const feedItems: FeedItem[] = [
     ...(promoBattle ? ([{ kind: 'promo', promo: promoBattle }] as const) : []),
@@ -77,9 +83,9 @@ export default function VideoFeed() {
   ];
 
   useEffect(() => {
-    if (videos.length === 0) return;
+    if (visibleVideos.length === 0) return;
     setActiveIndex(0);
-  }, [videos, promoCount]);
+  }, [visibleVideos.length, promoCount]);
 
   const handleVideoEnd = (feedIndex: number) => {
     const container = containerRef.current;
@@ -110,7 +116,9 @@ export default function VideoFeed() {
 
   const nextItem = feedItems[activeIndex + 1];
   const nextVideoUrl =
-    nextItem && nextItem.kind === 'video' ? videos.find((v) => v.id === nextItem.videoId)?.url : undefined;
+    nextItem && nextItem.kind === 'video'
+      ? visibleVideos.find((v) => v.id === nextItem.videoId)?.url
+      : undefined;
 
   useEffect(() => {
     if (!nextVideoUrl) return;

@@ -13,7 +13,6 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
   const tier = level > 100 ? 'pink' : level > 60 ? 'purple' : level > 30 ? 'orange' : level > 20 ? 'green' : 'blue';
   const safeLevel = Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
   const isChat = variant === 'chat';
-  const isClean = variant === 'clean';
 
   const colors =
     tier === 'blue'

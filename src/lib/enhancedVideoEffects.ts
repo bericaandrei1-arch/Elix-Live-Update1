@@ -177,13 +177,14 @@ export class EnhancedVideoEffectsProcessor {
         this.ctx.globalAlpha = 1;
         break;
       
-      case 'slide':
+      case 'slide': {
         const offsetX = this.canvas.width * progress;
         this.ctx.drawImage(frame1, -offsetX, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(frame2, this.canvas.width - offsetX, 0, this.canvas.width, this.canvas.height);
         break;
+      }
       
-      case 'zoom':
+      case 'zoom': {
         const scale1 = 1 + progress * 0.5;
         const scale2 = 1 - progress * 0.5;
         
@@ -201,6 +202,7 @@ export class EnhancedVideoEffectsProcessor {
         this.ctx.drawImage(frame2, 0, 0, this.canvas.width, this.canvas.height);
         this.ctx.restore();
         break;
+      }
     }
   }
 
@@ -248,12 +250,13 @@ export class EnhancedVideoEffectsProcessor {
     this.ctx.textAlign = 'center';
     
     switch (animation) {
-      case 'typewriter':
+      case 'typewriter': {
         const charsToShow = Math.floor(this.time * 10) % (text.length + 1);
         const visibleText = text.substring(0, charsToShow);
         this.ctx.strokeText(visibleText, position.x, position.y);
         this.ctx.fillText(visibleText, position.x, position.y);
         break;
+      }
       
       case 'fade':
         this.ctx.globalAlpha = (Math.sin(this.time * 2) + 1) / 2;
@@ -261,11 +264,12 @@ export class EnhancedVideoEffectsProcessor {
         this.ctx.fillText(text, position.x, position.y);
         break;
       
-      case 'slide':
+      case 'slide': {
         const slideX = Math.sin(this.time) * 20;
         this.ctx.strokeText(text, position.x + slideX, position.y);
         this.ctx.fillText(text, position.x + slideX, position.y);
         break;
+      }
     }
     
     this.ctx.restore();

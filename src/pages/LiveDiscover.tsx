@@ -10,6 +10,12 @@ type LiveCreator = {
   thumbnail?: string;
 };
 
+type LiveStreamRow = {
+  stream_key: string;
+  title: string | null;
+  viewer_count: number | null;
+};
+
 export default function LiveDiscover() {
   const navigate = useNavigate();
   const [creators, setCreators] = useState<LiveCreator[]>([]);
@@ -28,7 +34,7 @@ export default function LiveDiscover() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const mapped: LiveCreator[] = data.map((stream: any) => ({
+        const mapped: LiveCreator[] = (data as LiveStreamRow[]).map((stream) => ({
           id: stream.stream_key,
           name: stream.title || 'Unknown User',
           viewers: stream.viewer_count || 0,

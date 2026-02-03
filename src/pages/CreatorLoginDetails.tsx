@@ -1,15 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function CreatorLoginDetails() {
   const navigate = useNavigate();
-  const { user, signInWithPassword, signUpWithPassword, signOut, resendSignupConfirmation } = useAuthStore();
+  const { user, signInWithPassword, signUpWithPassword, signOut, resendSignupConfirmation, authMode } = useAuthStore();
   const [rememberMe, setRememberMe] = useState(true);
   const [saveDetails, setSaveDetails] = useState(false);
+  const [savePassword, setSavePassword] = useState(false);
   const [savedIdentifier, setSavedIdentifier] = useState('');
   const [savedUsername, setSavedUsername] = useState('');
+  const [savedPassword, setSavedPassword] = useState('');
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -29,28 +31,42 @@ export default function CreatorLoginDetails() {
     setRememberMe(storedRemember === null ? true : storedRemember === 'true');
     const storedSave = window.localStorage.getItem('creator_save_login_details') === 'true';
     setSaveDetails(storedSave);
+    const storedSavePassword = window.localStorage.getItem('creator_save_password') === 'true';
+    setSavePassword(storedSavePassword);
     const identifier = window.localStorage.getItem('creator_saved_identifier') ?? '';
     const savedName = window.localStorage.getItem('creator_saved_username') ?? '';
+    const storedPassword = window.localStorage.getItem('creator_saved_password') ?? '';
     setSavedIdentifier(identifier);
     setSavedUsername(savedName);
+    setSavedPassword(storedPassword);
     setEmail(identifier);
     setUsername(savedName);
+    if (storedSavePassword && storedPassword) {
+      setPassword(storedPassword);
+    }
   }, []);
 
-  const canSave = useMemo(() => saveDetails, [saveDetails]);
-
   const persistSavedDetails = (nextEmail: string, nextUsername: string) => {
-    if (!canSave) return;
+    const shouldSave = window.localStorage.getItem('creator_save_login_details') === 'true';
+    if (!shouldSave) return;
     window.localStorage.setItem('creator_saved_identifier', nextEmail);
     window.localStorage.setItem('creator_saved_username', nextUsername);
     setSavedIdentifier(nextEmail);
     setSavedUsername(nextUsername);
   };
 
+  const persistSavedPassword = (nextPassword: string) => {
+    const shouldSave = window.localStorage.getItem('creator_save_password') === 'true';
+    if (!shouldSave) return;
+    window.localStorage.setItem('creator_saved_password', nextPassword);
+    setSavedPassword(nextPassword);
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setShowResend(false);
     setIsSubmitting(true);
 
     const trimmedEmail = email.trim();
@@ -71,28 +87,34 @@ export default function CreatorLoginDetails() {
           setError(res.error);
           return;
         }
-        persistSavedDetails(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
         if (res.needsEmailConfirmation) {
-          setInfo('Cont creat. Verifică email-ul pentru confirmare. Dacă nu primești email, apasă "Resend confirmation".');
+          setInfo('Check your inbox and confirm your email to finish creating your account.');
           setShowResend(true);
-          setMode('signin');
-          setPassword('');
-          setConfirmPassword('');
+          persistSavedDetails(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
           return;
         }
+        persistSavedDetails(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
+        persistSavedPassword(password);
         navigate('/profile', { replace: true });
         return;
       }
 
       const res = await signInWithPassword(trimmedEmail, password);
       if (res.error) {
-        setError(res.error);
-        if (/confirm|verification|verify|email/i.test(res.error)) {
+        const msg = res.error;
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          setError('Email neconfirmat. Verifică inbox-ul și confirmă contul, apoi încearcă din nou.');
+          setShowResend(true);
+          return;
+        }
+        setError(msg);
+        if (/confirm|verification|verify|email/i.test(msg)) {
           setShowResend(true);
         }
         return;
       }
       persistSavedDetails(trimmedEmail, trimmedUsername || savedUsername || trimmedEmail.split('@')[0]);
+      persistSavedPassword(password);
       navigate('/profile', { replace: true });
     } finally {
       setIsSubmitting(false);
@@ -137,6 +159,7 @@ export default function CreatorLoginDetails() {
                 setMode('signin');
                 setError(null);
                 setInfo(null);
+                setShowResend(false);
               }}
               className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition ${
                 mode === 'signin'
@@ -152,6 +175,7 @@ export default function CreatorLoginDetails() {
                 setMode('signup');
                 setError(null);
                 setInfo(null);
+                setShowResend(false);
               }}
               className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition ${
                 mode === 'signup'
@@ -169,37 +193,44 @@ export default function CreatorLoginDetails() {
             {mode === 'signup' && (
               <div className="space-y-1">
                 <label className="text-xs text-white/70">Username</label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-                  placeholder="creator_name"
-                  autoComplete="username"
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-secondary/50"
+                    placeholder="creator_name"
+                    autoComplete="username"
+                  />
+                </div>
               </div>
             )}
 
             <div className="space-y-1">
               <label className="text-xs text-white/70">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-                placeholder="you@email.com"
-                autoComplete="email"
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-secondary/50"
+                  placeholder="you@email.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs text-white/70">Password</label>
               <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 pr-10 text-sm outline-none focus:border-secondary/50"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-9 py-2 text-sm outline-none focus:border-secondary/50"
                   placeholder="••••••••"
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   required
@@ -209,7 +240,7 @@ export default function CreatorLoginDetails() {
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
@@ -218,11 +249,12 @@ export default function CreatorLoginDetails() {
               <div className="space-y-1">
                 <label className="text-xs text-white/70">Confirm password</label>
                 <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 pr-10 text-sm outline-none focus:border-secondary/50"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-9 py-2 text-sm outline-none focus:border-secondary/50"
                     placeholder="••••••••"
                     autoComplete="new-password"
                     required
@@ -232,7 +264,7 @@ export default function CreatorLoginDetails() {
                     onClick={() => setShowConfirmPassword((v) => !v)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
@@ -251,6 +283,10 @@ export default function CreatorLoginDetails() {
                 {isResending ? 'Sending...' : 'Resend confirmation email'}
               </button>
             )}
+
+          <div className="text-[10px] text-white/40 text-center">
+            Auth: {authMode}
+          </div>
 
             <button
               type="submit"
@@ -301,19 +337,40 @@ export default function CreatorLoginDetails() {
             />
           </label>
 
+          <label className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+            <span className="text-sm">Save password</span>
+            <input
+              type="checkbox"
+              checked={savePassword}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setSavePassword(next);
+                window.localStorage.setItem('creator_save_password', next ? 'true' : 'false');
+                if (!next) {
+                  window.localStorage.removeItem('creator_saved_password');
+                  setSavedPassword('');
+                }
+              }}
+            />
+          </label>
+
           <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
             <div className="text-xs text-white/60">Saved email</div>
             <div className="text-sm break-all">{savedIdentifier || '-'}</div>
             <div className="mt-3 text-xs text-white/60">Saved username</div>
             <div className="text-sm break-all">{savedUsername || '-'}</div>
+            <div className="mt-3 text-xs text-white/60">Saved password</div>
+            <div className="text-sm break-all">{savedPassword ? '••••••••' : '-'}</div>
 
             <button
               className="mt-4 w-full bg-white/10 border border-white/10 rounded-xl py-2 text-sm"
               onClick={() => {
                 window.localStorage.removeItem('creator_saved_identifier');
                 window.localStorage.removeItem('creator_saved_username');
+                window.localStorage.removeItem('creator_saved_password');
                 setSavedIdentifier('');
                 setSavedUsername('');
+                setSavedPassword('');
               }}
             >
               Clear saved details

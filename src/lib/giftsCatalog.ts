@@ -55,12 +55,12 @@ export function resolveGiftAssetUrl(path: string): string {
 
 export function buildGiftUiItemsFromCatalog(rows: GiftCatalogRow[]): GiftUiItem[] {
   const faceArFallback: Record<string, { icon: string; video: string }> = {
-    face_ar_crown: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Zeus.webm' },
-    face_ar_glasses: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Frostwing Ascendant.webm' },
-    face_ar_hearts: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Thunder God Rage.webm' },
-    face_ar_mask: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Hunted Castel.webm' },
-    face_ar_ears: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/majestic_ice_blue_mythic_bird_in_flight.webm' },
-    face_ar_stars: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Zeus.webm' },
+    face_ar_crown: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Global Universe.webm' },
+    face_ar_glasses: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Live Universe.webm' },
+    face_ar_hearts: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Gold Universe.webm' },
+    face_ar_mask: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Beast Relic of the Ancients.webm' },
+    face_ar_ears: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Live Universe.webm' },
+    face_ar_stars: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Global Universe.webm' },
   };
 
   return rows

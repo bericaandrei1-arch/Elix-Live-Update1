@@ -7,11 +7,12 @@ import { trackEvent } from '../lib/analytics';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { signOut } = useAuthStore();
+  const { signOut, session } = useAuthStore();
   const { muteAllSounds, notificationsEnabled, language, setMuteAllSounds, setNotificationsEnabled, setLanguage } =
     useSettingsStore();
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const languageOptions = useMemo(() => {
     const opts: { value: AppLanguage; label: string }[] = [
@@ -141,6 +142,11 @@ export default function Settings() {
         </div>
 
         <div className="mt-8 space-y-2">
+          {deleteError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-200">
+              {deleteError}
+            </div>
+          )}
           <button
             type="button"
             className="w-full flex items-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 cursor-pointer text-left text-red-400 disabled:opacity-60"
@@ -150,11 +156,26 @@ export default function Settings() {
               const ok = window.confirm('Delete account? This will sign you out and start the deletion request.');
               if (!ok) return;
               setIsDeleting(true);
+              setDeleteError(null);
               trackEvent('settings_delete_account_start');
               try {
-                window.location.href =
-                  'mailto:support@elixstarlive.co.uk?subject=Delete%20my%20account&body=Please%20delete%20my%20account.%20My%20email%3A%20';
-              } catch {}
+                if (session?.access_token) {
+                  const resp = await fetch('/api/delete-account', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${session.access_token}` }
+                  });
+                  if (!resp.ok) {
+                    const body = await resp.json().catch(() => null);
+                    throw new Error(body?.error || 'Failed to delete account.');
+                  }
+                } else {
+                  window.location.href =
+                    'mailto:support@elixstarlive.co.uk?subject=Delete%20my%20account&body=Please%20delete%20my%20account.%20My%20email%3A%20';
+                }
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : 'Failed to delete account.';
+                setDeleteError(msg);
+              }
               await signOut();
               trackEvent('settings_delete_account_signed_out');
               navigate('/login', { replace: true });

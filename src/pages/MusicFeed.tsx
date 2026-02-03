@@ -3,11 +3,11 @@ import { ArrowLeft, Music, Play } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const MUSIC_VIDEOS = [
-  { id: 1, url: '/gifts/Elix Lucky Kitty.mp4' },
-  { id: 2, url: '/gifts/Emerald Sky Guardian.mp4' },
+  { id: 1, url: '/gifts/Crown Kitty Treasure.mp4' },
+  { id: 2, url: '/gifts/Eternal Guardian.mp4' },
   { id: 3, url: '/gifts/Ember Dragon Egg.mp4' },
   { id: 4, url: '/gifts/Mythic Fire Unicorn.mp4' },
-  { id: 5, url: '/gifts/Zeus.webm' },
+  { id: 5, url: '/gifts/Elix Live Universe.webm' },
   { id: 6, url: '/gifts/Beast Relic of the Ancients.webm' },
 ];
 

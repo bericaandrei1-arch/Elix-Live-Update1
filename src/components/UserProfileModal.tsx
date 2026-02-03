@@ -3,12 +3,15 @@ import { X, UserPlus, UserMinus, MessageCircle, Share2, MoreHorizontal, Flag, Ba
 import { useVideoStore } from '../store/useVideoStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { LevelBadge } from './LevelBadge';
+import { useSafetyStore } from '../store/useSafetyStore';
+import ReportModal from './ReportModal';
 
 interface User {
   id: string;
   username: string;
   name: string;
   avatar: string;
+  level?: number;
   isVerified?: boolean;
   followers: number;
   following: number;
@@ -28,14 +31,18 @@ interface UserProfileModalProps {
 
 export default function UserProfileModal({ isOpen, onClose, user, onFollow }: UserProfileModalProps) {
   const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showReportModal, setShowReportModal] = useState(false);
   
   const { videos } = useVideoStore();
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, session } = useAuthStore();
+  const blockedUserIds = useSafetyStore((s) => s.blockedUserIds);
+  const blockUser = useSafetyStore((s) => s.blockUser);
+  const unblockUser = useSafetyStore((s) => s.unblockUser);
   
   const userVideos = videos.filter(video => video.user.id === user.id);
   const isOwnProfile = currentUser?.id === user.id;
+  const isBlocked = blockedUserIds.includes(user.id);
 
   if (!isOpen) return null;
 
@@ -43,15 +50,27 @@ export default function UserProfileModal({ isOpen, onClose, user, onFollow }: Us
     // Navigate to chat with user
   };
 
-  const handleBlockUser = () => {
+  const handleBlockUser = async () => {
     if (window.confirm(`Are you sure you want to block @${user.username}?`)) {
-      setIsBlocked(true);
+      const token = session?.access_token;
+      if (token) {
+        await fetch('/api/block-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ blockedUserId: user.id, action: 'block' }),
+        }).catch(() => null);
+      }
+      blockUser(user.id);
       onClose();
     }
   };
 
   const handleReportUser = () => {
-    // Implement user reporting functionality
+    setShowMoreOptions(false);
+    setShowReportModal(true);
   };
 
   const formatNumber = (num: number) => {
@@ -79,7 +98,20 @@ export default function UserProfileModal({ isOpen, onClose, user, onFollow }: Us
             You have blocked @{user.username}. You will no longer see their content.
           </p>
           <button
-            onClick={() => setIsBlocked(false)}
+            onClick={async () => {
+              const token = session?.access_token;
+              if (token) {
+                await fetch('/api/block-user', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ blockedUserId: user.id, action: 'unblock' }),
+                }).catch(() => null);
+              }
+              unblockUser(user.id);
+            }}
             className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
           >
             Unblock User
@@ -119,7 +151,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onFollow }: Us
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <LevelBadge level={(user as any).level ?? 1} size={10} layout="fixed" />
+                <LevelBadge level={user.level ?? 1} size={10} layout="fixed" />
                 <h2 className="text-white font-bold text-lg truncate">{user.name}</h2>
                 {user.isVerified && <div className="w-4 h-4 bg-blue-500 rounded-full flex-shrink-0" />}
               </div>
@@ -148,7 +180,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onFollow }: Us
               <div className="text-xs font-extrabold text-white/80">A1</div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 flex items-center justify-center">
-              <LevelBadge level={(user as any).level ?? 1} size={10} layout="fixed" />
+              <LevelBadge level={user.level ?? 1} size={10} layout="fixed" />
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 flex items-center justify-center">
               <div className="text-xs font-extrabold text-white/80">TOP</div>
@@ -316,6 +348,14 @@ export default function UserProfileModal({ isOpen, onClose, user, onFollow }: Us
           </div>
         )}
       </div>
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        videoId=""
+        contentType="user"
+        contentId={user.id}
+      />
     </div>
   );
 

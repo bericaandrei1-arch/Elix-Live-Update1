@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseConfig } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -18,11 +18,14 @@ interface User {
   joinedDate: string;
 }
 
+type AuthMode = 'supabase' | 'local' | 'guest';
+
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   session: Session | null;
   isLoading: boolean;
+  authMode: AuthMode;
   
   // Actions
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -73,78 +76,340 @@ function mapSessionToUser(session: Session | null): User | null {
   };
 }
 
+const getAuthErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    const m = error.message.toLowerCase();
+    if (
+      m.includes('load failed') ||
+      m.includes('failed to fetch') ||
+      m.includes('network request failed') ||
+      m.includes('the internet connection appears to be offline')
+    ) {
+      return 'Network error. Please check your connection and try again.';
+    }
+    return error.message;
+  }
+  if (typeof error === 'string') return error;
+  console.error('Unknown auth error:', error);
+  return 'Authentication failed. Please try again.';
+};
+
+const LOCAL_USERS_KEY = 'elix_local_users_v1';
+const LOCAL_SESSION_KEY = 'elix_local_session_v1';
+const FORCE_LOCAL_AUTH = import.meta.env.VITE_FORCE_LOCAL_AUTH === 'true';
+const ALLOW_LOCAL_AUTH = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOCAL_AUTH === 'true' || FORCE_LOCAL_AUTH;
+
+type LocalAuthUser = {
+  id: string;
+  email: string;
+  password: string;
+  username: string;
+  createdAt: string;
+};
+
+const safeJsonParse = <T,>(raw: string | null): T | null => {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const readLocalUsers = (): LocalAuthUser[] => {
+  const parsed = safeJsonParse<LocalAuthUser[]>(
+    typeof window !== 'undefined' ? window.localStorage.getItem(LOCAL_USERS_KEY) : null
+  );
+  return Array.isArray(parsed) ? parsed : [];
+};
+
+const writeLocalUsers = (users: LocalAuthUser[]) => {
+  try {
+    window.localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+  } catch {
+    void users;
+  }
+};
+
+const randomId = () => {
+  try {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return (crypto as Crypto).randomUUID();
+    }
+  } catch {
+    void 0;
+  }
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+};
+
+const mapLocalUserToUser = (u: LocalAuthUser): User => {
+  return {
+    id: u.id,
+    username: u.username,
+    name: u.username,
+    email: u.email,
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=random`,
+    level: 1,
+    isVerified: false,
+    followers: 0,
+    following: 0,
+    joinedDate: u.createdAt
+  };
+};
+
+const persistLocalSession = (u: LocalAuthUser) => {
+  try {
+    window.localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ userId: u.id }));
+  } catch {
+    void u;
+  }
+};
+
+const clearLocalSession = () => {
+  try {
+    window.localStorage.removeItem(LOCAL_SESSION_KEY);
+  } catch {
+    void 0;
+  }
+};
+
+const readLocalSessionUser = (): LocalAuthUser | null => {
+  const sessionRaw =
+    typeof window !== 'undefined' ? window.localStorage.getItem(LOCAL_SESSION_KEY) : null;
+  const parsed = safeJsonParse<{ userId: string }>(sessionRaw);
+  const userId = parsed?.userId;
+  if (!userId) return null;
+  const users = readLocalUsers();
+  return users.find((u) => u.id === userId) ?? null;
+};
+
+const localAuthSignIn = (set: (partial: Partial<AuthStore>) => void, email: string, password: string) => {
+  const users = readLocalUsers();
+  const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!found) return { error: 'Invalid email or password.' };
+  if (found.password !== password) return { error: 'Invalid email or password.' };
+  persistLocalSession(found);
+  set({ session: null, user: mapLocalUserToUser(found), isAuthenticated: true, isLoading: false, authMode: 'local' });
+  return { error: null };
+};
+
+const localAuthSignUp = (
+  set: (partial: Partial<AuthStore>) => void,
+  email: string,
+  password: string,
+  username?: string
+) => {
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail) return { error: 'Email is required.', needsEmailConfirmation: false };
+  if (password.length < 6) return { error: 'Password must be at least 6 characters.', needsEmailConfirmation: false };
+  const users = readLocalUsers();
+  const exists = users.some((u) => u.email.toLowerCase() === normalizedEmail.toLowerCase());
+  if (exists) return { error: 'Account already exists for this email.', needsEmailConfirmation: false };
+
+  const derivedUsername = username?.trim() || normalizedEmail.split('@')[0] || 'user';
+  const createdAt = new Date().toISOString();
+  const nextUser: LocalAuthUser = { id: randomId(), email: normalizedEmail, password, username: derivedUsername, createdAt };
+  const nextUsers = [...users, nextUser];
+  writeLocalUsers(nextUsers);
+  persistLocalSession(nextUser);
+  set({ session: null, user: mapLocalUserToUser(nextUser), isAuthenticated: true, isLoading: false, authMode: 'local' });
+  return { error: null, needsEmailConfirmation: false };
+};
+
+const localAuthSignUpOrSignIn = (
+  set: (partial: Partial<AuthStore>) => void,
+  email: string,
+  password: string,
+  username?: string
+) => {
+  const signUpRes = localAuthSignUp(set, email, password, username);
+  if (!signUpRes.error) return signUpRes;
+  if (signUpRes.error.toLowerCase().includes('already exists')) {
+    const signInRes = localAuthSignIn(set, email, password);
+    if (!signInRes.error) return { error: null, needsEmailConfirmation: false };
+  }
+  return signUpRes;
+};
+
+const isInfraAuthError = (message: string) => {
+  const m = message.toLowerCase();
+  return (
+    m.includes('load failed') ||
+    m.includes('failed to fetch') ||
+    m.includes('network request failed') ||
+    m.includes('the internet connection appears to be offline') ||
+    m.includes('fetch') ||
+    m.includes('network') ||
+    m.includes('invalid api key') ||
+    m.includes('jwt') ||
+    m.includes('not found') ||
+    m.includes('signup is disabled') ||
+    m.includes('signups not allowed') ||
+    m.includes('rate limit') ||
+    m.includes('too many requests') ||
+    m.includes('authentication failed')
+  );
+};
+
 export const useAuthStore = create<AuthStore>()(
   (set, get) => ({
     user: null,
     isAuthenticated: false,
     session: null,
     isLoading: true,
+    authMode: supabaseConfig.hasValidConfig && !FORCE_LOCAL_AUTH ? 'supabase' : ALLOW_LOCAL_AUTH ? 'local' : 'supabase',
 
     signInWithPassword: async (email, password) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return { error: error.message };
-      const session = data.session ?? null;
-      set({ session, user: mapSessionToUser(session), isAuthenticated: !!session, isLoading: false });
-      return { error: null };
+      if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
+        if (ALLOW_LOCAL_AUTH) return localAuthSignIn(set, email, password);
+        return { error: 'Authentication is not configured.' };
+      }
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          if (ALLOW_LOCAL_AUTH) {
+            const localRes = localAuthSignIn(set, email, password);
+            if (!localRes.error) return localRes;
+            if (isInfraAuthError(error.message)) {
+              return { error: `Supabase login failed (${error.message}). ${localRes.error}` };
+            }
+          }
+          return { error: error.message };
+        }
+        const session = data.session ?? null;
+        if (!session) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const recoveredSession = sessionData.session ?? null;
+          if (recoveredSession) {
+            clearLocalSession();
+            set({ session: recoveredSession, user: mapSessionToUser(recoveredSession), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+            return { error: null };
+          }
+          if (ALLOW_LOCAL_AUTH) {
+            const localRes = localAuthSignIn(set, email, password);
+            if (!localRes.error) return localRes;
+          }
+          return { error: 'No active session returned from Supabase.' };
+        }
+        clearLocalSession();
+        set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+        return { error: null };
+      } catch (error) {
+        const msg = getAuthErrorMessage(error);
+        if (ALLOW_LOCAL_AUTH) {
+          const localRes = localAuthSignIn(set, email, password);
+          if (!localRes.error) return localRes;
+          if (isInfraAuthError(msg)) {
+            return { error: `Supabase login failed (${msg}). ${localRes.error}` };
+          }
+        }
+        return { error: msg };
+      }
     },
 
     signUpWithPassword: async (email, password, username) => {
+      if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
+        if (ALLOW_LOCAL_AUTH) return localAuthSignUpOrSignIn(set, email, password, username);
+        return { error: 'Authentication is not configured.', needsEmailConfirmation: false };
+      }
       const userData: Record<string, unknown> = { level: 1 };
       if (username) userData.username = username;
-
-      // Force no email confirmation for this user
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { 
-          data: userData,
-          emailRedirectTo: undefined // Don't send confirmation email flow
-        }
-      });
-      
-      if (error) return { error: error.message, needsEmailConfirmation: false };
-      
-      // Auto sign-in logic (Supabase sometimes returns session immediately if email confirm is off)
-      const session = data.session ?? null;
-      if (session) {
-        set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false });
-        return { error: null, needsEmailConfirmation: false };
-      }
-
-      // If no session, try to sign in immediately (works if email confirm is off)
-      if (data.user && !data.session) {
-          const signInRes = await supabase.auth.signInWithPassword({ email, password });
-          if (signInRes.data.session) {
-             set({ session: signInRes.data.session, user: mapSessionToUser(signInRes.data.session), isAuthenticated: true, isLoading: false });
-             return { error: null, needsEmailConfirmation: false };
-          }
-          
-          // If sign in fails, it means Supabase requires email confirmation.
-          // We must return true so the UI prompts the user to check their email.
-          return { error: null, needsEmailConfirmation: true };
-      }
-
-      return { error: 'Unknown signup state', needsEmailConfirmation: false };
-    },
-
-    resendSignupConfirmation: async (email) => {
       const emailRedirectTo =
         typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
           : undefined;
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: userData,
+            emailRedirectTo
+          }
+        });
 
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: { emailRedirectTo }
-      });
-      if (error) return { error: error.message };
-      return { error: null };
+        if (error) {
+          const normalized = error.message.toLowerCase();
+          if (normalized.includes('user already registered') || normalized.includes('already registered')) {
+            return { error: 'Email already used. Please sign in instead.', needsEmailConfirmation: false };
+          }
+          if (ALLOW_LOCAL_AUTH) {
+            const localRes = localAuthSignUpOrSignIn(set, email, password, username);
+            if (!localRes.error) return { error: null, needsEmailConfirmation: false };
+            return { error: localRes.error ?? error.message, needsEmailConfirmation: false };
+          }
+          return { error: error.message, needsEmailConfirmation: false };
+        }
+
+        const session = data.session ?? null;
+        if (session) {
+          clearLocalSession();
+          set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+          return { error: null, needsEmailConfirmation: false };
+        }
+
+        if (data.user && !data.session) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const recoveredSession = sessionData.session ?? null;
+          if (recoveredSession) {
+            clearLocalSession();
+            set({ session: recoveredSession, user: mapSessionToUser(recoveredSession), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+            return { error: null, needsEmailConfirmation: false };
+          }
+          return { error: null, needsEmailConfirmation: true };
+        }
+
+        if (ALLOW_LOCAL_AUTH) {
+          const localRes = localAuthSignUpOrSignIn(set, email, password, username);
+          if (!localRes.error) return { error: null, needsEmailConfirmation: false };
+          return { error: localRes.error, needsEmailConfirmation: false };
+        }
+        return { error: 'Unknown signup state. Please try again.', needsEmailConfirmation: false };
+      } catch (error) {
+        const msg = getAuthErrorMessage(error);
+        if (ALLOW_LOCAL_AUTH) {
+          const localRes = localAuthSignUpOrSignIn(set, email, password, username);
+          if (!localRes.error) return { error: null, needsEmailConfirmation: false };
+          if (isInfraAuthError(msg)) return { error: localRes.error ?? msg, needsEmailConfirmation: false };
+        }
+        return { error: msg, needsEmailConfirmation: false };
+      }
+    },
+
+    resendSignupConfirmation: async (email) => {
+      if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
+        if (ALLOW_LOCAL_AUTH) return { error: null };
+        return { error: 'Authentication is not configured.' };
+      }
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback`
+          : undefined;
+      try {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: { emailRedirectTo }
+        });
+        if (error) return { error: error.message };
+        return { error: null };
+      } catch (error) {
+        return { error: getAuthErrorMessage(error) };
+      }
     },
 
     signOut: async () => {
-      await supabase.auth.signOut();
-      set({ session: null, user: null, isAuthenticated: false, isLoading: false });
+      if (!FORCE_LOCAL_AUTH && supabaseConfig.hasValidConfig) {
+        await supabase.auth.signOut();
+      }
+      clearLocalSession();
+      set({
+        session: null,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        authMode: supabaseConfig.hasValidConfig && !FORCE_LOCAL_AUTH ? 'supabase' : ALLOW_LOCAL_AUTH ? 'local' : 'supabase'
+      });
     },
 
     updateUser: (updates) =>
@@ -155,9 +420,34 @@ export const useAuthStore = create<AuthStore>()(
     getCurrentUser: () => get().user,
 
     checkUser: () => {
+      if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
+        if (ALLOW_LOCAL_AUTH) {
+          const found = readLocalSessionUser();
+          if (found) {
+            set({ session: null, user: mapLocalUserToUser(found), isAuthenticated: true, isLoading: false, authMode: 'local' });
+            return;
+          }
+          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'local' });
+          return;
+        }
+        set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
+        return;
+      }
       if (!authUnsubscribe) {
         const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-          set({ session: session ?? null, user: mapSessionToUser(session ?? null), isAuthenticated: !!session, isLoading: false });
+          if (session) {
+            clearLocalSession();
+            set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+            return;
+          }
+          if (ALLOW_LOCAL_AUTH) {
+            const localFound = readLocalSessionUser();
+            if (localFound) {
+              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
+              return;
+            }
+          }
+          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
         });
         authUnsubscribe = () => data.subscription.unsubscribe();
       }
@@ -166,10 +456,29 @@ export const useAuthStore = create<AuthStore>()(
         .getSession()
         .then(({ data }) => {
           const session = data.session ?? null;
-          set({ session, user: mapSessionToUser(session), isAuthenticated: !!session, isLoading: false });
+          if (session) {
+            clearLocalSession();
+            set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+            return;
+          }
+          if (ALLOW_LOCAL_AUTH) {
+            const localFound = readLocalSessionUser();
+            if (localFound) {
+              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
+              return;
+            }
+          }
+          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
         })
         .catch(() => {
-          set({ session: null, user: null, isAuthenticated: false, isLoading: false });
+          if (ALLOW_LOCAL_AUTH) {
+            const localFound = readLocalSessionUser();
+            if (localFound) {
+              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
+              return;
+            }
+          }
+          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
         });
     },
 
@@ -186,7 +495,7 @@ export const useAuthStore = create<AuthStore>()(
         following: 0,
         joinedDate: new Date().toISOString()
       };
-      set({ user: guestUser, isAuthenticated: true, isLoading: false, session: null });
+      set({ user: guestUser, isAuthenticated: true, isLoading: false, session: null, authMode: 'guest' });
     }
   })
 );

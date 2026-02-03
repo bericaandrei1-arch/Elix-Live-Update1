@@ -644,7 +644,7 @@ export class LiveStreamingManager {
     this.streamCallbacks.forEach(callback => callback(stream));
   }
 
-  private sendSignalingMessage(message: any): void {
+  private sendSignalingMessage(_message: any): void {
     // Send signaling message to WebRTC server
   }
 }

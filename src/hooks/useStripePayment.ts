@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { getStripeKey, STRIPE_CONFIG } from '@/config/stripe';
-
-const stripePromise = loadStripe(getStripeKey());
+import { STRIPE_CONFIG } from '@/config/stripe';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export interface PaymentResult {
   success: boolean;
@@ -11,6 +9,7 @@ export interface PaymentResult {
 }
 
 export const useStripePayment = () => {
+  const user = useAuthStore((s) => s.user);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +28,10 @@ export const useStripePayment = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(user?.id ? { 'x-user-id': user.id } : {})
         },
         body: JSON.stringify({
+          userId: user?.id ?? null,
           coinPackage: {
             id: coinPackage.id,
             coins: coinPackage.coins,

@@ -488,14 +488,32 @@ export default function Create() {
       const hasAudio = (current?.getAudioTracks().length || 0) > 0;
 
       if (!current || !hasAudio) {
-        const nextStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: isFrontCamera ? 'user' : 'environment',
-            width: { ideal: 1080 },
-            height: { ideal: 1920 },
-          },
-          audio: true,
-        });
+        let nextStream: MediaStream | null = null;
+        try {
+          nextStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: isFrontCamera ? 'user' : 'environment',
+              width: { ideal: 1080 },
+              height: { ideal: 1920 },
+            },
+            audio: true,
+          });
+        } catch {
+          try {
+            nextStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: isFrontCamera ? 'user' : 'environment',
+                width: { ideal: 1080 },
+                height: { ideal: 1920 },
+              },
+              audio: false,
+            });
+            showToast('Microphone permission denied. Going live without sound.');
+          } catch {
+            setCameraError('Camera access denied');
+            return;
+          }
+        }
 
         if (current) {
           current.getTracks().forEach((t) => t.stop());

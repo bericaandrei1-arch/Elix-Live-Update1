@@ -1,7 +1,7 @@
 export function getPosterCandidatesFromVideoSrc(videoSrc: string): string[] {
   if (!videoSrc) return [];
   const clean = videoSrc.split('?')[0];
-  const match = clean.match(/^(.*\/)([^\/]+)\.(mp4|webm)$/i);
+  const match = clean.match(/^(.*\/)([^/]+)\.(mp4|webm)$/i);
   if (!match) return [];
   const [, dir, filename] = match;
   return [

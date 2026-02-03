@@ -17,6 +17,7 @@ import SavedVideos from './pages/SavedVideos';
 import MusicFeed from './pages/MusicFeed';
 import FollowingFeed from './pages/FollowingFeed';
 import SearchPage from './pages/SearchPage';
+import VideoView from './pages/VideoView';
 import Inbox from './pages/Inbox';
 import ChatThread from './pages/ChatThread';
 import FriendsFeed from './pages/FriendsFeed';
@@ -34,12 +35,12 @@ import LegalAffiliate from './pages/LegalAffiliate';
 import LegalDMCA from './pages/LegalDMCA';
 import LegalSafety from './pages/LegalSafety';
 import RequireAuth from './components/RequireAuth';
-import FaceARGiftDemo from './components/FaceARGiftDemo';
 import DesignSystem from './pages/DesignSystem';
 
 function App() {
   const { checkUser } = useAuthStore();
   const location = useLocation();
+  const isDev = import.meta.env.DEV;
 
   useEffect(() => {
     checkUser();
@@ -48,6 +49,7 @@ function App() {
   const isFullScreen =
     location.pathname === '/' ||
     location.pathname === '/feed' ||
+    location.pathname.startsWith('/video/') ||
     location.pathname === '/live' ||
     location.pathname.startsWith('/live/') ||
     location.pathname.startsWith('/music/') ||
@@ -57,12 +59,12 @@ function App() {
     <div className="min-h-screen bg-background text-text font-sans">
       <main className={cn("min-h-screen", !isFullScreen && "pb-32")}>
         <Routes>
-          <Route path="/" element={<Navigate to="/live/broadcast" replace />} />
+          <Route path="/" element={<VideoFeed />} />
           <Route path="/feed" element={<VideoFeed />} />
-          <Route path="/face-ar-gift-demo" element={<FaceARGiftDemo />} />
-          <Route path="/design" element={<DesignSystem />} />
+          {isDev && <Route path="/design" element={<DesignSystem />} />}
           <Route path="/following" element={<FollowingFeed />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/video/:videoId" element={<VideoView />} />
           <Route path="/live" element={<LiveDiscover />} />
           <Route path="/live/:streamId" element={<LiveStream />} />
           <Route path="/live/start" element={<Navigate to="/live/broadcast" replace />} />

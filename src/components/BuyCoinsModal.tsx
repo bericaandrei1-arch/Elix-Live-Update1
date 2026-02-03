@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Smartphone } from 'lucide-react';
 import { STRIPE_CONFIG } from '@/config/stripe';
 import { StripePaymentElement } from './StripePaymentElement';
-import { useStripePayment } from '@/hooks/useStripePayment';
+import { IS_STORE_BUILD } from '@/config/build';
 
 interface BuyCoinsModalProps {
   isOpen: boolean;
@@ -16,14 +16,14 @@ interface BuyCoinsModalProps {
 export const BuyCoinsModal: React.FC<BuyCoinsModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [selectedPackage, setSelectedPackage] = useState(STRIPE_CONFIG.coinPackages[0]);
   const [showPaymentElement, setShowPaymentElement] = useState(false);
-  const { createCheckoutSession, loading } = useStripePayment();
+  const loading = false;
 
   const handlePackageSelect = async (coinPackage: typeof STRIPE_CONFIG.coinPackages[0]) => {
     setSelectedPackage(coinPackage);
     setShowPaymentElement(true);
   };
 
-  const handlePaymentSuccess = (paymentIntentId: string) => {
+  const handlePaymentSuccess = () => {
     // Update user's coin balance
     if (onSuccess) {
       onSuccess(selectedPackage.coins);
@@ -49,7 +49,16 @@ export const BuyCoinsModal: React.FC<BuyCoinsModalProps> = ({ isOpen, onClose, o
           </DialogTitle>
         </DialogHeader>
 
-        {!showPaymentElement ? (
+        {IS_STORE_BUILD ? (
+          <div className="space-y-4">
+            <div className="text-center text-sm text-gray-600">
+              Purchases are handled through the App Store / Play Store in the native app build.
+            </div>
+            <Button className="w-full" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        ) : !showPaymentElement ? (
           <div className="space-y-4">
             <div className="text-center text-sm text-gray-600 mb-4">
               Choose a coin package to continue

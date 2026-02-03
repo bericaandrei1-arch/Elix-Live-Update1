@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUpWithPassword, resendSignupConfirmation } = useAuthStore();
+  const { signUpWithPassword, resendSignupConfirmation, authMode } = useAuthStore();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,15 +18,21 @@ export default function Register() {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setShowResend(false);
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
     setIsSubmitting(true);
     const res = await signUpWithPassword(email.trim(), password, username.trim() || undefined);
     setIsSubmitting(false);
     if (res.error) {
+      console.error('Registration error:', res.error);
       setError(res.error);
       return;
     }
     if (res.needsEmailConfirmation) {
-      setInfo('Cont creat. Verifică email-ul pentru confirmare. Dacă nu primești email, apasă "Resend confirmation".');
+      setInfo('Check your inbox and confirm your email to finish creating your account.');
       setShowResend(true);
       return;
     }
@@ -108,6 +114,10 @@ export default function Register() {
               {isResending ? 'Sending...' : 'Resend confirmation email'}
             </button>
           )}
+
+          <div className="text-[10px] text-white/40 text-center">
+            Auth: {authMode}
+          </div>
 
           <button
             type="submit"

@@ -3,9 +3,9 @@ import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const FOLLOWING_VIDEOS = [
-  { id: 1, url: '/gifts/Lightning Hypercar.mp4' },
-  { id: 2, url: '/gifts/Emerald Colossus Rhino.mp4' },
-  { id: 3, url: '/gifts/Majestic ice unicorn in enchanted snow.mp4' },
+  { id: 1, url: '/gifts/Crystal Voyager Ship.mp4' },
+  { id: 2, url: '/gifts/Earth Titan Gorilla.mp4' },
+  { id: 3, url: '/gifts/Fantasy Unicorn.mp4' },
 ];
 
 export default function FollowingFeed() {

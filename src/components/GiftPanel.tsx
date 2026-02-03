@@ -1,16 +1,9 @@
 
-const giftsBase = undefined; // Force local gifts
-const hasRemoteGifts = false; // Force local gifts
-const normalizeBase = (base: string) => base.replace(/\/+$/, '');
-
 const giftUrl = (path: string) => {
-  // Always treat as local path
-  let cleanPath = path.startsWith('/') ? path : `/${path}`;
-  
-  // Handle spaces and special characters in filename
-  const encodedPath = cleanPath.split('/').map(segment => encodeURIComponent(segment)).join('/').replace('%2F', '/');
-  
-  return encodedPath;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const encodedPath = cleanPath.split('/').map((segment) => encodeURIComponent(segment)).join('/');
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+  return `${baseUrl}${encodedPath}`;
 };
 
 export type GiftType = 'universe' | 'big' | 'small';
@@ -37,6 +30,46 @@ export const GIFTS: GiftItem[] = [
     icon: 'https://cdn-icons-png.flaticon.com/512/740/740935.png',
     video: 'https://cdn-icons-png.flaticon.com/512/740/740935.png',
     preview: 'https://cdn-icons-png.flaticon.com/512/740/740935.png',
+  },
+  {
+    id: 's_heart',
+    name: 'Love Heart',
+    coins: 5,
+    giftType: 'small',
+    isActive: true,
+    icon: 'https://cdn-icons-png.flaticon.com/512/833/833472.png',
+    video: 'https://cdn-icons-png.flaticon.com/512/833/833472.png',
+    preview: 'https://cdn-icons-png.flaticon.com/512/833/833472.png',
+  },
+  {
+    id: 's_coffee',
+    name: 'Morning Coffee',
+    coins: 15,
+    giftType: 'small',
+    isActive: true,
+    icon: 'https://cdn-icons-png.flaticon.com/512/924/924514.png',
+    video: 'https://cdn-icons-png.flaticon.com/512/924/924514.png',
+    preview: 'https://cdn-icons-png.flaticon.com/512/924/924514.png',
+  },
+  {
+    id: 's_diamond',
+    name: 'Blue Diamond',
+    coins: 300,
+    giftType: 'small',
+    isActive: true,
+    icon: 'https://cdn-icons-png.flaticon.com/512/2663/2663114.png',
+    video: 'https://cdn-icons-png.flaticon.com/512/2663/2663114.png',
+    preview: 'https://cdn-icons-png.flaticon.com/512/2663/2663114.png',
+  },
+  {
+    id: 's_crown',
+    name: 'King Crown',
+    coins: 1500,
+    giftType: 'small',
+    isActive: true,
+    icon: 'https://cdn-icons-png.flaticon.com/512/691/691065.png',
+    video: 'https://cdn-icons-png.flaticon.com/512/691/691065.png',
+    preview: 'https://cdn-icons-png.flaticon.com/512/691/691065.png',
   },
   {
     id: 's_panda',
@@ -460,5 +493,126 @@ export const GIFTS: GiftItem[] = [
     icon: giftUrl('/gifts/Treasure Drake Cub.png'),
     video: giftUrl('/gifts/Treasure Drake Cub.mp4'),
     preview: giftUrl('/gifts/Treasure Drake Cub.png'),
+  },
+  // --- New Video Gifts ---
+  {
+    id: 'horse_gallop',
+    name: 'Galloping Horse',
+    coins: 5000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Horse.png'),
+    video: giftUrl('/gifts/Horse.mp4'),
+    preview: giftUrl('/gifts/Horse.png'),
+  },
+  {
+    id: 'rex_dino',
+    name: 'T-Rex',
+    coins: 12000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Rex Dinosaur.png'),
+    video: giftUrl('/gifts/Rex Dinosaur.mp4'),
+    preview: giftUrl('/gifts/Rex Dinosaur.png'),
+  },
+  {
+    id: 'frost_wolf',
+    name: 'Frost Wolf',
+    coins: 18000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Frost Wolf.png'),
+    video: giftUrl('/gifts/Frost Wolf.mp4'),
+    preview: giftUrl('/gifts/Frost Wolf.png'),
+  },
+  {
+    id: 'night_panther',
+    name: 'Night Panther',
+    coins: 22000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Night Panther.png'),
+    video: giftUrl('/gifts/Night Panther.mp4'),
+    preview: giftUrl('/gifts/Night Panther.png'),
+  },
+  {
+    id: 'cosmic_panther',
+    name: 'Cosmic Panther',
+    coins: 26000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Cosmic Panther.png'),
+    video: giftUrl('/gifts/Cosmic Panther.mp4'),
+    preview: giftUrl('/gifts/Cosmic Panther.png'),
+  },
+  {
+    id: 'crystal_rhino',
+    name: 'Crystal Rhino',
+    coins: 32000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Crystal Rhino.png'),
+    video: giftUrl('/gifts/Crystal Rhino.mp4'),
+    preview: giftUrl('/gifts/Crystal Rhino.png'),
+  },
+  {
+    id: 'fire_phoenix',
+    name: 'Fire Phoenix',
+    coins: 38000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Fire Phoenix.png'),
+    video: giftUrl('/gifts/Fire Phoenix.mp4'),
+    preview: giftUrl('/gifts/Fire Phoenix.png'),
+  },
+  {
+    id: 'aelyra_flameveil',
+    name: 'Aelyra Flameveil',
+    coins: 45000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Aelyra Flameveil.png'),
+    video: giftUrl('/gifts/Aelyra Flameveil.mp4'),
+    preview: giftUrl('/gifts/Aelyra Flameveil.png'),
+  },
+  {
+    id: 'dragon_wrath',
+    name: 'Dragon Wrath',
+    coins: 55000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Dragon’s Wrath Ride.png'),
+    video: giftUrl('/gifts/Dragon’s Wrath Ride.mp4'),
+    preview: giftUrl('/gifts/Dragon’s Wrath Ride.png'),
+  },
+  {
+    id: 'flame_king',
+    name: 'The Flame King',
+    coins: 65000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/The Flame King.png'),
+    video: giftUrl('/gifts/The Flame King.mp4'),
+    preview: giftUrl('/gifts/The Flame King.png'),
+  },
+  {
+    id: 'pink_jet',
+    name: 'Pink Love Jet',
+    coins: 88000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Pink Love Jet.png'),
+    video: giftUrl('/gifts/Pink Love Jet.mp4'),
+    preview: giftUrl('/gifts/Pink Love Jet.png'),
+  },
+  {
+    id: 'romantic_jet',
+    name: 'Romantic Jet',
+    coins: 99000,
+    giftType: 'big',
+    isActive: true,
+    icon: giftUrl('/gifts/Romantic Jet.png'),
+    video: giftUrl('/gifts/Romantic Jet.mp4'),
+    preview: giftUrl('/gifts/Romantic Jet.png'),
   },
 ];

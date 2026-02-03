@@ -19,8 +19,13 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
 
   const nameParts = file.name.split('.');
   const ext = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'png';
-  const objectPath = `${userId}/${Date.now()}.${ext}`;
-  const bucket = 'avatars';
+  const bucket =
+    import.meta.env.VITE_SUPABASE_AVATAR_BUCKET ||
+    import.meta.env.VITE_SUPABASE_STORAGE_BUCKET ||
+    'avatars';
+  const basePath = (import.meta.env.VITE_SUPABASE_AVATAR_PATH ?? '').replace(/^\/+|\/+$/g, '');
+  const fileName = `${Date.now()}.${ext}`;
+  const objectPath = basePath ? `${basePath}/${userId}/${fileName}` : `${userId}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, {
     upsert: true,
@@ -41,4 +46,3 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
 
   return publicUrl;
 }
-

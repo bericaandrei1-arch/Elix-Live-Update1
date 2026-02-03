@@ -261,7 +261,7 @@ export const mockApi = {
   },
 
   // Comment functions
-  getComments: async (videoId: string) => {
+  getComments: async (_videoId: string) => {
     await delay(400);
     return mockComments;
   },
@@ -307,7 +307,7 @@ export const mockApi = {
   },
 
   // Gift sending
-  sendGift: async (streamId: string, giftId: string, userId: string) => {
+  sendGift: async (streamId: string, giftId: string, _userId: string) => {
     await delay(500);
     const stream = mockLiveStreams.find(s => s.id === streamId);
     const gift = mockGifts.find(g => g.id === giftId);
@@ -325,7 +325,7 @@ export const mockApi = {
   },
 
   // Authentication (mock)
-  login: async (email: string, password: string) => {
+  login: async (_email: string, _password: string) => {
     await delay(800);
     return {
       user: mockUsers[0],
@@ -334,7 +334,7 @@ export const mockApi = {
     };
   },
 
-  register: async (email: string, password: string, username: string) => {
+  register: async (email: string, _password: string, username: string) => {
     await delay(1000);
     return {
       user: {

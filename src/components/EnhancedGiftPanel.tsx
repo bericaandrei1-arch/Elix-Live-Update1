@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Gift, Coins } from 'lucide-react';
-import { RechargeModal } from './RechargeModal';
+import { IS_STORE_BUILD } from '@/config/build';
+import { BuyCoinsModal } from './BuyCoinsModal';
 
 import { GIFTS as BASE_GIFTS } from './GiftPanel';
-import { buildGiftUiItemsFromCatalog, fetchGiftCatalog, fetchGiftPriceMap } from '../lib/giftsCatalog';
+import { fetchGiftPriceMap } from '../lib/giftsCatalog';
 import { getPosterCandidatesFromVideoSrc, pickFirstPosterCandidate } from '../lib/giftPoster';
 
 export const GIFTS = BASE_GIFTS;
@@ -43,7 +44,6 @@ function isImageUrl(url: string) {
 
 const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = ({ src, poster, active }) => {
   const [failed, setFailed] = useState(false);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [posterFailed, setPosterFailed] = useState<Set<string>>(() => new Set());
@@ -72,25 +72,7 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
     el.play().catch(() => {});
   }, [active, failed]);
 
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    if (failed || thumbnail) return;
-    if (!src) return;
-
-    // Remove complex thumbnail generation to avoid CORS issues and improve performance
-    // Just rely on poster
-  }, [failed, src, thumbnail]);
-
-  // if (failed) {
-  //   return (
-  //     <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-  //       <span className="text-2xl">🎁</span>
-  //     </div>
-  //   );
-  // }
-
-  const stillImage = poster ?? thumbnail ?? resolvedPoster;
+  const stillImage = poster ?? resolvedPoster;
 
   return (
     <>
@@ -140,7 +122,7 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
   const [showRecharge, setShowRecharge] = useState(false);
   const { ref: panelRef, inView } = useInView<HTMLDivElement>({ root: null, threshold: 0.05 });
   const [giftPriceMap, setGiftPriceMap] = useState<Map<string, number>>(() => new Map());
-  const [catalogGifts, setCatalogGifts] = useState<typeof GIFTS>(() => GIFTS);
+  const catalogGifts = GIFTS;
 
   useEffect(() => {
     fetchGiftPriceMap()
@@ -198,23 +180,24 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
         <div className="flex items-center gap-2 bg-black/60 px-2.5 py-0.5 rounded-full border border-secondary/20">
           <Coins size={13} className="text-secondary" />
           <span className="text-secondary font-bold text-xs">{userCoins.toLocaleString()}</span>
-          <button 
-            onClick={() => setShowRecharge(true)}
-            className="bg-secondary text-black text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 hover:bg-white transition"
-          >
-            Top Up
-          </button>
+          {!IS_STORE_BUILD && (
+            <button 
+              onClick={() => setShowRecharge(true)}
+              className="bg-secondary text-black text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 hover:bg-white transition"
+            >
+              Top Up
+            </button>
+          )}
         </div>
       </div>
 
-      {showRecharge && (
-        <RechargeModal 
-          onClose={() => setShowRecharge(false)}
-          onSuccess={(newBalance) => {
-             if (onRechargeSuccess) onRechargeSuccess(newBalance);
-          }}
-        />
-      )}
+      <BuyCoinsModal
+        isOpen={showRecharge}
+        onClose={() => setShowRecharge(false)}
+        onSuccess={(coins) => {
+          if (onRechargeSuccess) onRechargeSuccess(userCoins + coins);
+        }}
+      />
 
       {/* Tabs */}
       <div className="flex items-center gap-6 mb-3 px-2 border-b border-white/10">

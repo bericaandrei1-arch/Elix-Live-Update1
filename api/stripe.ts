@@ -1,7 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || '', {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2026-01-28.clover',
 });
 
@@ -11,9 +12,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { amount, coinPackage } = req.body;
+    const { amount, coinPackage, userId } = req.body ?? {};
 
-    if (!amount || !coinPackage) {
+    if (!amount || !coinPackage || !userId) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
@@ -25,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         coinPackageId: coinPackage.id,
         coins: coinPackage.coins.toString(),
         label: coinPackage.label,
+        userId: userId.toString(),
       },
       automatic_payment_methods: {
         enabled: true,

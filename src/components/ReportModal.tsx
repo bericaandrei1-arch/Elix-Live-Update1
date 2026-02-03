@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle, Flag, Ban, EyeOff, MessageSquare, UserMinus } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const authToken = useAuthStore((s) => s.session?.access_token ?? null);
 
   if (!isOpen) return null;
 
@@ -81,21 +83,35 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
       alert('Please select a reason for reporting');
       return;
     }
+    if (!authToken) {
+      alert('Please sign in to submit a report.');
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Report submitted:', {
-        videoId,
-        contentType,
-        contentId,
-        reason: selectedReason,
-        details: additionalDetails,
-        timestamp: new Date().toISOString()
+      const targetId = (contentType === 'video' ? videoId : contentId || videoId).trim();
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          targetType: contentType,
+          targetId,
+          reason: selectedReason,
+          details: additionalDetails,
+          contextVideoId: videoId,
+        }),
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const message = data?.error || 'Failed to submit report. Please try again.';
+        throw new Error(message);
+      }
 
       setShowSuccess(true);
       setTimeout(() => {

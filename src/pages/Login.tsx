@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInWithPassword, loginAsGuest, resendSignupConfirmation } = useAuthStore();
+  const { signInWithPassword, loginAsGuest, resendSignupConfirmation, authMode } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [savePassword, setSavePassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +19,15 @@ export default function Login() {
 
   const state = location.state as { from?: string } | null;
   const from = state?.from ?? '/';
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('login_save_password') === 'true';
+    const storedEmail = window.localStorage.getItem('login_saved_email') ?? '';
+    const storedPassword = window.localStorage.getItem('login_saved_password') ?? '';
+    setSavePassword(saved);
+    if (storedEmail) setEmail(storedEmail);
+    if (saved && storedPassword) setPassword(storedPassword);
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +48,11 @@ export default function Login() {
       }
       return;
     }
+    if (savePassword) {
+      window.localStorage.setItem('login_saved_email', email.trim());
+      window.localStorage.setItem('login_saved_password', password);
+      window.localStorage.setItem('login_save_password', 'true');
+    }
     navigate(from, { replace: true });
   };
 
@@ -47,29 +64,58 @@ export default function Login() {
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1">
             <label className="text-xs text-white/70">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-              placeholder="you@email.com"
-              autoComplete="email"
-              required
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-secondary/50"
+                placeholder="you@email.com"
+                autoComplete="email"
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-1">
             <label className="text-xs text-white/70">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-9 py-2 text-sm outline-none focus:border-secondary/50"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
+
+          <label className="flex items-center justify-between px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
+            <span className="text-xs">Save password</span>
+            <input
+              type="checkbox"
+              checked={savePassword}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setSavePassword(next);
+                window.localStorage.setItem('login_save_password', next ? 'true' : 'false');
+                if (!next) {
+                  window.localStorage.removeItem('login_saved_password');
+                }
+              }}
+            />
+          </label>
 
           {error && <div className="text-xs text-rose-300">{error}</div>}
           {info && <div className="text-xs text-white/70">{info}</div>}
@@ -104,6 +150,10 @@ export default function Login() {
             </button>
           )}
 
+          <div className="text-[10px] text-white/40 text-center">
+            Auth: {authMode}
+          </div>
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -133,9 +183,9 @@ export default function Login() {
           
           <div className="text-[10px] text-white/40 text-center pt-2 border-t border-white/5">
             By continuing, you agree to our{' '}
-            <Link to="/legal/terms" className="text-white/60 hover:text-white underline">EULA</Link>
+            <Link to="/terms" className="text-white/60 hover:text-white underline">EULA</Link>
             {' '}and{' '}
-            <Link to="/legal/privacy" className="text-white/60 hover:text-white underline">Privacy Policy</Link>.
+            <Link to="/privacy" className="text-white/60 hover:text-white underline">Privacy Policy</Link>.
             <br />
             There is zero tolerance for abusive content.
           </div>

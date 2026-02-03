@@ -189,15 +189,16 @@ export default function EnhancedVideoPlayer({
   useEffect(() => {
     if (isActive) {
       const el = videoRef.current;
-      el
-        ?.play()
-        .catch((err) => {
+      const playResult = el?.play?.();
+      if (playResult && typeof (playResult as Promise<void>).catch === 'function') {
+        (playResult as Promise<void>).catch((err) => {
           if (!effectiveMuted) {
             setIsMuted(true);
             if (videoRef.current) videoRef.current.muted = true;
             trackEvent('video_autoplay_sound_blocked', { videoId, name: err?.name });
           }
         });
+      }
       setIsPlaying(true);
       incrementViews(videoId);
       trackEvent('video_view', { videoId });
@@ -211,13 +212,30 @@ export default function EnhancedVideoPlayer({
         audio.muted = effectiveMuted;
         audio.volume = volume;
         if (!effectiveMuted) {
-          audio.play().catch(() => {});
+          const audioPlayResult = audio.play?.();
+          if (audioPlayResult && typeof (audioPlayResult as Promise<void>).catch === 'function') {
+            (audioPlayResult as Promise<void>).catch(() => {});
+          }
         }
       }
     } else {
-      videoRef.current?.pause();
+      const v = videoRef.current;
+      if (v?.pause) {
+        try {
+          v.pause();
+        } catch {
+          void 0;
+        }
+      }
       setIsPlaying(false);
-      audioRef.current?.pause();
+      const a = audioRef.current;
+      if (a?.pause) {
+        try {
+          a.pause();
+        } catch {
+          void 0;
+        }
+      }
     }
   }, [effectiveMuted, incrementViews, isActive, video?.music?.previewUrl, videoId, volume]);
 
@@ -227,7 +245,13 @@ export default function EnhancedVideoPlayer({
     if (videoRef.current) videoRef.current.muted = true;
     if (audioRef.current) {
       audioRef.current.muted = true;
-      audioRef.current.pause();
+      if (audioRef.current.pause) {
+        try {
+          audioRef.current.pause();
+        } catch {
+          void 0;
+        }
+      }
     }
   }, [muteAllSounds]);
 

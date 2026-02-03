@@ -5,6 +5,8 @@
 import { mockApi } from './mockApi';
 import { supabase } from './supabase';
 
+const isProd = import.meta.env.PROD;
+
 // Check if API keys are configured
 const hasApiKeys = () => {
   try {
@@ -17,13 +19,22 @@ const hasApiKeys = () => {
            !supabaseUrl.includes('your-') && 
            !supabaseKey.includes('your-') &&
            supabaseUrl !== 'https://test-12345.supabase.co'; // Don't use test keys in production
-  } catch (error) {
+  } catch {
     return false;
   }
 };
 
 // Determine which API to use
 export const useRealApi = hasApiKeys();
+
+if (isProd && !useRealApi) {
+  throw new Error('Missing API configuration.');
+}
+
+const handleRealApiError = async <T,>(_error: unknown, fallback: () => Promise<T>): Promise<T> => {
+  if (isProd) throw new Error('API request failed.');
+  return fallback();
+};
 
 // Wrapper functions that automatically choose between real and mock APIs
 export const api = {
@@ -40,8 +51,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getUser(userId);
+        return handleRealApiError(error, () => mockApi.getUser(userId));
       }
     }
     return mockApi.getUser(userId);
@@ -58,8 +68,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getUsers();
+        return handleRealApiError(error, () => mockApi.getUsers());
       }
     }
     return mockApi.getUsers();
@@ -81,8 +90,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getVideos(page, limit);
+        return handleRealApiError(error, () => mockApi.getVideos(page, limit));
       }
     }
     return mockApi.getVideos(page, limit);
@@ -103,8 +111,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getVideo(videoId);
+        return handleRealApiError(error, () => mockApi.getVideo(videoId));
       }
     }
     return mockApi.getVideo(videoId);
@@ -126,8 +133,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getLiveStreams();
+        return handleRealApiError(error, () => mockApi.getLiveStreams());
       }
     }
     return mockApi.getLiveStreams();
@@ -148,8 +154,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getLiveStream(streamId);
+        return handleRealApiError(error, () => mockApi.getLiveStream(streamId));
       }
     }
     return mockApi.getLiveStream(streamId);
@@ -167,8 +172,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getGifts();
+        return handleRealApiError(error, () => mockApi.getGifts());
       }
     }
     return mockApi.getGifts();
@@ -190,8 +194,7 @@ export const api = {
         if (error) throw error;
         return data;
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.getComments(videoId);
+        return handleRealApiError(error, () => mockApi.getComments(videoId));
       }
     }
     return mockApi.getComments(videoId);
@@ -219,8 +222,7 @@ export const api = {
         
         return { success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.likeVideo(videoId);
+        return handleRealApiError(error, () => mockApi.likeVideo(videoId));
       }
     }
     return mockApi.likeVideo(videoId);
@@ -247,8 +249,7 @@ export const api = {
         
         return { success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.unlikeVideo(videoId);
+        return handleRealApiError(error, () => mockApi.unlikeVideo(videoId));
       }
     }
     return mockApi.unlikeVideo(videoId);
@@ -276,8 +277,7 @@ export const api = {
         
         return { success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.followUser(userId);
+        return handleRealApiError(error, () => mockApi.followUser(userId));
       }
     }
     return mockApi.followUser(userId);
@@ -304,8 +304,7 @@ export const api = {
         
         return { success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.unfollowUser(userId);
+        return handleRealApiError(error, () => mockApi.unfollowUser(userId));
       }
     }
     return mockApi.unfollowUser(userId);
@@ -343,8 +342,7 @@ export const api = {
           gift: giftResult.data
         };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.sendGift(streamId, giftId, userId);
+        return handleRealApiError(error, () => mockApi.sendGift(streamId, giftId, userId));
       }
     }
     return mockApi.sendGift(streamId, giftId, userId);
@@ -362,8 +360,7 @@ export const api = {
         if (error) throw error;
         return { user: data.user, token: data.session?.access_token, success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.login(email, password);
+        return handleRealApiError(error, () => mockApi.login(email, password));
       }
     }
     return mockApi.login(email, password);
@@ -372,19 +369,23 @@ export const api = {
   register: async (email: string, password: string, username: string) => {
     if (useRealApi) {
       try {
+        const emailRedirectTo =
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/auth/callback`
+            : undefined;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { username }
+            data: { username },
+            emailRedirectTo
           }
         });
         
         if (error) throw error;
         return { user: data.user, token: data.session?.access_token, success: true };
       } catch (error) {
-        console.warn('Real API failed, falling back to mock:', error);
-        return mockApi.register(email, password, username);
+        return handleRealApiError(error, () => mockApi.register(email, password, username));
       }
     }
     return mockApi.register(email, password, username);
