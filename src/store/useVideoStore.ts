@@ -139,6 +139,162 @@ export const useVideoStore = create<VideoStore>()(
           comments: [],
           quality: '1080p',
           privacy: 'public'
+        },
+        {
+          id: 'cartoon2',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+          thumbnail: 'https://picsum.photos/400/600?random=2',
+          duration: '10:54',
+          user: {
+            id: 'user2',
+            username: 'dream_creator',
+            name: 'Dream Creator',
+            avatar: 'https://i.pravatar.cc/150?u=cartoon2',
+            level: 28,
+            isVerified: true,
+            followers: 75000,
+            following: 150
+          },
+          description: 'Elephants Dream - CGI Animated Short 🐘',
+          hashtags: ['animation', '3d', 'dream'],
+          music: {
+            id: 'original',
+            title: 'Original Sound',
+            artist: 'Creator',
+            duration: '10:54'
+          },
+          stats: {
+            views: 15000,
+            likes: 1200,
+            comments: 68,
+            shares: 200,
+            saves: 350
+          },
+          createdAt: '2026-02-01T11:00:00Z',
+          location: 'For You',
+          isLiked: false,
+          isSaved: false,
+          isFollowing: false,
+          comments: [],
+          quality: '1080p',
+          privacy: 'public'
+        },
+        {
+          id: 'cartoon3',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          thumbnail: 'https://picsum.photos/400/600?random=3',
+          duration: '0:15',
+          user: {
+            id: 'user3',
+            username: 'anime_lover',
+            name: 'Anime Lover',
+            avatar: 'https://i.pravatar.cc/150?u=cartoon3',
+            level: 52,
+            isVerified: false,
+            followers: 32000,
+            following: 280
+          },
+          description: 'Epic animated scene 🔥',
+          hashtags: ['epic', 'animated', 'fire'],
+          music: {
+            id: 'original',
+            title: 'Original Sound',
+            artist: 'Creator',
+            duration: '0:15'
+          },
+          stats: {
+            views: 8500,
+            likes: 720,
+            comments: 35,
+            shares: 95,
+            saves: 180
+          },
+          createdAt: '2026-02-01T12:00:00Z',
+          location: 'For You',
+          isLiked: false,
+          isSaved: false,
+          isFollowing: false,
+          comments: [],
+          quality: '1080p',
+          privacy: 'public'
+        },
+        {
+          id: 'cartoon4',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+          thumbnail: 'https://picsum.photos/400/600?random=4',
+          duration: '0:15',
+          user: {
+            id: 'user4',
+            username: 'adventure_time',
+            name: 'Adventure Time',
+            avatar: 'https://i.pravatar.cc/150?u=cartoon4',
+            level: 77,
+            isVerified: true,
+            followers: 120000,
+            following: 320
+          },
+          description: 'Animated adventures await! 🚀',
+          hashtags: ['adventure', 'animation', 'explore'],
+          music: {
+            id: 'original',
+            title: 'Original Sound',
+            artist: 'Creator',
+            duration: '0:15'
+          },
+          stats: {
+            views: 25000,
+            likes: 2100,
+            comments: 145,
+            shares: 380,
+            saves: 620
+          },
+          createdAt: '2026-02-01T13:00:00Z',
+          location: 'For You',
+          isLiked: false,
+          isSaved: false,
+          isFollowing: false,
+          comments: [],
+          quality: '1080p',
+          privacy: 'public'
+        },
+        {
+          id: 'cartoon5',
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+          thumbnail: 'https://picsum.photos/400/600?random=5',
+          duration: '0:15',
+          user: {
+            id: 'user5',
+            username: 'fun_times',
+            name: 'Fun Times',
+            avatar: 'https://i.pravatar.cc/150?u=cartoon5',
+            level: 105,
+            isVerified: true,
+            followers: 200000,
+            following: 450
+          },
+          description: 'Animated fun for everyone! 🎉',
+          hashtags: ['fun', 'animated', 'party'],
+          music: {
+            id: 'original',
+            title: 'Original Sound',
+            artist: 'Creator',
+            duration: '0:15'
+          },
+          stats: {
+            views: 45000,
+            likes: 3800,
+            comments: 220,
+            shares: 560,
+            saves: 980
+          },
+          createdAt: '2026-02-01T14:00:00Z',
+          location: 'For You',
+          isLiked: false,
+          isSaved: false,
+          isFollowing: false,
+          comments: [],
+          quality: '1080p',
+          privacy: 'public'
         }
       ],
       likedVideos: [],
