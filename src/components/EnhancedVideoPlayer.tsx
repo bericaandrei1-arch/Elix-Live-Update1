@@ -427,28 +427,28 @@ export default function EnhancedVideoPlayer({
         </div>
       </div>
 
-      {/* Right Sidebar - LUXURY PREMIUM DESIGN */}
-      <div className="absolute z-[201] right-3 bottom-20 flex flex-col items-center gap-3 pointer-events-auto">
+      {/* Right Sidebar - Same Buttons with Subtle Luxury Effects */}
+      <div className="absolute z-[201] right-3 bottom-20 flex flex-col items-center gap-2 pointer-events-auto">
         
-        {/* Profile Avatar with Luxury Border & Glow */}
-        <div className="relative -mt-4 mb-3 animate-float">
+        {/* Profile Avatar - SAME SIZE */}
+        <div className="relative -mt-4 mb-2">
           <div 
-            className="w-14 h-14 rounded-full cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 relative animate-glow-border"
+            className="w-12 h-12 rounded-full cursor-pointer hover:scale-105 transition-transform relative"
             onClick={handleProfileClick}
             style={{
-              background: 'linear-gradient(145deg, #FFD700 0%, #E6B36A 50%, #FFD700 100%)',
-              padding: '3px',
-              boxShadow: '0 8px 24px rgba(230,179,106,0.6), 0 0 40px rgba(230,179,106,0.3)',
+              background: 'linear-gradient(145deg, #FF6B9D 0%, #C44569 50%, #FF8E9E 100%)',
+              padding: '2px',
+              boxShadow: '0 4px 15px rgba(255,107,157,0.4)',
             }}
           >
             <img 
               src={video.user.avatar} 
               alt={video.user.username} 
-              className="w-full h-full rounded-full object-cover border-2 border-black/20"
+              className="w-full h-full rounded-full object-cover"
             />
             {video.user.isVerified && (
-              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full p-0.5 border-2 border-black animate-premium-glow">
-                <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+              <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-black">
+                <div className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center">
                   <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
                 </div>
               </div>
@@ -456,130 +456,98 @@ export default function EnhancedVideoPlayer({
           </div>
         </div>
 
-        {/* Like Button - Premium Style */}
-        <div className="flex flex-col items-center gap-1">
-          <button 
-            onClick={handleLike}
-            className="w-16 h-16 hover:scale-110 active:scale-95 transition-all duration-300 relative"
-            title="Like"
-          >
-            <img 
-              src="/Icons/side-like.png?v=10" 
-              alt="Like" 
-              className={`w-full h-full object-contain transition-all duration-300 ${
-                video.isLiked 
-                  ? 'brightness-125 drop-shadow-[0_0_20px_rgba(230,179,106,0.9)] animate-luxury-pulse' 
-                  : 'hover:brightness-110 hover:drop-shadow-[0_0_10px_rgba(230,179,106,0.5)]'
-              }`}
-            />
-          </button>
-          <span className="glass-premium px-2 py-0.5 rounded-full text-[#E6B36A] text-xs font-bold shadow-lg">
-            {formatNumber(video.stats.likes)}
-          </span>
-        </div>
+        {/* Like Button - SAME SIZE */}
+        <button 
+          onClick={handleLike}
+          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
+          title="Like"
+        >
+          <img 
+            src="/Icons/side-like.png?v=10" 
+            alt="Like" 
+            className={`w-full h-full object-contain ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
+          />
+        </button>
+        <span className="text-[#E6B36A] text-xs font-semibold -mt-1">{formatNumber(video.stats.likes)}</span>
 
-        {/* Comment Button */}
-        <div className="flex flex-col items-center gap-1">
-          <button 
-            onClick={handleComment}
-            className="w-12 h-12 hover:scale-110 active:scale-95 transition-all duration-300"
-            title="Comments"
-          >
-            <img src="/Icons/side-comment.png" alt="Comments" className="w-full h-full object-contain hover:brightness-110 transition-all" />
-          </button>
-          <span className="glass px-2 py-0.5 rounded-full text-[#E6B36A] text-xs font-bold">
-            {formatNumber(video.stats.comments)}
-          </span>
-        </div>
+        {/* Comment Button - SAME SIZE */}
+        <button 
+          onClick={handleComment}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Comments"
+        >
+          <img src="/Icons/side-comment.png" alt="Comments" className="w-full h-full object-contain" />
+        </button>
+        <span className="text-[#E6B36A] text-xs font-semibold -mt-1">{formatNumber(video.stats.comments)}</span>
 
-        {/* Save Button */}
-        <div className="flex flex-col items-center gap-1">
-          <button 
-            onClick={handleSave}
-            className="w-12 h-12 hover:scale-110 active:scale-95 transition-all duration-300"
-            title="Save"
-          >
-            <img 
-              src="/Icons/side-save.png" 
-              alt="Save" 
-              className={`w-full h-full object-contain transition-all ${
-                video.isSaved 
-                  ? 'brightness-125 drop-shadow-[0_0_15px_rgba(230,179,106,0.8)]' 
-                  : 'hover:brightness-110'
-              }`}
-            />
-          </button>
-          <span className="glass px-2 py-0.5 rounded-full text-white text-xs font-bold">
-            {formatNumber(video.stats.saves || 0)}
-          </span>
-        </div>
+        {/* Save Button - SAME SIZE */}
+        <button 
+          onClick={handleSave}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Save"
+        >
+          <img 
+            src="/Icons/side-save.png" 
+            alt="Save" 
+            className={`w-full h-full object-contain ${video.isSaved ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
+          />
+        </button>
+        <span className="text-white text-xs font-semibold -mt-1">{formatNumber(video.stats.saves || 0)}</span>
 
-        {/* Share Button */}
-        <div className="flex flex-col items-center gap-1">
-          <button 
-            onClick={handleShare}
-            className="w-12 h-12 hover:scale-110 active:scale-95 transition-all duration-300"
-            title="Share"
-          >
-            <img src="/Icons/side-share.png" alt="Share" className="w-full h-full object-contain hover:brightness-110 transition-all" />
-          </button>
-          <span className="glass px-2 py-0.5 rounded-full text-white text-xs font-bold">
-            {formatNumber(video.stats.shares)}
-          </span>
-        </div>
+        {/* Share Button - SAME SIZE */}
+        <button 
+          onClick={handleShare}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Share"
+        >
+          <img src="/Icons/side-share.png" alt="Share" className="w-full h-full object-contain" />
+        </button>
+        <span className="text-white text-xs font-semibold -mt-1">{formatNumber(video.stats.shares)}</span>
 
-        {/* Music Button - Spinning with Glow */}
+        {/* Music Button - SAME SIZE */}
         <button 
           onClick={handleMusicClick}
-          className="w-12 h-12 hover:scale-110 transition-all duration-300 animate-spin-slow relative"
+          className="w-12 h-12 hover:scale-105 transition-transform animate-spin"
+          style={{ animationDuration: '8s' }}
           title="Music"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#E6B36A]/30 to-transparent rounded-full blur-md animate-premium-glow" />
-          <img src="/Icons/side-music.png" alt="Music" className="w-full h-full object-contain relative z-10" />
+          <img src="/Icons/side-music.png" alt="Music" className="w-full h-full object-contain" />
         </button>
 
-        {/* Menu Button */}
+        {/* Menu Button - SAME SIZE */}
         <button 
           onClick={() => {}}
-          className="w-12 h-12 hover:scale-110 active:scale-95 transition-all duration-300"
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
           title="More"
         >
-          <img src="/Icons/side-menu.png" alt="More" className="w-full h-full object-contain hover:brightness-110 transition-all" />
+          <img src="/Icons/side-menu.png" alt="More" className="w-full h-full object-contain" />
         </button>
       </div>
 
-      {/* Bottom Info Area - LUXURY REDESIGN */}
+      {/* Bottom Info Area - Same Layout with Subtle Luxury */}
       <div className="absolute z-[190] left-4 bottom-[120px] md:bottom-[150px] w-[70%] pb-4 pointer-events-none">
-        {/* Premium User Badge with Glassmorphism */}
-        <div className="glass-premium rounded-2xl px-3 py-2 mb-3 animate-luxury-fade-in">
-          <div className="flex items-center gap-2 mb-1">
-            <LevelBadge level={video.user.level ?? 1} size={10} layout="fixed" />
-            <h3 className="text-[#E6B36A] font-extrabold text-shadow-md tracking-wide">{video.user.username}</h3>
-            {video.user.isVerified && (
-              <div className="w-4 h-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                <div className="w-2 h-2 bg-white rounded-full" />
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-[#E6B36A]/80 text-xs font-semibold">
-            <span>{formatNumber(video.user.followers)} followers</span>
-            <span>•</span>
-            <span className="text-white/70">{formatNumber(video.stats.views)} views</span>
-          </div>
+        <div className="flex items-center gap-2 mb-2">
+          <LevelBadge level={video.user.level ?? 1} size={10} layout="fixed" />
+          <h3 className="text-[#E6B36A] font-bold text-shadow-md">{video.user.username}</h3>
+          {video.user.isVerified && (
+            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full" />
+            </div>
+          )}
+          <span className="text-[#E6B36A]/60 text-sm">•</span>
+          <span className="text-[#E6B36A]/60 text-sm">{formatNumber(video.user.followers)} followers</span>
         </div>
         
-        {/* Description with Premium Background */}
-        <p className="text-white text-sm mb-2 text-shadow-lg font-medium line-clamp-2 px-1">
+        <p className="text-white/90 text-sm mb-2 text-shadow-md line-clamp-2">
           {video.description}
         </p>
         
-        {/* Hashtags with Luxury Style */}
-        <div className="flex flex-wrap gap-1.5 mb-2.5">
+        <div className="flex flex-wrap gap-1 mb-2">
           {video.hashtags.map((hashtag) => (
             <button
               key={hashtag}
               onClick={() => navigate(`/hashtag/${hashtag}`)}
-              className="glass px-2.5 py-1 rounded-full text-[#E6B36A] text-xs font-bold hover:bg-[#E6B36A]/20 transition-all hover:scale-105 pointer-events-auto"
+              className="text-[#E6B36A] text-xs font-medium hover:underline"
             >
               #{hashtag}
             </button>
@@ -587,24 +555,23 @@ export default function EnhancedVideoPlayer({
         </div>
 
         {video.location && (
-          <div className="flex items-center gap-1.5 text-white/70 text-xs mb-2.5 px-1">
-            <div className="w-2 h-2 bg-[#E6B36A] rounded-full animate-premium-glow" />
-            <span className="font-medium">{video.location}</span>
+          <div className="flex items-center gap-1 text-white/60 text-xs mb-2">
+            <div className="w-3 h-3 bg-white/60 rounded-full" />
+            <span>{video.location}</span>
           </div>
         )}
         
-        {/* Music Player - Premium Style */}
-        <div className="glass-premium rounded-full px-3 py-2 flex items-center gap-2 w-fit max-w-[90%]">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E6B36A] to-[#C9A172] flex items-center justify-center animate-spin-slow">
-            <Music size={14} className="text-black" />
-          </div>
-          <div className="overflow-hidden flex-1 max-w-[180px]">
-            <div className="text-xs font-bold text-white whitespace-nowrap animate-marquee">
-              <span className="inline-block pl-full animate-marquee-scroll">
-                {video.music.title} - {video.music.artist}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 text-white/90">
+          <Music size={14} className="text-[#E6B36A]" />
+          <span className="text-xs font-medium animate-marquee whitespace-nowrap overflow-hidden w-32">
+            {video.music.title} - {video.music.artist}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4 mt-2 text-white/60 text-xs">
+          <span>{formatNumber(video.stats.views)} views</span>
+          <span>•</span>
+          <span>{new Date(video.createdAt).toLocaleDateString()}</span>
         </div>
       </div>
 
