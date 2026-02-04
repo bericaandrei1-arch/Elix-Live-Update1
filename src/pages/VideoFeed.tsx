@@ -139,7 +139,7 @@ export default function VideoFeed() {
   return (
     <div 
       ref={containerRef}
-      className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar relative"
+      className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory relative"
       onScroll={handleScroll}
     >
       {/* Top Navigation Bar - Image with Clickable Buttons */}
