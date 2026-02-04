@@ -455,13 +455,13 @@ export default function EnhancedVideoPlayer({
         {/* Like/Gift Heart Button - Generated Icon */}
         <button 
           onClick={handleLike}
-          className="w-52 h-52 hover:scale-105 active:scale-95 transition-transform"
+          className="w-72 h-72 hover:scale-105 active:scale-95 transition-transform"
           title="Like"
         >
           <img 
-            src="/Icons/side-like.png?v=4" 
+            src="/Icons/side-like.png?v=5" 
             alt="Like" 
-            className={`w-full h-full object-contain ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
+            className={`w-full h-full object-contain scale-150 ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
           />
         </button>
         <span className="text-[#E6B36A] text-xs font-semibold -mt-1">{formatNumber(video.stats.likes)}</span>
