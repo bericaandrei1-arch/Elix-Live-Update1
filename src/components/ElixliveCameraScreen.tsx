@@ -29,9 +29,9 @@ export default function ElixStarLiveCameraScreen() {
           className="w-20 h-20 object-contain cursor-pointer hover:scale-110 transition pointer-events-auto"
         />
         <img 
-          src="/Icons/side-like.png" 
+          src="/Icons/side-like.png?v=4" 
           alt="Like" 
-          className="w-20 h-20 object-contain cursor-pointer hover:scale-110 transition pointer-events-auto"
+          className="w-52 h-52 object-contain cursor-pointer hover:scale-110 transition pointer-events-auto"
         />
         <img 
           src="/Icons/side-save.png" 

@@ -455,11 +455,11 @@ export default function EnhancedVideoPlayer({
         {/* Like/Gift Heart Button - Generated Icon */}
         <button 
           onClick={handleLike}
-          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          className="w-52 h-52 hover:scale-105 active:scale-95 transition-transform"
           title="Like"
         >
           <img 
-            src="/Icons/side-like.png" 
+            src="/Icons/side-like.png?v=4" 
             alt="Like" 
             className={`w-full h-full object-contain ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
           />
@@ -469,7 +469,7 @@ export default function EnhancedVideoPlayer({
         {/* Comment Button - Generated Icon */}
         <button 
           onClick={handleComment}
-          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
           title="Comments"
         >
           <img src="/Icons/side-comment.png" alt="Comments" className="w-full h-full object-contain" />
@@ -479,7 +479,7 @@ export default function EnhancedVideoPlayer({
         {/* Bookmark/Save Button - Generated Icon */}
         <button 
           onClick={handleSave}
-          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
           title="Save"
         >
           <img 
@@ -493,7 +493,7 @@ export default function EnhancedVideoPlayer({
         {/* Share Button - Generated Icon */}
         <button 
           onClick={handleShare}
-          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
           title="Share"
         >
           <img src="/Icons/side-share.png" alt="Share" className="w-full h-full object-contain" />
@@ -503,7 +503,7 @@ export default function EnhancedVideoPlayer({
         {/* Music Button - Generated Icon with Spin */}
         <button 
           onClick={handleMusicClick}
-          className="w-12 h-12 hover:scale-105 transition-transform animate-spin"
+          className="w-16 h-16 hover:scale-105 transition-transform animate-spin"
           style={{ animationDuration: '8s' }}
           title="Music"
         >
@@ -513,7 +513,7 @@ export default function EnhancedVideoPlayer({
         {/* 3-Dot Menu Button */}
         <button 
           onClick={() => {}}
-          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
           title="More"
         >
           <img src="/Icons/side-menu.png" alt="More" className="w-full h-full object-contain" />
