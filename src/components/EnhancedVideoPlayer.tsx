@@ -470,7 +470,7 @@ export default function EnhancedVideoPlayer({
         {/* Comment Button */}
         <button 
           onClick={handleComment}
-          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
           title="Comments"
         >
           <img src="/Icons/side-comment.png" alt="Comments" className="w-full h-full object-contain" />
@@ -480,7 +480,7 @@ export default function EnhancedVideoPlayer({
         {/* Save Button */}
         <button 
           onClick={handleSave}
-          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
           title="Save"
         >
           <img 
@@ -494,7 +494,7 @@ export default function EnhancedVideoPlayer({
         {/* Share Button */}
         <button 
           onClick={handleShare}
-          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
           title="Share"
         >
           <img src="/Icons/side-share.png" alt="Share" className="w-full h-full object-contain" />
@@ -504,7 +504,7 @@ export default function EnhancedVideoPlayer({
         {/* Music Button */}
         <button 
           onClick={handleMusicClick}
-          className="w-16 h-16 hover:scale-105 transition-transform animate-spin"
+          className="w-12 h-12 hover:scale-105 transition-transform animate-spin"
           style={{ animationDuration: '8s' }}
           title="Music"
         >
@@ -514,7 +514,7 @@ export default function EnhancedVideoPlayer({
         {/* Menu Button */}
         <button 
           onClick={() => {}}
-          className="w-16 h-16 hover:scale-105 active:scale-95 transition-transform"
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
           title="More"
         >
           <img src="/Icons/side-menu.png" alt="More" className="w-full h-full object-contain" />
