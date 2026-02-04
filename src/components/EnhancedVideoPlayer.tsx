@@ -459,7 +459,7 @@ export default function EnhancedVideoPlayer({
           title="Like"
         >
           <img 
-            src="/Icons/side-like.png?v=6" 
+            src="/Icons/side-like.png?v=10" 
             alt="Like" 
             className={`w-full h-full object-contain ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
           />
