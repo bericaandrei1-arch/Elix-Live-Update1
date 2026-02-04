@@ -1093,8 +1093,10 @@ export default function LiveStream() {
           >
             {battleCountdown != null && (
               <div className="absolute inset-0 z-[260] pointer-events-none flex items-center justify-center">
-                <div className="w-28 h-28 rounded-full bg-black/55 border border-white/15 backdrop-blur-md flex items-center justify-center">
-                  <div className="text-white text-5xl font-black tabular-nums">{battleCountdown}</div>
+                {/* LUXURY BATTLE COUNTDOWN */}
+                <div className="w-32 h-32 rounded-full glass-premium flex items-center justify-center shadow-2xl animate-luxury-pulse relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#E6B36A]/30 to-transparent animate-glow-border" />
+                  <div className="text-white text-6xl font-black tabular-nums relative z-10 drop-shadow-[0_0_20px_rgba(230,179,106,1)]">{battleCountdown}</div>
                 </div>
               </div>
             )}
@@ -1146,30 +1148,35 @@ export default function LiveStream() {
                   e.stopPropagation();
                   toggleBattle();
                 }}
-                className="absolute top-[-14px] left-0 right-0 z-20 w-full h-5 rounded-none overflow-hidden bg-black/40 backdrop-blur-md"
+                className="absolute top-[-14px] left-0 right-0 z-20 w-full h-6 rounded-none overflow-hidden glass-premium shadow-2xl"
               >
+                {/* LUXURY BATTLE PROGRESS BAR */}
                 <div className="absolute inset-0 flex">
                   <div
-                    className="h-full transition-all duration-500 ease-out"
+                    className="h-full transition-all duration-500 ease-out relative overflow-hidden"
                     style={{
                       width: `${leftPct}%`,
-                      backgroundImage: 'linear-gradient(90deg, #8B0000, #B22222)',
+                      backgroundImage: 'linear-gradient(90deg, #DC143C, #FF1744, #C41E3A)',
                     }}
-                  />
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                  </div>
                   <div
-                    className="h-full flex-1 transition-all duration-500 ease-out"
-                    style={{ backgroundImage: 'linear-gradient(90deg, #4169E1, #00008B)' }}
-                  />
+                    className="h-full flex-1 transition-all duration-500 ease-out relative overflow-hidden"
+                    style={{ backgroundImage: 'linear-gradient(90deg, #1E90FF, #4169E1, #0047AB)' }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-black/25" />
-                <div className="relative z-10 h-full flex items-center justify-between px-2.5">
-                  <div className="text-white font-extrabold text-[10px] tabular-nums drop-shadow">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/10" />
+                <div className="relative z-10 h-full flex items-center justify-between px-3">
+                  <div className="glass px-2 py-0.5 rounded text-white font-black text-[11px] tabular-nums shadow-lg">
                     {myScore.toLocaleString()}
                   </div>
-                  <div className="px-1.5 py-0 rounded bg-black/65 border border-none text-white text-[9px] font-bold tabular-nums">
+                  <div className="glass-premium px-2.5 py-0.5 rounded-full text-[#E6B36A] text-[10px] font-black tabular-nums shadow-lg">
                     {formatTime(battleTime)}
                   </div>
-                  <div className="text-white font-extrabold text-[10px] tabular-nums drop-shadow">
+                  <div className="glass px-2 py-0.5 rounded text-white font-black text-[11px] tabular-nums shadow-lg">
                     {opponentScore.toLocaleString()}
                   </div>
                 </div>
@@ -1177,31 +1184,34 @@ export default function LiveStream() {
 
               {battleWinner && (
                 <div className="absolute left-3 right-3 top-3 z-50 pointer-events-none">
+                  {/* LUXURY BATTLE WINNER DISPLAY */}
                   {battleWinner === 'draw' ? (
                     <div className="mt-9 flex justify-center">
-                      <div className="px-3 py-1.5 rounded-full bg-black/65 border border-white/15 text-[#E6B36A] text-xs font-black tracking-widest">
-                        DRAW
+                      <div className="glass-premium px-4 py-2 rounded-full shadow-2xl animate-luxury-fade-in">
+                        <div className="text-[#E6B36A] text-sm font-black tracking-widest drop-shadow-[0_0_10px_rgba(230,179,106,0.8)]">
+                          DRAW
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-9 flex items-center justify-between">
+                    <div className="mt-9 flex items-center justify-between animate-luxury-fade-in">
                       <div
-                        className={`px-3 py-1.5 rounded-full border text-xs font-black tracking-widest ${
+                        className={`px-4 py-2 rounded-full border-2 text-sm font-black tracking-widest shadow-2xl transition-all ${
                           battleWinner === 'me'
-                            ? 'bg-[#E6B36A] text-black border-[#E6B36A]'
-                            : 'bg-black/65 text-white/70 border-white/15'
+                            ? 'bg-gradient-to-r from-[#FFD700] to-[#E6B36A] text-black border-[#E6B36A] animate-premium-glow scale-110'
+                            : 'glass text-white/50 border-white/20'
                         }`}
                       >
-                        {battleWinner === 'me' ? 'WIN' : ''}
+                        {battleWinner === 'me' ? '🏆 WIN' : ''}
                       </div>
                       <div
-                        className={`px-3 py-1.5 rounded-full border text-xs font-black tracking-widest ${
+                        className={`px-4 py-2 rounded-full border-2 text-sm font-black tracking-widest shadow-2xl transition-all ${
                           battleWinner === 'opponent'
-                            ? 'bg-[#E6B36A] text-black border-[#E6B36A]'
-                            : 'bg-black/65 text-white/70 border-white/15'
+                            ? 'bg-gradient-to-r from-[#FFD700] to-[#E6B36A] text-black border-[#E6B36A] animate-premium-glow scale-110'
+                            : 'glass text-white/50 border-white/20'
                         }`}
                       >
-                        {battleWinner === 'opponent' ? 'LOSE' : ''}
+                        {battleWinner === 'opponent' ? '🏆 WIN' : ''}
                       </div>
                     </div>
                   )}
@@ -1218,30 +1228,32 @@ export default function LiveStream() {
                 onLike={() => addLiveLikes(1)}
               />
               
-              <div className="absolute right-4 bottom-4 z-[80] pointer-events-auto flex flex-col gap-2">
+              <div className="absolute right-4 bottom-4 z-[80] pointer-events-auto flex flex-col gap-3">
+                {/* LUXURY BATTLE CONTROLS */}
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
+                  className="w-12 h-12 glass-premium rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all"
                 >
-                  <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
+                  <img src="/Icons/battle-share.png" alt="Share" className="w-10 h-10 object-contain" />
                 </button>
                 <button
                   type="button"
                   onClick={() => alert('Reported')}
-                  className="w-11 h-11 bg-black/70 rounded-full flex items-center justify-center text-white shadow-lg border border-white/20 hover:bg-black/80 transition"
+                  className="w-12 h-12 glass-premium rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 active:scale-95 transition-all"
                 >
-                  <MoreVertical className="w-5 h-5" strokeWidth={2} />
+                  <MoreVertical className="w-5 h-5" strokeWidth={2.5} />
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowGiftPanel(true)}
-                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
+                  className="w-14 h-14 glass-premium rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all animate-premium-glow relative"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#E6B36A]/30 to-transparent rounded-full blur-md" />
                   <img
                     src="/Icons/gift-button.png"
                     alt="Gift"
-                    className="w-11 h-11 object-contain"
+                    className="w-12 h-12 object-contain relative z-10"
                   />
                 </button>
               </div>
@@ -1353,19 +1365,32 @@ export default function LiveStream() {
           <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
             <div className="flex items-start justify-between gap-2">
               <div className="pointer-events-auto flex flex-col gap-2">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-black/60">
-                  <img
-                    src={myAvatar}
-                    alt={myCreatorName}
-                    className="w-7 h-7 rounded-full object-cover"
-                  />
-                  <span className="text-white text-sm font-semibold truncate max-w-[120px]">
-                    {myCreatorName}
-                  </span>
-                  <span className="inline-flex items-center gap-1 bg-white rounded-full px-2 py-0.5">
-                    <Heart className="w-3 h-3 text-red-500" strokeWidth={2} />
-                    <span className="text-black text-[11px] font-bold">7</span>
-                  </span>
+                {/* LUXURY BROADCASTER INFO */}
+                <div className="glass-premium rounded-2xl px-3 py-2 shadow-2xl animate-luxury-fade-in">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <img
+                        src={myAvatar}
+                        alt={myCreatorName}
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[#E6B36A]/50 shadow-lg"
+                      />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-2 border-black animate-premium-glow" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-white text-sm font-bold truncate max-w-[120px]">
+                        {myCreatorName}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-gradient-to-r from-[#E6B36A] to-[#FFD700] rounded text-black text-[9px] font-black uppercase tracking-wide">
+                          LIVE
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-black/50 rounded-full px-1.5 py-0.5">
+                          <Heart className="w-2.5 h-2.5 text-red-500" strokeWidth={2.5} />
+                          <span className="text-white text-[10px] font-bold">7</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1373,9 +1398,9 @@ export default function LiveStream() {
                 <button
                   type="button"
                   onClick={stopBroadcast}
-                  className="w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition"
+                  className="w-10 h-10 glass-premium rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
                 >
-                  <img src="/Icons/power-button.png" alt="Exit" className="w-9 h-9 object-contain" />
+                  <img src="/Icons/power-button.png" alt="Exit" className="w-8 h-8 object-contain" />
                 </button>
               </div>
             </div>
@@ -1410,38 +1435,47 @@ export default function LiveStream() {
         <div className="absolute top-0 left-0 right-0 z-[80] pointer-events-none">
         <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}>
           <div className="flex items-start justify-between gap-3">
-            <button type="button" onClick={() => openMiniProfile(myCreatorName)} className="pointer-events-auto inline-flex items-center gap-2 pr-3 pl-2 py-2 rounded-2xl bg-black/45 backdrop-blur-md border border-white/10">
-              <img
-                src={myAvatar}
-                alt={myCreatorName}
-                className="w-10 h-10 rounded-full object-cover border border-[#E6B36A]/50"
-              />
-              <div className="min-w-0">
-                <p className="text-white font-extrabold text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5 text-[#E6B36A]" strokeWidth={2.2} />
-                    <span className="text-white/90 text-[10px] font-extrabold tabular-nums">
-                      {activeLikes.toLocaleString()}
+            {/* LUXURY CREATOR PROFILE BUTTON */}
+            <button type="button" onClick={() => openMiniProfile(myCreatorName)} className="pointer-events-auto glass-premium rounded-2xl pr-3 pl-2 py-2 shadow-2xl hover:scale-105 transition-all animate-luxury-fade-in">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <img
+                    src={myAvatar}
+                    alt={myCreatorName}
+                    className="w-11 h-11 rounded-full object-cover border-2 border-[#E6B36A] shadow-lg"
+                  />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-2 border-black animate-premium-glow" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white font-black text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5">
+                      <Heart className="w-3 h-3 text-[#E6B36A]" strokeWidth={2.5} fill="#E6B36A" />
+                      <span className="text-white text-[10px] font-black tabular-nums">
+                        {activeLikes.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="px-1.5 py-0.5 bg-gradient-to-r from-[#E6B36A] to-[#FFD700] rounded text-black text-[9px] font-black uppercase tracking-wide">
+                      LIVE
                     </span>
                   </div>
-                  <p className="text-[#E6B36A]/80 text-[10px] font-extrabold tracking-widest">LIVE</p>
                 </div>
               </div>
             </button>
 
             <div className="pointer-events-auto flex flex-col items-center gap-2">
-              <div className="h-8 px-3 rounded-full bg-black/45 backdrop-blur-md border border-none flex items-center gap-2">
-                <Flame className="w-4 h-4 text-[#E6B36A]" strokeWidth={2} />
-                <span className="text-white text-xs font-extrabold">Popular</span>
+              {/* LUXURY POPULAR BADGE */}
+              <div className="glass-premium h-9 px-3 rounded-full flex items-center gap-2 shadow-lg animate-luxury-fade-in">
+                <Flame className="w-4 h-4 text-[#E6B36A] animate-float" strokeWidth={2.5} />
+                <span className="text-white text-xs font-black">Popular</span>
               </div>
               {!isBattleMode && isBroadcast && (
                 <button
                   type="button"
                   onClick={() => setIsFindCreatorsOpen(true)}
-                  className="pointer-events-auto h-8 px-3 rounded-full bg-black/70 border border-[#E6B36A]/30 text-[#E6B36A] text-xs font-extrabold flex items-center gap-2"
+                  className="pointer-events-auto glass-premium h-8 px-3 rounded-full text-[#E6B36A] text-xs font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg"
                 >
-                  <UsersRound className="w-4 h-4" strokeWidth={2} />
+                  <UsersRound className="w-4 h-4" strokeWidth={2.5} />
                   Find creators
                 </button>
               )}
@@ -1452,9 +1486,9 @@ export default function LiveStream() {
                 <button
                   type="button"
                   onClick={isBroadcast ? stopBroadcast : () => navigate('/')}
-                  className="w-9 h-9 rounded-full bg-black/70 border border-white/10 text-white flex items-center justify-center"
+                  className="w-10 h-10 glass-premium rounded-full text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={20} strokeWidth={2.5} />
                 </button>
               </div>
             </div>
@@ -1702,42 +1736,46 @@ export default function LiveStream() {
         {isBattleMode && (
           <div className="absolute bottom-0 left-0 right-0 z-[95]">
             <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-              <div className="h-14 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCreatorsOpen(true)}
-                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
-                  >
-                    <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
-                  </button>
-                </div>
+              {/* LUXURY BATTLE MODE CONTROLS */}
+              <div className="glass-premium rounded-3xl px-4 py-3 shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsFindCreatorsOpen(true)}
+                      className="w-14 h-14 glass rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                    >
+                      <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
+                    </button>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGiftTarget('me');
-                      setShowGiftPanel(true);
-                    }}
-                    className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsMoreMenuOpen(true)}
-                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/more-button.png" alt="More" className="w-11 h-11 object-contain" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGiftTarget('me');
+                        setShowGiftPanel(true);
+                      }}
+                      className="w-14 h-14 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg animate-premium-glow relative"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#E6B36A]/30 to-transparent rounded-full blur-md" />
+                      <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain relative z-10" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                    >
+                      <img src="/Icons/battle-share.png" alt="Share" className="w-10 h-10 object-contain" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMoreMenuOpen(true)}
+                      className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                    >
+                      <img src="/Icons/more-button.png" alt="More" className="w-10 h-10 object-contain" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1746,49 +1784,54 @@ export default function LiveStream() {
         {!isBattleMode && (
           <div className="absolute bottom-0 left-0 right-0 z-[95]">
             <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-              <div className="h-14 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={toggleBattle}
-                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
-                  >
-                    <img src="/Icons/battle-button.png" alt="Battle" className="w-12 h-12 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCreatorsOpen(true)}
-                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
-                  >
-                    <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
-                  </button>
-                </div>
+              {/* LUXURY BROADCASTER CONTROLS */}
+              <div className="glass-premium rounded-3xl px-4 py-3 shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={toggleBattle}
+                      className="w-14 h-14 glass rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all relative"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent rounded-full blur-md" />
+                      <img src="/Icons/battle-button.png" alt="Battle" className="w-12 h-12 object-contain relative z-10" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsFindCreatorsOpen(true)}
+                      className="w-14 h-14 glass rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                    >
+                      <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
+                    </button>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGiftTarget('me');
-                      setShowGiftPanel(true);
-                    }}
-                    className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsMoreMenuOpen(true)}
-                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <img src="/Icons/more-button.png" alt="More" className="w-11 h-11 object-contain" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGiftTarget('me');
+                        setShowGiftPanel(true);
+                      }}
+                      className="w-14 h-14 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg animate-premium-glow relative"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#E6B36A]/30 to-transparent rounded-full blur-md" />
+                      <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain relative z-10" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                    >
+                      <img src="/Icons/battle-share.png" alt="Share" className="w-10 h-10 object-contain" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMoreMenuOpen(true)}
+                      className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                    >
+                      <img src="/Icons/more-button.png" alt="More" className="w-10 h-10 object-contain" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

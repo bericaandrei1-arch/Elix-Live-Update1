@@ -123,3 +123,159 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ========== LUXURY PREMIUM ANIMATIONS ========== */
+
+/* Floating Heart Animation */
+@keyframes elix-heart-float {
+  0% {
+    transform: translate(-50%, -50%) translateY(0) translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(-200px) translateX(var(--elix-heart-dx, 0)) rotate(var(--elix-heart-rot, 0deg)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.elix-heart-float {
+  animation: elix-heart-float 0.95s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Premium Glow Pulse */
+@keyframes premium-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(230, 179, 106, 0.6)) drop-shadow(0 0 16px rgba(230, 179, 106, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(230, 179, 106, 0.8)) drop-shadow(0 0 24px rgba(230, 179, 106, 0.6));
+  }
+}
+
+.animate-premium-glow {
+  animation: premium-glow 2s ease-in-out infinite;
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(230, 179, 106, 0.3) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Luxury Scale Pulse */
+@keyframes luxury-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+  }
+}
+
+.animate-luxury-pulse {
+  animation: luxury-pulse 2s ease-in-out infinite;
+}
+
+/* Rose Gold Gradient */
+.bg-luxury-gradient {
+  background: linear-gradient(145deg, #FFD700 0%, #E6B36A 25%, #C9A172 50%, #E6B36A 75%, #FFD700 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Glowing Border */
+@keyframes glow-border {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(230, 179, 106, 0.5), 0 0 20px rgba(230, 179, 106, 0.3), inset 0 0 10px rgba(230, 179, 106, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(230, 179, 106, 0.8), 0 0 40px rgba(230, 179, 106, 0.5), inset 0 0 20px rgba(230, 179, 106, 0.2);
+  }
+}
+
+.animate-glow-border {
+  animation: glow-border 3s ease-in-out infinite;
+}
+
+/* Luxury Fade In */
+@keyframes luxury-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-luxury-fade-in {
+  animation: luxury-fade-in 0.6s ease-out;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-premium {
+  background: linear-gradient(135deg, rgba(230, 179, 106, 0.15) 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(230, 179, 106, 0.2);
+}
+
+/* Diamond Sparkle */
+@keyframes diamond-sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.animate-diamond-sparkle {
+  animation: diamond-sparkle 2s ease-in-out infinite;
+}

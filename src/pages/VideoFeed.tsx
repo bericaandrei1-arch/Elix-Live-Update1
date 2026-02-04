@@ -142,17 +142,19 @@ export default function VideoFeed() {
       className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory relative"
       onScroll={handleScroll}
     >
-      {/* Top Navigation Bar - Image with Clickable Buttons */}
+      {/* Top Navigation Bar - LUXURY REDESIGN */}
       <div className="fixed left-0 right-0 top-0 z-[200] flex justify-center pointer-events-none">
         <div className="w-full max-w-[500px] relative px-2 pt-2 pb-1" style={{ transform: 'scaleY(0.75)' }}>
           
-          {/* Background Image */}
+          {/* Background Image with Premium Glow */}
           <div className="relative">
             <img 
               src="/Icons/topbar.png" 
               alt="Navigation" 
               className="w-full h-auto pointer-events-none"
-              style={{ filter: 'drop-shadow(0 0 15px rgba(212,165,116,0.3))' }}
+              style={{ 
+                filter: 'drop-shadow(0 0 20px rgba(230,179,106,0.5)) drop-shadow(0 4px 15px rgba(0,0,0,0.6))',
+              }}
             />
             
             {/* Clickable Button Overlays */}
