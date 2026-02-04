@@ -130,8 +130,8 @@ function SoundPickerModal({
             >
               Add URL
             </button>
-            <button onClick={onClose} className="p-2 text-[#E6B36A]">
-              <X className="w-5 h-5" strokeWidth={2} />
+            <button onClick={onClose} className="p-2">
+              <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5 object-contain" />
             </button>
           </div>
         </div>

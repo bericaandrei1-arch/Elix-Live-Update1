@@ -217,7 +217,7 @@ const localAuthSignUp = (
   return { error: null, needsEmailConfirmation: false };
 };
 
-const localAuthSignUpOrSignIn = (
+const _localAuthSignUpOrSignIn = (
   set: (partial: Partial<AuthStore>) => void,
   email: string,
   password: string,
@@ -271,9 +271,8 @@ export const useAuthStore = create<AuthStore>()(
           if (ALLOW_LOCAL_AUTH) {
             const localRes = localAuthSignIn(set, email, password);
             if (!localRes.error) return localRes;
-            if (isInfraAuthError(error.message)) {
-              return { error: `Supabase login failed (${error.message}). ${localRes.error}` };
-            }
+            // Always include local error if fallback failed
+            return { error: `Supabase login failed (${error.message}). ${localRes.error}` };
           }
           return { error: error.message };
         }
@@ -329,9 +328,9 @@ export const useAuthStore = create<AuthStore>()(
           if (ALLOW_LOCAL_AUTH) {
             const localRes = localAuthSignUp(set, email, password, username);
             if (!localRes.error) return localRes;
-            if (isInfraAuthError(error.message)) {
-              return { error: `Supabase signup failed (${error.message}). ${localRes.error}`, needsEmailConfirmation: false };
-            }
+            // Fallback to local if Supabase fails for ANY reason in this MVP phase
+            // especially if it's a "Failed" generic error or network issue
+            return { error: `Supabase signup failed (${error.message}). ${localRes.error}`, needsEmailConfirmation: false };
           }
           return { error: error.message, needsEmailConfirmation: false };
         }
@@ -340,18 +339,19 @@ export const useAuthStore = create<AuthStore>()(
           set({ session: data.session, user: mapSessionToUser(data.session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
           return { error: null, needsEmailConfirmation: false };
         }
-        if (data.user && !data.session) {
-          // If Supabase requires email confirmation but we want to allow immediate login,
-          // we could try local auth fallback here too?
-          // For now, let's just return success with needsEmailConfirmation
-          return { error: null, needsEmailConfirmation: true };
-        }
         
-        // If Supabase returned no user and no error, something is wrong. Fallback to local.
+        // If Supabase returned no user and no error, or just user without session (email confirm needed but we want instant access)
         if (ALLOW_LOCAL_AUTH) {
+            // Try to create local user to ensure they can login immediately
            const localRes = localAuthSignUp(set, email, password, username);
            if (!localRes.error) return localRes;
-           // If local also fails, return the specific error from local auth (e.g. "Account already exists")
+           
+           // If local also fails (e.g. exists), and we have a user from supabase but no session, 
+           // we might want to tell them to check email, OR just log them in as the local user if passwords match?
+           // For now, let's return the local error if we really couldn't create a session.
+           if (data.user && !data.session) {
+               return { error: null, needsEmailConfirmation: true };
+           }
            return { error: localRes.error, needsEmailConfirmation: false };
         }
 

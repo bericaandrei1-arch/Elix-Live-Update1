@@ -3,7 +3,6 @@ import {
   Heart, 
   Bookmark, 
   Music,
-  UserPlus,
   MessageCircle,
   Share2,
   Flag,
@@ -26,40 +25,70 @@ interface EnhancedVideoPlayerProps {
   onProgress?: (progress: number) => void;
 }
 
-// Reusable Sidebar Button Component for Gold & Black Theme
-const SidebarButton = ({ 
+// Premium Sidebar Button Component with Metallic Rose Gold Design
+const PremiumSidebarButton = ({ 
   onClick, 
   isActive = false, 
-  icon: Icon, 
+  iconSrc,
+  icon: Icon,
   label, 
-  customContent,
   className = ""
 }: { 
   onClick: () => void; 
   isActive?: boolean; 
-  icon?: React.ElementType; 
+  iconSrc?: string;
+  icon?: React.ElementType;
   label?: string;
-  customContent?: React.ReactNode;
   className?: string;
 }) => (
-  <div className={`flex flex-col items-center mr-[110px] ${className}`}>
+  <div className={`flex flex-col items-center ${className}`}>
     <button 
       onClick={onClick}
-      className="w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95 hover:bg-white/5 group"
+      className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90"
+      style={{
+        background: 'linear-gradient(145deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.98) 100%)',
+        boxShadow: isActive 
+          ? '0 0 20px rgba(230,179,106,0.5), inset 0 1px 1px rgba(255,255,255,0.1)' 
+          : '0 4px 15px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05)',
+        border: '2px solid',
+        borderColor: isActive ? '#E6B36A' : 'rgba(230,179,106,0.4)',
+      }}
     >
-      {customContent ? customContent : Icon && (
+      {/* Inner glow */}
+      <div 
+        className="absolute inset-[2px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08) 0%, transparent 60%)',
+        }}
+      />
+      
+      {/* Light reflection */}
+      <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gradient-to-r from-transparent via-[#E6B36A]/30 to-transparent rounded-full" />
+      
+      {iconSrc ? (
+        <img 
+          src={iconSrc} 
+          alt="" 
+          className={`w-7 h-7 object-contain transition-all duration-200 ${isActive ? 'brightness-125' : 'opacity-80'}`}
+          style={{ filter: isActive ? 'drop-shadow(0 0 8px rgba(230,179,106,0.6))' : 'none' }}
+        />
+      ) : Icon && (
         <Icon 
-          className={`w-8 h-8 stroke-[1.5px] transition-colors ${
+          className={`w-7 h-7 stroke-[1.5px] transition-all duration-200 ${
             isActive 
-              ? 'text-black fill-[#E6B36A]' 
-              : 'text-[#E6B36A] fill-black/60'
-          }`} 
+              ? 'text-[#E6B36A] drop-shadow-[0_0_8px_rgba(230,179,106,0.6)]' 
+              : 'text-[#E6B36A]/70'
+          }`}
+          style={isActive ? { fill: '#E6B36A' } : { fill: 'transparent' }}
         />
       )}
     </button>
     {label && (
       <span 
-        className="text-[#E6B36A] text-xs font-bold mt-1 text-shadow-sm cursor-pointer hover:underline"
+        className={`text-xs font-semibold mt-1.5 cursor-pointer hover:underline transition-colors ${
+          isActive ? 'text-[#E6B36A]' : 'text-[#E6B36A]/70'
+        }`}
+        style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
         onClick={onClick}
       >
         {label}
@@ -67,6 +96,9 @@ const SidebarButton = ({
     )}
   </div>
 );
+
+// Legacy wrapper for compatibility
+const SidebarButton = PremiumSidebarButton;
 
 export default function EnhancedVideoPlayer({ 
   videoId, 
@@ -340,10 +372,10 @@ export default function EnhancedVideoPlayer({
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-screen bg-black snap-start overflow-hidden border-b border-gray-800 flex justify-center"
+      className="relative w-full h-full snap-start overflow-hidden border-b border-gray-800 flex justify-center"
     >
       {/* Video Element */}
-      <div className="absolute inset-0 w-full max-w-[500px]">
+      <div className="absolute inset-0 w-full max-w-[500px] mx-auto">
         <audio ref={audioRef} preload="auto" className="hidden" />
         <video
           ref={videoRef}
@@ -366,12 +398,12 @@ export default function EnhancedVideoPlayer({
         />
 
         {videoSize && (
-          <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-black/60 border border-white/10 text-[10px] text-white/80">
+          <div className="absolute top-16 right-4 px-2 py-1 rounded-full bg-black/60 border border-white/10 text-[10px] text-white/80">
             {videoSize.w}×{videoSize.h}
           </div>
         )}
 
-        <div className="absolute top-3 left-3 right-3 h-1 rounded-full bg-white/15 overflow-hidden">
+        <div className="absolute bottom-3 left-3 right-3 h-1 rounded-full bg-white/15 overflow-hidden">
           <div
             className="h-full bg-[#E6B36A]"
             style={{
@@ -390,91 +422,102 @@ export default function EnhancedVideoPlayer({
         )}
       </div>
 
-      {/* Right Sidebar - Constrained to Right Edge */}
-      {/* Old PNG overlay removed as per user request */}
-
-      {/* Interactive Hitboxes - Aligned with the visual overlay */}
-      <div className="absolute z-[201] right-[-97px] bottom-[100px] flex flex-col items-center gap-2 pb-24 pointer-events-auto">
+      {/* Right Sidebar - Premium Metallic Icon Buttons */}
+      <div className="absolute z-[201] right-3 bottom-[160px] flex flex-col items-center gap-2 pointer-events-auto">
         
-        {/* Profile Avatar Area */}
-        <div className="relative mr-[110px] mt-[10px]">
+        {/* Profile Avatar with Premium Border */}
+        <div className="relative -mt-4 mb-2">
           <div 
-            className="w-11 h-11 rounded-full cursor-pointer hover:brightness-110 relative border border-[#E6B36A]"
+            className="w-12 h-12 rounded-full cursor-pointer hover:scale-105 transition-transform relative"
             onClick={handleProfileClick}
+            style={{
+              background: 'linear-gradient(145deg, #FF6B9D 0%, #C44569 50%, #FF8E9E 100%)',
+              padding: '2px',
+              boxShadow: '0 4px 15px rgba(255,107,157,0.4)',
+            }}
           >
-             <img 
-               src={video.user.avatar} 
-               alt={video.user.username} 
-               className="w-full h-full rounded-full object-cover"
-             />
+            <img 
+              src={video.user.avatar} 
+              alt={video.user.username} 
+              className="w-full h-full rounded-full object-cover"
+            />
             {video.user.isVerified && (
-              <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border border-black">
-                <div className="w-2 h-2 bg-white rounded-full flex items-center justify-center">
+              <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-black">
+                <div className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center">
                   <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
                 </div>
               </div>
             )}
           </div>
           
-          {/* Follow Button Badge */}
-          {!video.isFollowing && (
-            <button 
-              className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-[#E6B36A] rounded-full flex items-center justify-center hover:scale-110 transition-transform" 
-              onClick={handleFollow}
-            >
-              <UserPlus className="w-3 h-3 text-black" />
-            </button>
-          )}
         </div>
 
-        {/* Like Button */}
-        <SidebarButton 
+        {/* Like/Gift Heart Button - Generated Icon */}
+        <button 
           onClick={handleLike}
-          isActive={video.isLiked}
-          icon={Heart}
-          label={formatNumber(video.stats.likes)}
-          className="mt-[10px]"
-        />
-
-        {/* Comment Button */}
-        <SidebarButton 
-          onClick={handleComment}
-          icon={MessageCircle}
-          label={formatNumber(video.stats.comments)}
-          className="mt-[5px]"
-        />
-
-        {/* Save Button */}
-        <SidebarButton 
-          onClick={handleSave}
-          isActive={video.isSaved}
-          icon={Bookmark}
-          className="mt-[5px]"
-        />
-
-        {/* Share Button */}
-        <SidebarButton 
-          onClick={handleShare}
-          icon={Share2}
-          label={formatNumber(video.stats.shares)}
-          className="mt-[5px]"
-        />
-
-        <SidebarButton
-          onClick={handleReport}
-          icon={Flag}
-          label="Report"
-          className="mt-[5px]"
-        />
-
-        {/* Music Disc Area */}
-        <div 
-          className="w-11 h-11 rounded-full cursor-pointer hover:scale-110 transition-transform mt-[20px] mr-[110px] relative bg-black border border-[#E6B36A]"
-          onClick={handleMusicClick}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Like"
         >
-          <div className="absolute inset-0 rounded-full border border-[#E6B36A]/30 animate-spin" style={{ animationDuration: '8s' }} />
-          <Music className="w-5 h-5 text-[#E6B36A] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-        </div>
+          <img 
+            src="/Icons/side-like.png" 
+            alt="Like" 
+            className={`w-full h-full object-contain ${video.isLiked ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
+          />
+        </button>
+        <span className="text-[#E6B36A] text-xs font-semibold -mt-1">{formatNumber(video.stats.likes)}</span>
+
+        {/* Comment Button - Generated Icon */}
+        <button 
+          onClick={handleComment}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Comments"
+        >
+          <img src="/Icons/side-comment.png" alt="Comments" className="w-full h-full object-contain" />
+        </button>
+        <span className="text-[#E6B36A] text-xs font-semibold -mt-1">{formatNumber(video.stats.comments)}</span>
+
+        {/* Bookmark/Save Button - Generated Icon */}
+        <button 
+          onClick={handleSave}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Save"
+        >
+          <img 
+            src="/Icons/side-save.png" 
+            alt="Save" 
+            className={`w-full h-full object-contain ${video.isSaved ? 'brightness-125 drop-shadow-[0_0_10px_rgba(230,179,106,0.6)]' : ''}`}
+          />
+        </button>
+        <span className="text-white text-xs font-semibold -mt-1">{formatNumber(video.stats.saves || 0)}</span>
+
+        {/* Share Button - Generated Icon */}
+        <button 
+          onClick={handleShare}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="Share"
+        >
+          <img src="/Icons/side-share.png" alt="Share" className="w-full h-full object-contain" />
+        </button>
+        <span className="text-white text-xs font-semibold -mt-1">{formatNumber(video.stats.shares)}</span>
+
+        {/* Music Button - Generated Icon with Spin */}
+        <button 
+          onClick={handleMusicClick}
+          className="w-12 h-12 hover:scale-105 transition-transform animate-spin"
+          style={{ animationDuration: '8s' }}
+          title="Music"
+        >
+          <img src="/Icons/side-music.png" alt="Music" className="w-full h-full object-contain" />
+        </button>
+
+        {/* 3-Dot Menu Button */}
+        <button 
+          onClick={() => {}}
+          className="w-12 h-12 hover:scale-105 active:scale-95 transition-transform"
+          title="More"
+        >
+          <img src="/Icons/side-menu.png" alt="More" className="w-full h-full object-contain" />
+        </button>
       </div>
 
       {/* Bottom Info Area */}

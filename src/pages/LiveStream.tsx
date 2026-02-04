@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   X,
@@ -7,7 +7,6 @@ import {
   Search,
   Heart,
   Flame,
-  User,
   Link2,
   MessageCircle,
   Share2,
@@ -17,7 +16,6 @@ import {
   Settings2,
   LogOut,
   Power,
-  Cloud,
   ShoppingBag,
   Pencil,
   MoreHorizontal,
@@ -72,7 +70,7 @@ export default function LiveStream() {
   const updateUser = useAuthStore((s) => s.updateUser);
   const effectiveStreamId = streamId || 'broadcast';
   const PROMOTE_LIKES_THRESHOLD_LIVE = 10_000;
-  const PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
+  const _PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [currentGift, setCurrentGift] = useState<string | null>(null);
@@ -110,8 +108,8 @@ export default function LiveStream() {
 
   // FaceAR State
   const faceARCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [faceARVideoEl, setFaceARVideoEl] = useState<HTMLVideoElement | null>(null);
-  const [faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
+  const [_faceARVideoEl, setFaceARVideoEl] = useState<HTMLVideoElement | null>(null);
+  const [_faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const [battleGiftIconFailed, setBattleGiftIconFailed] = useState(false);
 
   useEffect(() => {
@@ -241,7 +239,7 @@ export default function LiveStream() {
   const [giftTarget, setGiftTarget] = useState<'me' | 'opponent'>('me');
   const lastScreenTapRef = useRef<number>(0);
   const battleTapScoreRemainingRef = useRef<number>(5);
-  const [battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
+  const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
   const battleScoreTapWindowRef = useRef<{ windowStart: number; count: number }>({ windowStart: 0, count: 0 });
   const battleTripleTapRef = useRef<{ target: 'me' | 'opponent' | null; lastTapAt: number; count: number }>({
     target: null,
@@ -249,9 +247,9 @@ export default function LiveStream() {
     count: 0,
   });
   const [battleCountdown, setBattleCountdown] = useState<number | null>(null);
-  const battleKeyboardLikeArmedRef = useRef(true);
+  const _battleKeyboardLikeArmedRef = useRef(true);
   const [liveLikes, setLiveLikes] = useState(0);
-  const [battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
+  const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
   const [floatingHearts, setFloatingHearts] = useState<
     Array<{ id: string; x: number; y: number; dx: number; rot: number; size: number; color: string }>
   >([]);
@@ -280,7 +278,7 @@ export default function LiveStream() {
     return () => clearInterval(interval);
   }, [isBattleMode, battleTime, myScore, opponentScore]);
 
-  const toggleBattle = () => {
+  const toggleBattle = useCallback(() => {
     if (isBattleMode) {
       setIsBattleMode(false);
       setBattleTime(300);
@@ -304,7 +302,7 @@ export default function LiveStream() {
     setBattleCountdown(3);
     battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
     battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
-  };
+  }, [isBattleMode]);
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -413,7 +411,7 @@ export default function LiveStream() {
     return coins.toLocaleString();
   };
 
-  const spawnHeartAt = (x: number, y: number, colorOverride?: string) => {
+  const spawnHeartAt = useCallback((x: number, y: number, colorOverride?: string) => {
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const dx = Math.round((Math.random() * 2 - 1) * 48);
     const rot = Math.round((Math.random() * 2 - 1) * 18);
@@ -425,7 +423,7 @@ export default function LiveStream() {
     window.setTimeout(() => {
       setFloatingHearts((prev) => prev.filter((h) => h.id !== id));
     }, 950);
-  };
+  }, []);
 
   const spawnHeartFromClient = (clientX: number, clientY: number, colorOverride?: string) => {
     const stage = stageRef.current;
@@ -434,19 +432,19 @@ export default function LiveStream() {
     spawnHeartAt(clientX - rect.left, clientY - rect.top, colorOverride);
   };
 
-  const spawnHeartAtSide = (target: 'me' | 'opponent') => {
+  const spawnHeartAtSide = useCallback((target: 'me' | 'opponent') => {
     const stage = stageRef.current;
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
     const x = rect.width * (target === 'me' ? 0.25 : 0.75);
     const y = rect.height * 0.62;
     spawnHeartAt(x, y, '#FF2D55');
-  };
+  }, [spawnHeartAt]);
 
-  const handleBattleTap = (target: 'me' | 'opponent') => {
+  const handleBattleTap = useCallback((target: 'me' | 'opponent') => {
     setGiftTarget(target);
     // Likes disconnected from battle tap/shortcuts
-  };
+  }, []);
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -469,6 +467,7 @@ export default function LiveStream() {
         e.preventDefault();
         handleBattleTap('me');
         spawnHeartAtSide('me');
+        addLiveLikes(1);
         return;
       }
 
@@ -476,12 +475,13 @@ export default function LiveStream() {
         e.preventDefault();
         handleBattleTap('opponent');
         spawnHeartAtSide('opponent');
+        addLiveLikes(1);
       }
     };
 
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isBattleMode, battleWinner]);
+  }, [isBattleMode, battleWinner, handleBattleTap, spawnHeartAtSide]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -489,7 +489,7 @@ export default function LiveStream() {
     if (shouldStartBattle && !isBattleMode) {
       toggleBattle();
     }
-  }, [location.search]);
+  }, [location.search, isBattleMode, toggleBattle]);
 
   useEffect(() => {
     const sampleLeft = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
@@ -663,7 +663,8 @@ export default function LiveStream() {
     }
     if (useRealApi && user?.id) {
       // DEV BACKDOOR: Skip API call for everyone to avoid DB balance check failure
-      if (true || user.username === 'bericaandrei') {
+      const devSkipBalanceCheck = true;
+      if (devSkipBalanceCheck || user.username === 'bericaandrei') {
           // Simulate success and update LEVEL/XP locally + DB
           let currentLevel = userLevel;
           let currentXP = userXP;
@@ -1028,7 +1029,7 @@ export default function LiveStream() {
 
   const closeMiniProfile = () => setMiniProfile(null);
 
-  const startBattleMatch = () => {
+  const _startBattleMatch = () => {
     if (!isBattleMode) return;
     setMyScore(0);
     setOpponentScore(0);
@@ -1039,7 +1040,7 @@ export default function LiveStream() {
     setBattleCountdown(3);
   };
 
-  const closeBattleMatch = () => {
+  const _closeBattleMatch = () => {
     if (!isBattleMode) return;
     setBattleCountdown(null);
     setBattleTime(0);
@@ -1075,8 +1076,8 @@ export default function LiveStream() {
                   left: `${h.x}px`,
                   top: `${h.y}px`,
                   transform: 'translate(-50%, -50%)',
-                  ['--elix-heart-dx' as any]: `${h.dx}px`,
-                  ['--elix-heart-rot' as any]: `${h.rot}deg`,
+                  '--elix-heart-dx': `${h.dx}px`,
+                  '--elix-heart-rot': `${h.rot}deg`,
                 } as React.CSSProperties
               }
             >
@@ -1216,15 +1217,14 @@ export default function LiveStream() {
                 className="static w-full h-full bg-black border-0 p-4"
                 onLike={() => addLiveLikes(1)}
               />
-              {/* Removed MVP Bar */}
               
               <div className="absolute right-4 bottom-4 z-[80] pointer-events-auto flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="w-11 h-11 bg-black/70 rounded-full flex items-center justify-center text-white shadow-lg border border-white/20 hover:bg-black/80 transition"
+                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
                 >
-                  <Share2 className="w-5 h-5" strokeWidth={2} />
+                  <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
                 </button>
                 <button
                   type="button"
@@ -1236,18 +1236,13 @@ export default function LiveStream() {
                 <button
                   type="button"
                   onClick={() => setShowGiftPanel(true)}
-                  className="w-11 h-11 bg-black/70 rounded-full flex items-center justify-center text-white shadow-lg border border-white/20 hover:bg-black/80 transition"
+                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
                 >
-                  {battleGiftIconFailed ? (
-                    <Gift className="w-6 h-6 text-white" strokeWidth={2} />
-                  ) : (
-                    <img
-                      src="/Icons/Gift%20icon.png?v=3"
-                      alt="Gift"
-                      className="w-6 h-6 object-contain"
-                      onError={() => setBattleGiftIconFailed(true)}
-                    />
-                  )}
+                  <img
+                    src="/Icons/gift-button.png"
+                    alt="Gift"
+                    className="w-11 h-11 object-contain"
+                  />
                 </button>
               </div>
             </div>
@@ -1343,9 +1338,9 @@ export default function LiveStream() {
                 <button
                   type="button"
                   onClick={stopBroadcast}
-                  className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center"
+                  className="w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition"
                 >
-                  <Power className="w-4 h-4" strokeWidth={2} />
+                  <img src="/Icons/power-button.png" alt="Exit" className="w-9 h-9 object-contain" />
                 </button>
               </div>
             </div>
@@ -1378,9 +1373,9 @@ export default function LiveStream() {
                 <button
                   type="button"
                   onClick={stopBroadcast}
-                  className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center"
+                  className="w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition"
                 >
-                  <Power className="w-4 h-4" strokeWidth={2} />
+                  <img src="/Icons/power-button.png" alt="Exit" className="w-9 h-9 object-contain" />
                 </button>
               </div>
             </div>
@@ -1405,8 +1400,6 @@ export default function LiveStream() {
                 </div>
               </div>
             )}
-
-          {/* MVP Bar removed */}
 
           </div>
         </div>
@@ -1500,7 +1493,7 @@ export default function LiveStream() {
                 }}
                 className="p-2 text-[#E6B36A]"
               >
-                <X className="w-5 h-5" strokeWidth={2} />
+                <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5 object-contain" />
               </button>
             </div>
 
@@ -1697,35 +1690,16 @@ export default function LiveStream() {
         {/* Gift Button - Visible for everyone for testing */}
         <button
             onClick={() => setShowGiftPanel(true)}
-            className="w-10 h-10 bg-black/70 rounded-full flex items-center justify-center text-white shadow-lg border border-none hover:bg-black/80 transition"
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition border border-none"
         >
-            <img src="/Icons/Gift%20icon.png?v=3" alt="Gift" className="w-5 h-5 object-contain" />
+            <img src="/Icons/gift-button.png" alt="Gift" className="w-10 h-10 object-contain" />
         </button>
       </div>
       )}
 
       {isBroadcast && (
         <>
-        {isBroadcast && !isBattleMode && (
-          <div className="absolute bottom-[68px] left-0 right-0 z-[94] px-3">
-            <div className="h-10 rounded-full bg-black/60 text-white text-xs flex items-center justify-between px-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                  <UsersRound className="w-3.5 h-3.5" strokeWidth={2} />
-                </div>
-                <span className="truncate">Invite {opponentCreatorName} to co-host now</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsFindCreatorsOpen(true)}
-                className="ml-3 h-7 px-3 rounded-full bg-white/15 text-white text-xs font-semibold"
-              >
-                Invite
-              </button>
-            </div>
-          </div>
-        )}
-        {!isBattleMode && (
+        {isBattleMode && (
           <div className="absolute bottom-0 left-0 right-0 z-[95]">
             <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
               <div className="h-14 flex items-center justify-between">
@@ -1733,16 +1707,9 @@ export default function LiveStream() {
                   <button
                     type="button"
                     onClick={() => setIsFindCreatorsOpen(true)}
-                    className="w-11 h-11 rounded-full bg-gradient-to-br from-[#5C59FF] to-[#FF4DA6] flex items-center justify-center shadow-lg"
+                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
                   >
-                    <Link2 className="w-5 h-5 text-white" strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCreatorsOpen(true)}
-                    className="w-11 h-11 rounded-full bg-[#FF4DA6] flex items-center justify-center shadow-lg"
-                  >
-                    <UsersRound className="w-5 h-5 text-white" strokeWidth={2} />
+                    <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
                   </button>
                 </div>
 
@@ -1753,30 +1720,74 @@ export default function LiveStream() {
                       setGiftTarget('me');
                       setShowGiftPanel(true);
                     }}
-                    className="w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center"
+                    className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition"
                   >
-                    <ShoppingBag className="w-5 h-5" strokeWidth={2} />
+                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain" />
                   </button>
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center"
+                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
                   >
-                    <Share2 className="w-5 h-5" strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsLiveSettingsOpen(true)}
-                    className="w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center"
-                  >
-                    <Pencil className="w-5 h-5" strokeWidth={2} />
+                    <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsMoreMenuOpen(true)}
-                    className="w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center"
+                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
                   >
-                    <MoreHorizontal className="w-5 h-5" strokeWidth={2} />
+                    <img src="/Icons/more-button.png" alt="More" className="w-11 h-11 object-contain" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {!isBattleMode && (
+          <div className="absolute bottom-0 left-0 right-0 z-[95]">
+            <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+              <div className="h-14 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={toggleBattle}
+                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
+                  >
+                    <img src="/Icons/battle-button.png" alt="Battle" className="w-12 h-12 object-contain" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsFindCreatorsOpen(true)}
+                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"
+                  >
+                    <img src="/Icons/friend-button.png" alt="Friends" className="w-12 h-12 object-contain" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGiftTarget('me');
+                      setShowGiftPanel(true);
+                    }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition"
+                  >
+                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-12 h-12 object-contain" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
+                  >
+                    <img src="/Icons/battle-share.png" alt="Share" className="w-9 h-9 object-contain" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsMoreMenuOpen(true)}
+                    className="w-11 h-11 rounded-full flex items-center justify-center hover:scale-110 transition"
+                  >
+                    <img src="/Icons/more-button.png" alt="More" className="w-11 h-11 object-contain" />
                   </button>
                 </div>
               </div>
@@ -1924,7 +1935,7 @@ export default function LiveStream() {
                   className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A] rounded-xl hover:bg-white/5"
                 >
                   <div className="flex items-center gap-3">
-                    <Share2 className="w-5 h-5" strokeWidth={2} />
+                    <img src="/Icons/battle-share.png" alt="Share" className="w-7 h-7 object-contain" />
                     <span className="font-semibold">Share</span>
                   </div>
                 </button>

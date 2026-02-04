@@ -6,7 +6,7 @@ import { useSafetyStore } from '../store/useSafetyStore';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-type HomeTopTab = 'live' | 'stream' | 'explore' | 'following' | 'shop' | 'foryou';
+type HomeTopTab = 'live' | 'stem' | 'explore' | 'following' | 'shop' | 'foryou';
 
 type FeedItem =
   | { kind: 'promo'; promo: LivePromo }
@@ -139,49 +139,80 @@ export default function VideoFeed() {
   return (
     <div 
       ref={containerRef}
-      className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black relative"
+      className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar relative"
       onScroll={handleScroll}
     >
-      {/* Top Navigation Bar - Gold & Black Theme */}
+      {/* Top Navigation Bar - Image with Clickable Buttons */}
       <div className="fixed left-0 right-0 top-0 z-[200] flex justify-center pointer-events-none">
-        <div className="w-full max-w-[500px] relative px-4 pt-4 pb-2 pointer-events-auto bg-gradient-to-b from-black/55 to-transparent">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                {(
-                  [
-                    { id: 'live', label: 'Live', to: '/live' },
-                    { id: 'stream', label: 'Stream', to: '/live' },
-                    { id: 'explore', label: 'Explore', to: '/search' },
-                    { id: 'following', label: 'Following', to: '/following' },
-                    { id: 'shop', label: 'Shop', to: '/saved' },
-                    { id: 'foryou', label: 'For You', to: '/' },
-                  ] as const
-                ).map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      if (t.id === 'live' || t.id === 'stream') {
-                        setActiveTab(t.id);
-                        navigate(t.to);
-                        return;
-                      }
-                      setActiveTab(t.id);
-                      navigate(t.to);
-                    }}
-                    className={`flex-1 text-center text-[15px] font-extrabold tracking-wide transition-colors whitespace-nowrap ${
-                      activeTab === t.id ? 'text-[#E6B36A]' : 'text-[#E6B36A]/70'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+        <div className="w-full max-w-[500px] relative px-2 pt-2 pb-1" style={{ transform: 'scaleY(0.75)' }}>
+          
+          {/* Background Image */}
+          <div className="relative">
+            <img 
+              src="/Icons/topbar.png" 
+              alt="Navigation" 
+              className="w-full h-auto pointer-events-none"
+              style={{ filter: 'drop-shadow(0 0 15px rgba(212,165,116,0.3))' }}
+            />
+            
+            {/* Clickable Button Overlays */}
+            <div className="absolute inset-0 flex items-center pointer-events-auto">
+              {/* LIVE Button - 11% */}
+              <button
+                onClick={() => { setActiveTab('live'); navigate('/live'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5 rounded-l-full"
+                style={{ width: '11%' }}
+                title="Live"
+              />
+              
+              {/* STEM Button - 11% */}
+              <button
+                onClick={() => { setActiveTab('stem'); navigate('/stem'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5"
+                style={{ width: '11%' }}
+                title="STEM"
+              />
+              
+              {/* Explore Button - 14% */}
+              <button
+                onClick={() => { setActiveTab('explore'); navigate('/search'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5"
+                style={{ width: '14%' }}
+                title="Explore"
+              />
+              
+              {/* Following Button - 17% */}
+              <button
+                onClick={() => { setActiveTab('following'); navigate('/following'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5"
+                style={{ width: '17%' }}
+                title="Following"
+              />
+              
+              {/* Shop Button - 12% */}
+              <button
+                onClick={() => { setActiveTab('shop'); navigate('/saved'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5"
+                style={{ width: '12%' }}
+                title="Shop"
+              />
+              
+              {/* For You Button - 17% */}
+              <button
+                onClick={() => { setActiveTab('foryou'); navigate('/'); }}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5"
+                style={{ width: '17%' }}
+                title="For You"
+              />
+              
+              {/* Search Button - 18% */}
+              <button
+                onClick={() => navigate('/search')}
+                className="h-full transition-all active:opacity-60 hover:bg-white/5 rounded-r-full"
+                style={{ width: '18%' }}
+                title="Search"
+              />
             </div>
-
-            <button className="text-[#E6B36A]" onClick={() => navigate('/search')} aria-label="Search">
-              <Search size={22} strokeWidth={2} />
-            </button>
           </div>
         </div>
       </div>
@@ -206,8 +237,8 @@ export default function VideoFeed() {
         }
 
         return (
-          <div key={`video-${index}`} className="h-full w-full snap-start relative flex justify-center bg-black">
-            <div className="w-full h-full md:w-[500px] relative">
+          <div key={`video-${index}`} className="h-[100dvh] w-full snap-start relative flex justify-center">
+            <div className="w-full h-[100dvh] md:w-[500px] relative" style={{ paddingBottom: '52px' }}>
               <EnhancedVideoPlayer
                 videoId={item.videoId}
                 isActive={activeIndex === index}

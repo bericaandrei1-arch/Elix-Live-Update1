@@ -55,19 +55,59 @@ export function resolveGiftAssetUrl(path: string): string {
 
 export function buildGiftUiItemsFromCatalog(rows: GiftCatalogRow[]): GiftUiItem[] {
   const faceArFallback: Record<string, { icon: string; video: string }> = {
-    face_ar_crown: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Global Universe.webm' },
-    face_ar_glasses: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Live Universe.webm' },
-    face_ar_hearts: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Gold Universe.webm' },
-    face_ar_mask: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Beast Relic of the Ancients.webm' },
-    face_ar_ears: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Live Universe.webm' },
-    face_ar_stars: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/Elix Global Universe.webm' },
+    face_ar_crown: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/elix_global_universe.webm' },
+    face_ar_glasses: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/elix_live_universe.webm' },
+    face_ar_hearts: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/elix_gold_universe.webm' },
+    face_ar_mask: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/beast_relic_of_the_ancients.webm' },
+    face_ar_ears: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/elix_live_universe.webm' },
+    face_ar_stars: { icon: '/Icons/Gift%20icon.png?v=3', video: '/gifts/elix_global_universe.webm' },
+  };
+
+  const sanitizeGiftUrl = (url: string | null): string | null => {
+      if (!url) return null;
+      // If it's a full URL, we might need to be careful, but if it's a relative path or just filename:
+      // We want to convert "Golden Rage Lion.mp4" -> "golden_rage_lion.mp4"
+      // But we must preserve the path structure if it exists.
+      
+      try {
+          // Check if it's a full URL
+          const isUrl = url.startsWith('http');
+          const pathPart = isUrl ? new URL(url).pathname : url;
+          const filename = pathPart.split('/').pop() || '';
+          
+          if (!filename) return url;
+          
+          // Create safe filename: lowercase, replace non-alphanum with underscore
+          // (Same logic as our rename script)
+          let newFilename = filename.toLowerCase()
+            .replace(/%20/g, '_') // Handle encoded spaces
+            .replace(/\s+/g, '_') // Handle real spaces
+            .replace(/[^a-z0-9.]/g, '_') // Replace special chars (except dot) with underscore
+            .replace(/_+/g, '_')
+            .replace(/_\./g, '.'); // Fix _.extension
+            
+           // Remove leading/trailing underscores from name part (before extension)
+           const parts = newFilename.split('.');
+           if (parts.length > 1) {
+               const ext = parts.pop();
+               const name = parts.join('.').replace(/^_/, '').replace(/_$/, '');
+               newFilename = `${name}.${ext}`;
+           }
+
+           return url.replace(filename, newFilename).replace(/%20/g, '_').replace(/ /g, '_'); // Brute force replace in URL too just in case
+      } catch {
+          return url;
+      }
   };
 
   return rows
     .filter((r) => r.is_active)
     .map((row) => {
       const fallback = faceArFallback[row.gift_id];
-      const animation = row.animation_url ?? (fallback ? fallback.video : null);
+      // Sanitize the animation URL from DB
+      const dbAnimation = sanitizeGiftUrl(row.animation_url);
+      
+      const animation = dbAnimation ?? (fallback ? fallback.video : null);
       const icon = fallback?.icon ?? (animation ? resolveGiftAssetUrl(animation) : '/Icons/Gift%20icon.png?v=3');
       const video = animation ? resolveGiftAssetUrl(animation) : icon;
 

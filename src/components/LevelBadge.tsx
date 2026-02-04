@@ -10,7 +10,7 @@ interface LevelBadgeProps {
 }
 
 export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", size = 40, layout = 'fit', variant = 'clean' }) => {
-  const tier = level > 100 ? 'pink' : level > 60 ? 'purple' : level > 30 ? 'orange' : level > 20 ? 'green' : 'blue';
+  const tier = level >= 100 ? 'red' : level >= 75 ? 'pink' : level >= 50 ? 'orange' : level >= 25 ? 'green' : 'blue';
   const safeLevel = Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
   const isChat = variant === 'chat';
 
@@ -30,8 +30,8 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
   // Original was 14px height. New target ~24px.
   // Original width 28px. New target ~50px.
   
-  const height = size === 10 ? 18 : (size === 2 ? 2 : (size === 14 ? 14 : Math.max(46, Math.round(size * 1.5))));
-  const width = size === 10 ? 40 : (size === 2 ? 3 : (size === 14 ? 16 : (layout === 'fixed' ? Math.round(height * 4.0) : undefined)));
+  const height = size === 10 ? 28 : (size === 2 ? 2 : (size === 14 ? 14 : Math.max(46, Math.round(size * 1.5))));
+  const width = size === 10 ? 60 : (size === 2 ? 3 : (size === 14 ? 16 : (layout === 'fixed' ? Math.round(height * 4.0) : undefined)));
   const radius = size === 10 ? 6 : (size === 2 ? 1 : (size === 14 ? 4 : (isChat ? 6 : Math.max(8, Math.round(height * 0.214)))));
   const fontSize = size === 10 ? 13 : size === 2 ? 1 : size === 14 ? 12 : Math.max(18, Math.round(height * 0.45));
   const iconSize = size === 10 ? 10 : Math.max(8, Math.round(fontSize * 0.8));
@@ -43,51 +43,42 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
         height,
         width,
         flexShrink: 0,
-        paddingLeft: (layout === 'fixed' || size === 10) ? 0 : Math.round(height * 1.4), // +padding (~4mm width extra)
+        paddingLeft: (layout === 'fixed' || size === 10) ? 0 : Math.round(height * 1.4),
         paddingRight: (layout === 'fixed' || size === 10) ? 0 : Math.round(height * 1.4),
         filter: 'none',
       }}
     >
-      {/* Main Background & Border */}
-      <span
-        className="absolute inset-0"
-        style={{
-          borderRadius: radius,
-          background: colors.bg, // Solid dark background
-          border: `1.5px solid ${colors.border}`, // Dark solid border
-          boxShadow: 'none',
-        }}
+      {/* Use custom image for level badge - dynamic color based on tier */}
+      <img 
+        src={
+          tier === 'blue' ? '/Icons/level-badge-blue.png?v=6' :
+          tier === 'green' ? '/Icons/level-badge-green.png?v=6' :
+          tier === 'orange' ? '/Icons/level-badge-orange.png?v=6' :
+          tier === 'pink' ? '/Icons/level-badge-pink.png?v=6' :
+          tier === 'red' ? '/Icons/level-badge-red.png?v=6' :
+          '/Icons/level-badge-green.png?v=6'
+        } 
+        alt={`Level ${safeLevel}`}
+        className="absolute inset-0 w-full h-full object-contain"
       />
       
-      {/* Content: Icon + Text */}
-      <div 
-        className="relative z-10 flex items-center justify-center" 
-        style={{ 
-          gap: size === 10 ? 3 : Math.round(height * 0.1),
-          transform: size === 10 ? 'none' : 'translateY(-1px)'
+      {/* Level number overlay */}
+      <span
+        className={`relative z-10 antialiased ${size === 10 ? 'font-bold' : 'font-black'}`}
+        style={{
+          color: '#000000',
+          fontSize,
+          textShadow: '0 1px 0 rgba(255,255,255,0.4), 0 2px 3px rgba(255,255,255,0.2), 0 3px 6px rgba(0,0,0,0.3)',
+          WebkitTextStroke: '0.5px rgba(255,255,255,0.3)',
+          letterSpacing: '-0.02em',
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap',
+          transform: size === 10 ? 'translateY(2px)' : 'none',
+          fontWeight: '900',
         }}
       >
-        <Gem 
-          size={iconSize} 
-          strokeWidth={2.5}
-          className="text-gray-200"
-          fill="currentColor"
-        />
-        <span
-          className={`antialiased ${size === 10 ? 'font-bold' : 'font-black'}`}
-          style={{
-            color: '#E5E7EB', // Gray-200 (alb-gri)
-            fontSize,
-            textShadow: 'none',
-            WebkitTextStroke: 'none',
-            letterSpacing: '-0.02em',
-            fontVariantNumeric: 'tabular-nums',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {safeLevel}
-        </span>
-      </div>
+        {safeLevel}
+      </span>
     </span>
   );
 };
