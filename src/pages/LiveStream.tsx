@@ -1085,11 +1085,78 @@ export default function LiveStream() {
             </div>
           ))}
         </div>
-        {isBattleMode ? (
+        
+        {/* Base Video Layer - Always Show for Broadcaster */}
+        {(!isBattleMode || isBroadcast) && (
           <div
-            className={`absolute inset-0 z-[40] flex flex-col ${isBroadcast ? 'pb-0' : 'pb-24'}`}
-            style={{ paddingTop: '90px' }}
-            onClick={handleScreenTap}
+            className="relative w-full h-full"
+            onPointerDown={(e) => {
+              if (isBattleMode && isBroadcast) return; // Battle overlay handles taps for broadcaster
+              if (e.target instanceof Element) {
+                const interactive = e.target.closest('button, a, input, textarea, select, [role="button"]');
+                if (interactive) return;
+              }
+              spawnHeartFromClient(e.clientX, e.clientY);
+              addLiveLikes(1);
+              const now = Date.now();
+              const last = lastScreenTapRef.current;
+              lastScreenTapRef.current = now;
+              if (now - last <= 320) {
+                handleComboClick();
+              }
+            }}
+          >
+            {isBroadcast ? (
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover transform scale-x-[-1]"
+                autoPlay
+                playsInline
+                muted
+              />
+            ) : (
+              <video
+                src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                onError={(e) => {
+                  console.warn("Video failed to load, falling back to black");
+                  e.currentTarget.style.display = 'block';
+                  e.currentTarget.parentElement?.classList.add('bg-black');
+                }}
+              />
+            )}
+
+            {isBroadcast && activeFaceARGift && (
+              <>
+                <canvas
+                  ref={faceARCanvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none transform scale-x-[-1]"
+                />
+                <FaceARGift
+                  giftType={activeFaceARGift.type}
+                  color={activeFaceARGift.color || '#E6B36A'}
+                />
+              </>
+            )}
+
+            {isBroadcast && cameraError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black text-white font-bold">
+                {cameraError}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Battle Split Screen Overlay - Shows ONLY when in battle mode */}
+        {isBattleMode && (
+          <div
+            className={`absolute inset-0 z-[80] flex flex-col ${isBroadcast ? 'pointer-events-none' : 'pb-24'}`}
+            style={{ paddingTop: isBroadcast ? '90px' : '90px', paddingBottom: isBroadcast ? '120px' : undefined }}
+            onClick={!isBroadcast ? handleScreenTap : undefined}
           >
             {battleCountdown != null && (
               <div className="absolute inset-0 z-[260] pointer-events-none flex items-center justify-center">
@@ -1100,7 +1167,7 @@ export default function LiveStream() {
               </div>
             )}
 
-            <div className="relative w-full h-[56%] flex">
+            <div className="relative w-full flex-1 flex">
               <button
                 type="button"
                 onClick={(e) => {
@@ -1112,7 +1179,7 @@ export default function LiveStream() {
                   spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
                   addLiveLikes(1);
                 }}
-                className={`w-1/2 h-full overflow-hidden relative border-r border-black bg-black ${giftTarget === 'me' ? 'ring-2 ring-[#FF4DA6]' : ''}`}
+                className={`w-1/2 h-full overflow-hidden relative border-r border-black bg-black pointer-events-auto ${giftTarget === 'me' ? 'ring-2 ring-[#FF4DA6]' : ''}`}
               >
                 <video
                   ref={videoRef}
@@ -1134,7 +1201,7 @@ export default function LiveStream() {
                   spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
                   addLiveLikes(1);
                 }}
-                className={`w-1/2 h-full bg-gray-900 relative overflow-hidden ${giftTarget === 'opponent' ? 'ring-2 ring-[#4A7DFF]' : ''}`}
+                className={`w-1/2 h-full bg-gray-900 relative overflow-hidden pointer-events-auto ${giftTarget === 'opponent' ? 'ring-2 ring-[#4A7DFF]' : ''}`}
               >
                 <video
                   ref={opponentVideoRef}
@@ -1151,7 +1218,7 @@ export default function LiveStream() {
                   e.stopPropagation();
                   toggleBattle();
                 }}
-                className="absolute top-[-14px] left-0 right-0 z-20 w-full h-6 rounded-none overflow-hidden  shadow-2xl"
+                className="absolute top-[-14px] left-0 right-0 z-20 w-full h-6 rounded-none overflow-hidden shadow-2xl pointer-events-auto"
               >
                 {/* LUXURY BATTLE PROGRESS BAR */}
                 <div className="absolute inset-0 flex">
@@ -1219,115 +1286,22 @@ export default function LiveStream() {
               )}
             </div>
 
-            {/* Chat Section (Bottom) */}
-            <div className="flex-1 bg-black overflow-hidden relative pt-6 pointer-events-none">
-              <ChatOverlay
-                messages={messages}
-                variant="panel"
-                className="static w-full h-full bg-black border-0 p-4"
-              />
-              
-            </div>
-          </div>
-        ) : (
-          <div
-            className="relative w-full h-full"
-            onPointerDown={(e) => {
-              if (e.target instanceof Element) {
-                const interactive = e.target.closest('button, a, input, textarea, select, [role="button"]');
-                if (interactive) return;
-              }
-              spawnHeartFromClient(e.clientX, e.clientY);
-              addLiveLikes(1);
-              const now = Date.now();
-              const last = lastScreenTapRef.current;
-              lastScreenTapRef.current = now;
-              if (now - last <= 320) {
-                handleComboClick();
-              }
-            }}
-          >
-            {isBroadcast ? (
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover transform scale-x-[-1]"
-                autoPlay
-                playsInline
-                muted
-              />
-            ) : (
-              <video
-                src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-                className="w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-                onError={(e) => {
-                  console.warn("Video failed to load, falling back to black");
-                  e.currentTarget.style.display = 'block';
-                  e.currentTarget.parentElement?.classList.add('bg-black');
-                }}
-              />
-            )}
-
-            {isBroadcast && activeFaceARGift && (
-              <>
-                <canvas
-                  ref={faceARCanvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none transform scale-x-[-1]"
+            {/* Chat Section for Spectators Only */}
+            {!isBroadcast && (
+              <div className="flex-1 bg-black overflow-hidden relative pt-6">
+                <ChatOverlay
+                  messages={messages}
+                  variant="panel"
+                  className="static w-full h-full bg-black border-0 p-4"
                 />
-                <FaceARGift
-                  giftType={activeFaceARGift.type}
-                  color={activeFaceARGift.color || '#E6B36A'}
-                />
-              </>
-            )}
-
-            {isBroadcast && cameraError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black text-white font-bold">
-                {cameraError}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {isBroadcast && isBattleMode && (
-        <div className="absolute top-0 left-0 right-0 z-[90] pointer-events-none">
-          <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="pointer-events-auto flex flex-col gap-1">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1.5">
-                  <div className="min-w-0">
-                    <p className="font-extrabold text-[16px] truncate max-w-[170px]">{myCreatorName}</p>
-                  </div>
-                </div>
-                
-                {/* LIVE LIKES COUNTER - Under Profile in Battle Mode */}
-                <div className="pl-2 flex items-center gap-1">
-                  <Heart className="w-4 h-4 text-[#E6B36A]" strokeWidth={2.5} fill="#E6B36A" />
-                  <span className="text-white text-sm font-black tabular-nums">
-                    {activeLikes.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pointer-events-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={stopBroadcast}
-                  className="w-9 h-9 flex items-center justify-center hover:scale-110 transition"
-                >
-                  <img src="/Icons/power-button.png" alt="Exit" className="w-9 h-9 object-contain" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isBroadcast && !isBattleMode && (
+      {/* Top Bar - Always show for broadcaster (both normal and battle mode) */}
+      {isBroadcast && (
         <div className="absolute top-0 left-0 right-0 z-[90] pointer-events-none">
           <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
             <div className="flex items-start justify-between gap-2">
@@ -1698,62 +1672,15 @@ export default function LiveStream() {
       </div>
       )}
 
+      {/* Bottom Controls - Always show for broadcaster */}
       {isBroadcast && (
-        <>
-        {isBattleMode && (
-          <div className="absolute bottom-0 left-0 right-0 z-[95]">
-            <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-              {/* LUXURY BATTLE MODE CONTROLS */}
-              <div className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsFindCreatorsOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/friend-button.png" alt="Friends" className="w-6 h-6 object-contain" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGiftTarget('me');
-                        setShowGiftPanel(true);
-                      }}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all relative"
-                    >
-                      <img src="/Icons/gift-button.png" alt="Gifts" className="w-6 h-6 object-contain relative z-10" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/battle-share.png" alt="Share" className="w-6 h-6 object-contain" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsMoreMenuOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/more-button.png" alt="More" className="w-6 h-6 object-contain" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {!isBattleMode && (
-          <div className="absolute bottom-0 left-0 right-0 z-[95]">
-            <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-              {/* LUXURY BROADCASTER CONTROLS */}
-              <div className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+        <div className="absolute bottom-0 left-0 right-0 z-[95]">
+          <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+            {/* LUXURY BROADCASTER CONTROLS */}
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {!isBattleMode && (
                     <button
                       type="button"
                       onClick={toggleBattle}
@@ -1761,47 +1688,46 @@ export default function LiveStream() {
                     >
                       <img src="/Icons/battle-button.png" alt="Battle" className="w-6 h-6 object-contain relative z-10" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsFindCreatorsOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/friend-button.png" alt="Friends" className="w-6 h-6 object-contain" />
-                    </button>
-                  </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsFindCreatorsOpen(true)}
+                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
+                  >
+                    <img src="/Icons/friend-button.png" alt="Friends" className="w-6 h-6 object-contain" />
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGiftTarget('me');
-                        setShowGiftPanel(true);
-                      }}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all relative"
-                    >
-                      <img src="/Icons/gift-button.png" alt="Gifts" className="w-6 h-6 object-contain relative z-10" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/battle-share.png" alt="Share" className="w-6 h-6 object-contain" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsMoreMenuOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                    >
-                      <img src="/Icons/more-button.png" alt="More" className="w-6 h-6 object-contain" />
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGiftTarget('me');
+                      setShowGiftPanel(true);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all relative"
+                  >
+                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-6 h-6 object-contain relative z-10" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
+                  >
+                    <img src="/Icons/battle-share.png" alt="Share" className="w-6 h-6 object-contain" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsMoreMenuOpen(true)}
+                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
+                  >
+                    <img src="/Icons/more-button.png" alt="More" className="w-6 h-6 object-contain" />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        )}
-        </>
+        </div>
       )}
 
       {isMoreMenuOpen && (
