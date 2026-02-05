@@ -1302,7 +1302,7 @@ export default function LiveStream() {
 
       {/* Top Bar - Always show for broadcaster (both normal and battle mode) */}
       {isBroadcast && (
-        <div className="absolute top-0 left-0 right-0 z-[90] pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
           <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
             <div className="flex items-start justify-between gap-2">
               <div className="pointer-events-auto flex flex-col gap-2">
@@ -1369,7 +1369,7 @@ export default function LiveStream() {
 
       {!isBroadcast && (
         <>
-        <div className="absolute top-0 left-0 right-0 z-[80] pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
         <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="pointer-events-auto flex flex-col gap-1">
@@ -1634,7 +1634,7 @@ export default function LiveStream() {
 
       {/* Bottom Controls - Higher z-index to be above video */}
       {!isBroadcast && (
-      <div className={`absolute bottom-4 left-4 right-4 z-[55] flex items-center gap-2 ${isPlayingGift ? 'justify-end' : ''}`}>
+      <div className={`absolute bottom-4 left-4 right-4 z-[110] flex items-center gap-2 ${isPlayingGift ? 'justify-end' : ''}`}>
         {!isPlayingGift && (
             <form onSubmit={handleSendMessage} className="flex-1 bg-black px-4 py-2 flex items-center gap-2">
                 <input 
@@ -1674,7 +1674,7 @@ export default function LiveStream() {
 
       {/* Bottom Controls - Always show for broadcaster */}
       {isBroadcast && (
-        <div className="absolute bottom-0 left-0 right-0 z-[95]">
+        <div className="absolute bottom-0 left-0 right-0 z-[110]">
           <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
             {/* LUXURY BROADCASTER CONTROLS */}
             <div className="px-4 py-3">
@@ -1883,14 +1883,14 @@ export default function LiveStream() {
         {showGiftPanel && (
             <>
                 <div 
-                    className="absolute inset-0 bg-black z-30"
+                    className="absolute inset-0 bg-black z-[150]"
                     onClick={() => setShowGiftPanel(false)}
                 />
                 <motion.div
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
-                    className="absolute bottom-0 left-0 right-0 z-[60]"
+                    className="absolute bottom-0 left-0 right-0 z-[160]"
                 >
                     <GiftPanel 
                         onSelectGift={handleSendGift} 
