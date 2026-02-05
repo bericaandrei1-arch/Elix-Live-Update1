@@ -18,27 +18,6 @@ interface ChatOverlayProps {
   onLike?: () => void;
 }
 
-const getLevelStyle = (level: number): React.CSSProperties => {
-  let bg = '#1e40af';
-  let border = '#3b82f6';
-  
-  if (level > 100) { bg = '#9d174d'; border = '#ec4899'; }
-  else if (level > 60) { bg = '#6b21a8'; border = '#a855f7'; }
-  else if (level > 30) { bg = '#9a3412'; border = '#f97316'; }
-  else if (level > 20) { bg = '#166534'; border = '#22c55e'; }
-  
-  return {
-    backgroundColor: bg,
-    border: `1px solid ${border}`,
-    padding: '2px 6px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-    color: 'white',
-    flexShrink: 0,
-  };
-};
-
 export function ChatOverlay({ messages, variant = 'panel', className, onLike }: ChatOverlayProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +34,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     width: '100%',
     height: variant === 'overlay' ? 'calc(26vh + 80px)' : '100%',
     paddingLeft: '0px',
-    paddingRight: '0px',
+    paddingRight: '16px',
     paddingTop: '16px',
     paddingBottom: variant === 'overlay' ? '96px' : '16px',
     boxSizing: 'border-box',
@@ -66,9 +45,9 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    scrollbarWidth: 'none', // Firefox
-    msOverflowStyle: 'none', // IE/Edge
+    gap: '0px',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
     paddingLeft: '0px',
     marginLeft: '0px',
     alignItems: 'flex-start',
@@ -78,22 +57,15 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
   const messageStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '4px 0',
+    gap: '1px',
+    padding: '0px 0',
     paddingLeft: '0px',
-    marginLeft: '0px',
+    marginLeft: '-100px',
+    marginTop: '-50px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     justifyContent: 'flex-start',
     width: 'auto',
     alignSelf: 'flex-start',
-  };
-
-  const avatarStyle: React.CSSProperties = {
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    flexShrink: 0,
   };
 
   const usernameStyle: React.CSSProperties = {
@@ -101,6 +73,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     color: '#d1d5db',
     fontSize: '14px',
     flexShrink: 0,
+    marginLeft: '-95px',
   };
 
   const textStyle = (isGift?: boolean): React.CSSProperties => ({
@@ -115,7 +88,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
         {messages.map((msg) => (
           <div key={msg.id} style={messageStyle}>
             {!msg.isSystem && (
-              <LevelBadge level={msg.level || 1} size={80} layout="fixed" />
+              <LevelBadge level={msg.level || 1} size={70} layout="fixed" />
             )}
             
             <span style={usernameStyle}>{msg.username}</span>

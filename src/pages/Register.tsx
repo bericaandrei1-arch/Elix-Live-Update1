@@ -1,136 +1,173 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUpWithPassword, resendSignupConfirmation, authMode } = useAuthStore();
+  const { signUpWithPassword } = useAuthStore();
+  
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showResend, setShowResend] = useState(false);
-  const [isResending, setIsResending] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    setShowResend(false);
+
+    // Validation
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Email is required.');
+      return;
+    }
+
     setIsSubmitting(true);
-    const res = await signUpWithPassword(email.trim(), password, username.trim() || undefined);
-    setIsSubmitting(false);
-    if (res.error) {
-      console.error('Registration error:', res.error);
-      setError(typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
-      return;
+
+    try {
+      const res = await signUpWithPassword(email.trim(), password, username.trim() || undefined);
+      
+      if (res.error) {
+        setError(res.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (res.needsEmailConfirmation) {
+        setInfo('Please check your email to confirm your account.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success - navigate to home
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      setIsSubmitting(false);
     }
-    if (res.needsEmailConfirmation) {
-      setInfo('Check your inbox and confirm your email to finish creating your account.');
-      setShowResend(true);
-      return;
-    }
-    navigate('/', { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] bg-black60 border border-white/10 rounded-2xl p-5">
-        <h1 className="text-xl font-bold mb-4">Register</h1>
+      <div className="w-full max-w-[420px] bg-black60 border border-white/10 rounded-2xl p-6">
+        <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
 
-        <form onSubmit={onSubmit} className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-xs text-white/70">Username</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-black40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-              placeholder="username"
-              autoComplete="username"
-            />
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm text-white/70">Username (optional)</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-sm outline-none focus:border-secondary/50"
+                placeholder="username"
+                autoComplete="username"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs text-white/70">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-              placeholder="you@email.com"
-              autoComplete="email"
-              required
-            />
+          <div className="space-y-2">
+            <label className="text-sm text-white/70">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-sm outline-none focus:border-secondary/50"
+                placeholder="you@email.com"
+                autoComplete="email"
+                required
+              />
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs text-white/70">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-secondary/50"
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-            />
+          <div className="space-y-2">
+            <label className="text-sm text-white/70">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm outline-none focus:border-secondary/50"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-          {error && <div className="text-xs text-rose-300">{error}</div>}
-          {info && <div className="text-xs text-white/70">{info}</div>}
+          <div className="space-y-2">
+            <label className="text-sm text-white/70">Confirm Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm outline-none focus:border-secondary/50"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-          {showResend && (
-            <button
-              type="button"
-              disabled={isResending}
-              className="w-full bg-transparent10 border border-white/10 rounded-xl py-2 text-sm disabled:opacity-60"
-              onClick={async () => {
-                const trimmed = email.trim();
-                if (!trimmed) {
-                  setError('Introdu email-ul mai întâi.');
-                  return;
-                }
-                setError(null);
-                setInfo(null);
-                setIsResending(true);
-                try {
-                  const res = await resendSignupConfirmation(trimmed);
-                  if (res.error) {
-                    setError(res.error);
-                    return;
-                  }
-                  setInfo('Email de confirmare trimis din nou. Verifică Inbox și Spam.');
-                } finally {
-                  setIsResending(false);
-                }
-              }}
-            >
-              {isResending ? 'Sending...' : 'Resend confirmation email'}
-            </button>
+          {error && (
+            <div className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3">
+              {error}
+            </div>
           )}
 
-          <div className="text-[10px] text-white/40 text-center">
-            Auth: {authMode}
-          </div>
+          {info && (
+            <div className="text-sm text-white/70 bg-white/5 border border-white/10 rounded-xl p-3">
+              {info}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-secondary text-black font-bold rounded-xl py-2 text-sm disabled:opacity-60"
+            className="w-full bg-secondary text-black font-bold rounded-xl py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating...' : 'Create account'}
+            {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
-        <div className="mt-4 text-xs text-white/70">
-          <Link to="/login" className="text-secondary hover:underline">
-            Already have an account? Login
+        <div className="mt-6 text-center">
+          <Link to="/login" className="text-sm text-secondary hover:underline">
+            Already have an account? Sign in
           </Link>
         </div>
       </div>

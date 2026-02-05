@@ -140,11 +140,18 @@ export default function VideoFeed() {
     <div 
       ref={containerRef}
       className="h-[100dvh] w-full overflow-y-scroll snap-y snap-mandatory relative"
+      style={{ 
+        margin: 0, 
+        padding: 0, 
+        gap: 0,
+        scrollSnapType: 'y mandatory',
+        scrollPadding: 0
+      }}
       onScroll={handleScroll}
     >
       {/* Top Navigation Bar - LUXURY REDESIGN */}
-      <div className="fixed left-0 right-0 top-0 z-[200] flex justify-center pointer-events-none">
-        <div className="w-full max-w-[500px] relative px-2 pt-2 pb-1" style={{ transform: 'scaleY(0.75)' }}>
+      <div className="fixed right-0 z-[200] flex justify-center pointer-events-none" style={{ top: '5mm', left: '-4mm' }}>
+        <div className="w-full relative px-2 pt-2 pb-1" style={{ transform: 'scaleY(0.75)', maxWidth: 'calc(500px + 3mm)' }}>
           
           {/* Background Image with Premium Glow */}
           <div className="relative">
@@ -225,6 +232,13 @@ export default function VideoFeed() {
             <div
               key={`promo-${index}`}
               className="h-full w-full snap-start relative flex justify-center bg-black"
+              style={{ 
+                margin: 0, 
+                padding: 0,
+                paddingTop: '8mm',
+                scrollSnapAlign: 'start',
+                scrollSnapStop: 'always'
+              }}
             >
               <div className="w-full h-full md:w-[500px] relative">
                 <PromoCard
@@ -239,8 +253,26 @@ export default function VideoFeed() {
         }
 
         return (
-          <div key={`video-${index}`} className="h-[100dvh] w-full snap-start relative flex justify-center">
-            <div className="w-full h-[100dvh] md:w-[500px] relative" style={{ paddingBottom: '52px' }}>
+          <div 
+            key={`video-${index}`} 
+            className="h-[100dvh] w-full snap-start relative flex justify-center" 
+            style={{ 
+              margin: 0, 
+              padding: 0, 
+              paddingTop: '8mm',
+              gap: 0,
+              scrollSnapAlign: 'start',
+              scrollSnapStop: 'always'
+            }}
+          >
+            <div 
+              className="w-full h-[100dvh] md:w-[500px] relative" 
+              style={{ 
+                paddingBottom: 'clamp(40px, 5vh, 52px)', 
+                margin: 0, 
+                gap: 0 
+              }}
+            >
               <EnhancedVideoPlayer
                 videoId={item.videoId}
                 isActive={activeIndex === index}

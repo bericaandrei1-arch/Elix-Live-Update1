@@ -30,10 +30,10 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
   // Original was 14px height. New target ~24px.
   // Original width 28px. New target ~50px.
   
-  const height = size === 10 ? 28 : (size === 2 ? 2 : (size === 14 ? 14 : Math.max(46, Math.round(size * 1.5))));
-  const width = size === 10 ? 60 : (size === 2 ? 3 : (size === 14 ? 16 : (layout === 'fixed' ? Math.round(height * 4.0) : undefined)));
+  const height = size === 10 ? 28 : (size === 2 ? 2 : (size === 14 ? 14 : (size === 28 ? 42 : (size === 70 ? 105 : Math.max(46, Math.round(size * 1.5))))));
+  const width = size === 10 ? 60 : (size === 2 ? 3 : (size === 14 ? 16 : (size === 28 ? 168 : (size === 70 ? 280 : (layout === 'fixed' ? Math.round(height * 4.0) : undefined)))));
   const radius = size === 10 ? 6 : (size === 2 ? 1 : (size === 14 ? 4 : (isChat ? 6 : Math.max(8, Math.round(height * 0.214)))));
-  const fontSize = size === 10 ? 13 : size === 2 ? 1 : size === 14 ? 12 : Math.max(18, Math.round(height * 0.45));
+  const fontSize = size === 10 ? 13 : size === 2 ? 1 : size === 14 ? 12 : size === 28 ? 14 : Math.max(18, Math.round(height * 0.45));
   const iconSize = size === 10 ? 10 : Math.max(8, Math.round(fontSize * 0.8));
 
   return (
@@ -59,7 +59,11 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
           '/Icons/level-badge-green.png?v=6'
         } 
         alt={`Level ${safeLevel}`}
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 h-full object-contain"
+        style={{
+          width: size === 70 ? '40%' : '100%',
+          left: size === 70 ? '30%' : '0%',
+        }}
       />
       
       {/* Level number overlay */}
@@ -67,13 +71,13 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
         className={`relative z-10 antialiased ${size === 10 ? 'font-bold' : 'font-black'}`}
         style={{
           color: '#000000',
-          fontSize,
+          fontSize: size === 70 ? 14 : fontSize,
           textShadow: '0 1px 0 rgba(255,255,255,0.4), 0 2px 3px rgba(255,255,255,0.2), 0 3px 6px rgba(0,0,0,0.3)',
           WebkitTextStroke: '0.5px rgba(255,255,255,0.3)',
           letterSpacing: '-0.02em',
           fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
-          transform: size === 10 ? 'translateY(2px)' : 'none',
+          transform: size === 10 ? 'translateY(2px)' : size === 70 ? 'translateX(15px)' : 'none',
           fontWeight: '900',
         }}
       >

@@ -372,11 +372,12 @@ export default function EnhancedVideoPlayer({
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full snap-start overflow-hidden border-b border-gray-800 flex justify-center"
+      className="relative w-full h-full snap-start overflow-hidden flex justify-center"
+      style={{ margin: 0, padding: 0, gap: 0 }}
     >
       {/* Video Element - iPhone 14 Pro Max: 6.7" Super Retina XDR, 2796×1290px, 19.5:9, ~460ppi */}
-      <div className="absolute inset-0 flex items-center justify-center bg-black">
-        <div className="w-full max-w-[500px] min-h-full" style={{ aspectRatio: '1290/2796' }}>
+      <div className="absolute inset-0 flex items-center justify-center bg-black" style={{ margin: 0, padding: 0, gap: 0 }}>
+        <div className="w-full max-w-[500px] min-h-full" style={{ aspectRatio: '1290/2796', margin: 0, padding: 0 }}>
         <audio ref={audioRef} preload="auto" className="hidden" />
         <video
           ref={videoRef}
@@ -428,7 +429,7 @@ export default function EnhancedVideoPlayer({
       </div>
 
       {/* Right Sidebar - Same Buttons with Subtle Luxury Effects */}
-      <div className="absolute z-[201] right-3 bottom-20 flex flex-col items-center gap-2 pointer-events-auto">
+      <div className="absolute z-[201] flex flex-col items-center gap-2 pointer-events-auto" style={{ right: 'calc(0.75rem - 3mm)', bottom: 'calc(5rem + 3mm)' }}>
         
         {/* Profile Avatar - SAME SIZE */}
         <div className="relative -mt-4 mb-2">

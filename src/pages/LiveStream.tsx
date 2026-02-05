@@ -655,12 +655,14 @@ export default function LiveStream() {
   };
 
   const handleSendGift = async (gift: typeof GIFTS[0]) => {
-    if (isBroadcast && isBattleMode) return;
     // Allow everyone to spend if they have coins locally (which we just set to max)
     if (coinBalance < gift.coins) {
         alert("Not enough coins! (Top up feature coming soon)");
         return;
     }
+    
+    let newLevel = userLevel;
+    
     if (useRealApi && user?.id) {
       // DEV BACKDOOR: Skip API call for everyone to avoid DB balance check failure
       const devSkipBalanceCheck = true;
@@ -689,6 +691,7 @@ export default function LiveStream() {
           setUserLevel(currentLevel);
           setUserXP(currentXP);
           updateUser({ level: currentLevel });
+          newLevel = currentLevel;
           
           supabase.from('profiles')
               .update({ level: currentLevel, xp: currentXP })
@@ -720,8 +723,10 @@ export default function LiveStream() {
             setCoinBalance(Number(row.new_balance));
           }
           if (row?.new_level != null) {
-            setUserLevel(Number(row.new_level));
-            updateUser({ level: Number(row.new_level) });
+            const updatedLevel = Number(row.new_level);
+            setUserLevel(updatedLevel);
+            updateUser({ level: updatedLevel });
+            newLevel = updatedLevel;
           }
           if (row?.new_xp != null) {
             setUserXP(Number(row.new_xp));
@@ -729,16 +734,7 @@ export default function LiveStream() {
       }
     } else {
       setCoinBalance(prev => prev - gift.coins);
-    }
-
-    maybeEnqueueUniverse(gift.name, viewerName);
-    addBattleGifterCoins(viewerName, gift.coins);
-
-    if (isBattleMode && battleTime > 0 && !battleWinner) {
-      awardBattlePoints(giftTarget, gift.coins);
-    }
-
-    const newLevel = useRealApi ? userLevel : (() => {
+      // Update level/XP when not using real API
       const xpGained = gift.coins;
       let newXP = userXP + xpGained;
       let lvl = userLevel;
@@ -750,8 +746,16 @@ export default function LiveStream() {
       }
       setUserXP(newXP);
       setUserLevel(lvl);
-      return lvl;
-    })();
+      updateUser({ level: lvl });
+      newLevel = lvl;
+    }
+
+    maybeEnqueueUniverse(gift.name, viewerName);
+    addBattleGifterCoins(viewerName, gift.coins);
+
+    if (isBattleMode && battleTime > 0 && !battleWinner) {
+      awardBattlePoints(giftTarget, gift.coins);
+    }
     
     setShowGiftPanel(false);
 
@@ -1609,6 +1613,7 @@ export default function LiveStream() {
         />
       )}
 
+
       {/* Combo Button Overlay */}
       <AnimatePresence>
         {showComboButton && lastSentGift && (
@@ -1616,11 +1621,11 @@ export default function LiveStream() {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                className="absolute right-4 bottom-24 z-[56] flex flex-col items-center"
+                className="absolute right-4 bottom-24 z-[170] flex flex-col items-center"
             >
                 <button 
                     onClick={handleComboClick}
-                    className="w-14 h-14 bg-gradient-to-r from-secondary to-orange-500 flex flex-col items-center justify-center animate-pulse active:scale-90 transition-transform"
+                    className="w-14 h-14 rounded-full bg-gradient-to-r from-secondary to-orange-500 flex flex-col items-center justify-center animate-pulse active:scale-90 transition-transform"
                 >
                     <span className="text-lg font-black italic text-white drop-shadow-md">x{comboCount}</span>
                     <span className="text-[8px] font-bold text-white uppercase tracking-widest">Combo</span>

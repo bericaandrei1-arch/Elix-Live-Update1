@@ -44,7 +44,7 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
   const poster = isVideo ? pickFirstPosterCandidate(videoSrc) : undefined;
 
   return (
-    <div className="absolute left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)-10px)] z-50 pointer-events-none flex justify-center">
+    <div className="absolute left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)-10px)] z-[100] pointer-events-none flex justify-center">
       <div
         className="w-full h-[52vh] flex items-end justify-center overflow-hidden"
         style={{
