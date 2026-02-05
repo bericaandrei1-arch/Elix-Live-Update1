@@ -1167,7 +1167,7 @@ export default function LiveStream() {
               </div>
             )}
 
-            <div className="relative w-full flex-1 flex">
+            <div className="relative w-full flex-1 flex border-l border-r border-b border-white/20">
               <button
                 type="button"
                 onClick={(e) => {
@@ -1179,7 +1179,7 @@ export default function LiveStream() {
                   spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
                   addLiveLikes(1);
                 }}
-                className={`w-1/2 h-full overflow-hidden relative border-r border-transparent bg-black pointer-events-auto ${giftTarget === 'me' ? 'ring-2 ring-[#FF4DA6]' : ''}`}
+                className={`w-1/2 h-full overflow-hidden relative border-r border-white/10 bg-black pointer-events-auto ${giftTarget === 'me' ? 'ring-2 ring-[#FF4DA6]' : ''}`}
               >
                 <video
                   ref={videoRef}
