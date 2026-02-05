@@ -75,8 +75,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     gap: '8px',
     padding: '4px 0',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    justifyContent: 'flex-end',
-    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
   };
 
   const avatarStyle: React.CSSProperties = {
