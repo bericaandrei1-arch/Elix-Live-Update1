@@ -55,7 +55,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     width: '100%',
     height: variant === 'overlay' ? 'calc(26vh + 80px)' : '100%',
     paddingLeft: '0px',
-    paddingRight: '16px',
+    paddingRight: '0px',
     paddingTop: '16px',
     paddingBottom: variant === 'overlay' ? '96px' : '16px',
     boxSizing: 'border-box',
@@ -71,17 +71,21 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     msOverflowStyle: 'none', // IE/Edge
     paddingLeft: '0px',
     marginLeft: '0px',
+    alignItems: 'flex-start',
+    width: '100%',
   };
 
   const messageStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '4px',
     padding: '4px 0',
     paddingLeft: '0px',
     marginLeft: '0px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     justifyContent: 'flex-start',
+    width: 'auto',
+    alignSelf: 'flex-start',
   };
 
   const avatarStyle: React.CSSProperties = {
