@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { pickFirstPosterCandidate } from '../lib/giftPoster';
 
@@ -10,8 +10,10 @@ interface GiftOverlayProps {
 export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { muteAllSounds } = useSettingsStore();
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   useEffect(() => {
+    setVideoPlaying(false);
     if (videoSrc && videoRef.current) {
       videoRef.current.muted = muteAllSounds;
       videoRef.current.load();
@@ -20,16 +22,14 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            // Automatic playback started!
+            // Video started playing
           })
           .catch((error) => {
             console.warn("Auto-play was prevented:", error);
-            // Fallback: try muted if sound was the issue
             if (videoRef.current) {
                 videoRef.current.muted = true;
                 videoRef.current.play().catch(e => {
                     console.error("Muted play also failed", e);
-                    // If we can't play at all, end the animation so we don't block the queue
                     onEnded();
                 });
             }
@@ -46,7 +46,7 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
   return (
     <div className="absolute left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)-10px)] z-[100] pointer-events-none flex justify-center">
       <div
-        className="w-full h-[52vh] flex items-end justify-center overflow-hidden"
+        className="w-full h-[52vh] flex items-end justify-center overflow-hidden relative"
         style={{
           WebkitMaskImage: 'linear-gradient(to top, black 0%, black 62%, transparent 100%)',
           maskImage: 'linear-gradient(to top, black 0%, black 62%, transparent 100%)',
@@ -57,20 +57,31 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
         }}
       >
         {isVideo ? (
-          <video
-            ref={videoRef}
-            src={videoSrc}
-            poster={poster}
-            className="w-full h-full object-cover object-top opacity-85 drop-shadow-2xl elix-overlay-in"
-            playsInline
-            preload="auto"
-            muted={muteAllSounds}
-            onEnded={onEnded}
-            onError={(e) => {
-              console.error("Video error:", e);
-              onEnded();
-            }}
-          />
+          <>
+            {/* PNG preview stays on top until video actually plays */}
+            {poster && !videoPlaying && (
+              <img
+                src={poster}
+                alt="Gift Preview"
+                className="absolute inset-0 w-full h-full object-cover object-top opacity-90 drop-shadow-2xl elix-overlay-in z-10"
+              />
+            )}
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              poster={poster}
+              className="w-full h-full object-cover object-top opacity-85 drop-shadow-2xl elix-overlay-in"
+              playsInline
+              preload="auto"
+              muted={muteAllSounds}
+              onPlaying={() => setVideoPlaying(true)}
+              onEnded={onEnded}
+              onError={(e) => {
+                console.error("Video error:", e);
+                onEnded();
+              }}
+            />
+          </>
         ) : (
           <img
             src={videoSrc}

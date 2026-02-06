@@ -109,7 +109,7 @@ export default function ShareSheet({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold">Share</h2>
           <button onClick={onClose} className="p-2 hover:brightness-125 rounded-full transition">
-            <X className="w-6 h-6" />
+            <img src="/Icons/power-button.png" alt="Close" className="w-4 h-4" />
           </button>
         </div>
 

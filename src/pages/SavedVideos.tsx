@@ -17,7 +17,7 @@ export default function SavedVideos() {
       <div className="w-full max-w-[500px]">
         <div className="p-4 flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft size={24} />
+            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
           </button>
           <h1 className="text-lg font-bold">Saved Videos</h1>
         </div>

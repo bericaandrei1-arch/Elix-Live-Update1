@@ -123,7 +123,7 @@ export default function BattleInviteModal({
             <h2 className="text-lg font-bold">Challenge to Battle</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:brightness-125 rounded-full transition">
-            <X className="w-6 h-6" />
+            <img src="/Icons/power-button.png" alt="Close" className="w-4 h-4" />
           </button>
         </div>
 

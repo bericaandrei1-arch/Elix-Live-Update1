@@ -183,7 +183,7 @@ export default function CommentsDrawer({ isOpen, onClose, videoId }: CommentsDra
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <h2 className="text-lg font-bold">{comments.length} Comments</h2>
           <button onClick={onClose} className="p-2 hover:brightness-125 rounded-full transition">
-            <X className="w-6 h-6" />
+            <img src="/Icons/power-button.png" alt="Close" className="w-4 h-4" />
           </button>
         </div>
 

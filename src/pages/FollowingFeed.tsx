@@ -79,7 +79,7 @@ export default function FollowingFeed() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-black">
         <div className="flex items-center justify-between px-4 py-4">
           <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-            <ArrowLeft size={24} />
+            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
           </button>
           <h1 className="text-lg font-bold">Following</h1>
           <div className="w-10"></div>

@@ -14,11 +14,13 @@ interface Message {
 interface ChatOverlayProps {
   messages: Message[];
   variant?: 'panel' | 'overlay';
+  compact?: boolean;
   className?: string;
   onLike?: () => void;
+  onHeartSpawn?: (clientX: number, clientY: number) => void;
 }
 
-export function ChatOverlay({ messages, variant = 'panel', className, onLike }: ChatOverlayProps) {
+export function ChatOverlay({ messages, variant = 'panel', compact = false, className, onLike, onHeartSpawn }: ChatOverlayProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,12 +34,13 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     bottom: variant === 'overlay' ? 0 : undefined,
     left: variant === 'overlay' ? 0 : undefined,
     width: '100%',
-    height: variant === 'overlay' ? 'calc(26vh + 80px)' : '100%',
+    height: variant === 'overlay' ? (compact ? 'calc(16vh + 40px)' : 'calc(26vh + 80px)') : '100%',
     paddingLeft: '0px',
     paddingRight: '16px',
     paddingTop: '16px',
     paddingBottom: variant === 'overlay' ? '96px' : '16px',
     boxSizing: 'border-box',
+    background: 'transparent',
   };
 
   const scrollStyle: React.CSSProperties = {
@@ -58,7 +61,7 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     display: 'flex',
     alignItems: 'center',
     gap: '1px',
-    padding: '0px 0',
+    padding: '2px 8px',
     paddingLeft: '0px',
     marginLeft: '-100px',
     marginTop: '-50px',
@@ -66,6 +69,9 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
     justifyContent: 'flex-start',
     width: 'auto',
     alignSelf: 'flex-start',
+    pointerEvents: 'auto',
+    textShadow: '0 0 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,1)',
+    WebkitTextStroke: '0.3px rgba(0,0,0,0.5)',
   };
 
   const usernameStyle: React.CSSProperties = {
@@ -83,12 +89,19 @@ export function ChatOverlay({ messages, variant = 'panel', className, onLike }: 
   });
 
   return (
-    <div style={containerStyle} className={className}>
+    <div
+      style={containerStyle}
+      className={className}
+      onPointerDown={(e) => {
+        if (onHeartSpawn) onHeartSpawn(e.clientX, e.clientY);
+        if (onLike) onLike();
+      }}
+    >
       <div style={scrollStyle} className="chat-scroll">
         {messages.map((msg) => (
           <div key={msg.id} style={messageStyle}>
             {!msg.isSystem && (
-              <LevelBadge level={msg.level || 1} size={70} layout="fixed" />
+              <LevelBadge level={msg.level || 1} size={70} layout="fixed" avatar={msg.avatar} />
             )}
             
             <span style={usernameStyle}>{msg.username}</span>

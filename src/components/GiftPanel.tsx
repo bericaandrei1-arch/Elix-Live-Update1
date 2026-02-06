@@ -612,16 +612,6 @@ export const GIFTS: GiftItem[] = [
     preview: giftUrl('/gifts/elix_gold_universe.png'),
   },
   {
-    id: 'fly_love',
-    name: 'Fly Love',
-    coins: 130000,
-    giftType: 'big',
-    isActive: true,
-    icon: giftUrl('/gifts/fly_love.png'),
-    video: giftUrl('/gifts/fly_love.png'),
-    preview: giftUrl('/gifts/fly_love.png'),
-  },
-  {
     id: 'lightning_hypercar',
     name: 'Lightning Car',
     coins: 150000,

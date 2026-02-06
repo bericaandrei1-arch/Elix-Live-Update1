@@ -53,7 +53,7 @@ import Support from './pages/Support';
 import Guidelines from './pages/Guidelines';
 
 function App() {
-  const { checkUser, user } = useAuthStore();
+  const { checkUser, user, isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
   const isDev = import.meta.env.DEV;
 
@@ -88,36 +88,48 @@ function App() {
     location.pathname.startsWith('/music/') ||
     location.pathname === '/following';
 
+  // Public routes that don't require authentication
+  const isPublicRoute =
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/auth/callback' ||
+    location.pathname === '/terms' ||
+    location.pathname === '/privacy' ||
+    location.pathname === '/copyright' ||
+    location.pathname === '/legal' ||
+    location.pathname.startsWith('/legal/') ||
+    location.pathname === '/guidelines' ||
+    location.pathname === '/support';
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#D6A088] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated and trying to access protected route
+  if (!isAuthenticated && !isPublicRoute) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  // If authenticated and on login/register, redirect to feed
+  if (isAuthenticated && (location.pathname === '/login' || location.pathname === '/register')) {
+    return <Navigate to="/feed" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background text-text font-sans">
       <main className={cn("min-h-screen", !isFullScreen && "pb-32")}>
         <Routes>
-          <Route path="/" element={<Navigate to="/feed" replace />} />
-          <Route path="/feed" element={<VideoFeed />} />
-          {isDev && <Route path="/design" element={<DesignSystem />} />}
-          <Route path="/following" element={<FollowingFeed />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/discover" element={<Discover />} />
-          <Route path="/hashtag/:tag" element={<Hashtag />} />
-          <Route path="/report" element={<Report />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/video/:videoId" element={<VideoView />} />
-          <Route path="/live" element={<LiveDiscover />} />
-          <Route path="/live/:streamId" element={<LiveStream />} />
-          <Route path="/live/start" element={<Navigate to="/live/broadcast" replace />} />
-          <Route path="/live/watch/:streamId" element={<LiveStream />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
+          
+          {/* ═══ PUBLIC ROUTES (no auth needed) ═══ */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/friends" element={<FriendsFeed />} />
-          <Route path="/saved" element={<SavedVideos />} />
-          <Route path="/music/:songId" element={<MusicFeed />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/creator/login-details" element={<CreatorLoginDetails />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/inbox" element={<Inbox />} />
-          <Route path="/inbox/:threadId" element={<ChatThread />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/copyright" element={<Copyright />} />
@@ -128,8 +140,31 @@ function App() {
           <Route path="/legal/dmca" element={<LegalDMCA />} />
           <Route path="/legal/safety" element={<LegalSafety />} />
           <Route path="/guidelines" element={<Guidelines />} />
+          <Route path="/support" element={<Support />} />
 
+          {/* ═══ PROTECTED ROUTES (require auth) ═══ */}
           <Route element={<RequireAuth />}>
+            <Route path="/feed" element={<VideoFeed />} />
+            {isDev && <Route path="/design" element={<DesignSystem />} />}
+            <Route path="/following" element={<FollowingFeed />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/hashtag/:tag" element={<Hashtag />} />
+            <Route path="/report" element={<Report />} />
+            <Route path="/video/:videoId" element={<VideoView />} />
+            <Route path="/live" element={<LiveDiscover />} />
+            <Route path="/live/:streamId" element={<LiveStream />} />
+            <Route path="/live/start" element={<Navigate to="/live/broadcast" replace />} />
+            <Route path="/live/watch/:streamId" element={<LiveStream />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/friends" element={<FriendsFeed />} />
+            <Route path="/saved" element={<SavedVideos />} />
+            <Route path="/music/:songId" element={<MusicFeed />} />
+            <Route path="/create" element={<Create />} />
+            <Route path="/creator/login-details" element={<CreatorLoginDetails />} />
+            <Route path="/inbox" element={<Inbox />} />
+            <Route path="/inbox/:threadId" element={<ChatThread />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/settings" element={<Settings />} />
@@ -143,7 +178,7 @@ function App() {
           </Route>
         </Routes>
       </main>
-      <BottomNav />
+      {isAuthenticated && <BottomNav />}
     </div>
   );
 }

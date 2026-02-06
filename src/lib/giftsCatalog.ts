@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { useRealApi } from './apiFallback';
 
 export type GiftCatalogRow = {
   gift_id: string;
@@ -23,8 +22,6 @@ export type GiftUiItem = {
 };
 
 export async function fetchGiftCatalog(): Promise<GiftCatalogRow[]> {
-  if (!useRealApi) return [];
-
   const { data, error } = await supabase
     .from('gifts_catalog')
     .select('gift_id,name,gift_type,coin_cost,animation_url,sfx_url,is_active')

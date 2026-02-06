@@ -21,6 +21,9 @@ import {
   MoreHorizontal,
   Gift,
   MoreVertical,
+  Volume2,
+  VolumeX,
+  Users,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GiftPanel, GIFTS } from '../components/EnhancedGiftPanel';
@@ -31,7 +34,6 @@ import { useLivePromoStore } from '../store/useLivePromoStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { clearCachedCameraStream, getCachedCameraStream } from '../lib/cameraStream';
 import { supabase } from '../lib/supabase';
-import { useRealApi } from '../lib/apiFallback';
 import { LevelBadge } from '../components/LevelBadge';
 
 type LiveMessage = {
@@ -50,13 +52,329 @@ type UniverseTickerMessage = {
   receiver: string;
 };
 
-// Mock messages for simulation
-const MOCK_MESSAGES = [
-    { id: '1', username: 'alex_cool', text: 'This is amazing! 🔥', level: 12, avatar: 'https://ui-avatars.com/api/?name=alex_cool&background=random' },
-    { id: '2', username: 'sarah_j', text: 'Love the vibe ❤️', level: 25, avatar: 'https://ui-avatars.com/api/?name=sarah_j&background=random' },
-    { id: '3', username: 'gamer_pro', text: 'Play that song again!', level: 5, avatar: 'https://ui-avatars.com/api/?name=gamer_pro&background=random' },
-    { id: '4', username: 'music_lover', text: 'Hello from Brazil 🇧🇷', level: 42, avatar: 'https://ui-avatars.com/api/?name=music_lover&background=random' },
+// ═══════════════════════════════════════════════════════════════
+// REALISTIC SIMULATED VIEWERS - Real names, photos, levels, chat
+// ═══════════════════════════════════════════════════════════════
+interface SimulatedViewer {
+  id: string;
+  username: string;
+  displayName: string;
+  level: number;
+  avatar: string;
+  country: string;
+  joinedAt: number;
+  isActive: boolean;
+  chatFrequency: number; // seconds between messages (lower = more active)
+}
+
+const VIEWER_POOL: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[] = [
+  { id: 'v1', username: 'emma_rose22', displayName: 'Emma Rose', level: 34, avatar: 'https://i.pravatar.cc/100?img=1', country: '🇺🇸', chatFrequency: 8 },
+  { id: 'v2', username: 'alex.madrid', displayName: 'Alex Madrid', level: 18, avatar: 'https://i.pravatar.cc/100?img=3', country: '🇪🇸', chatFrequency: 12 },
+  { id: 'v3', username: 'sofiab_', displayName: 'Sofia Bianchi', level: 45, avatar: 'https://i.pravatar.cc/100?img=5', country: '🇮🇹', chatFrequency: 6 },
+  { id: 'v4', username: 'lucassilva7', displayName: 'Lucas Silva', level: 27, avatar: 'https://i.pravatar.cc/100?img=7', country: '🇧🇷', chatFrequency: 10 },
+  { id: 'v5', username: 'mia.chen_', displayName: 'Mia Chen', level: 52, avatar: 'https://i.pravatar.cc/100?img=9', country: '🇬🇧', chatFrequency: 15 },
+  { id: 'v6', username: 'david_k99', displayName: 'David Kim', level: 8, avatar: 'https://i.pravatar.cc/100?img=11', country: '🇰🇷', chatFrequency: 20 },
+  { id: 'v7', username: 'anya.pet', displayName: 'Anya Petrova', level: 61, avatar: 'https://i.pravatar.cc/100?img=13', country: '🇷🇺', chatFrequency: 7 },
+  { id: 'v8', username: 'marcosantos_', displayName: 'Marco Santos', level: 14, avatar: 'https://i.pravatar.cc/100?img=14', country: '🇧🇷', chatFrequency: 9 },
+  { id: 'v9', username: 'chloe.dpt', displayName: 'Chloé Dupont', level: 39, avatar: 'https://i.pravatar.cc/100?img=16', country: '🇫🇷', chatFrequency: 11 },
+  { id: 'v10', username: 'jamesww_', displayName: 'James Wilson', level: 22, avatar: 'https://i.pravatar.cc/100?img=17', country: '🇺🇸', chatFrequency: 14 },
+  { id: 'v11', username: 'yuki.tnk', displayName: 'Yuki Tanaka', level: 73, avatar: 'https://i.pravatar.cc/100?img=19', country: '🇯🇵', chatFrequency: 5 },
+  { id: 'v12', username: 'isa_reyes', displayName: 'Isabella Reyes', level: 31, avatar: 'https://i.pravatar.cc/100?img=20', country: '🇲🇽', chatFrequency: 13 },
+  { id: 'v13', username: 'noah.mllr', displayName: 'Noah Müller', level: 16, avatar: 'https://i.pravatar.cc/100?img=22', country: '🇩🇪', chatFrequency: 18 },
+  { id: 'v14', username: 'lara_h', displayName: 'Lara Al-Hassan', level: 55, avatar: 'https://i.pravatar.cc/100?img=24', country: '🇦🇪', chatFrequency: 8 },
+  { id: 'v15', username: 'olibrown', displayName: 'Oliver Brown', level: 10, avatar: 'https://i.pravatar.cc/100?img=25', country: '🇬🇧', chatFrequency: 22 },
+  { id: 'v16', username: 'cami.lopez', displayName: 'Camila López', level: 42, avatar: 'https://i.pravatar.cc/100?img=26', country: '🇦🇷', chatFrequency: 7 },
+  { id: 'v17', username: 'liamtaylor_', displayName: 'Liam Taylor', level: 29, avatar: 'https://i.pravatar.cc/100?img=28', country: '🇦🇺', chatFrequency: 16 },
+  { id: 'v18', username: 'nina.w', displayName: 'Nina Weber', level: 37, avatar: 'https://i.pravatar.cc/100?img=29', country: '🇦🇹', chatFrequency: 10 },
+  { id: 'v19', username: 'raj_p', displayName: 'Raj Patel', level: 48, avatar: 'https://i.pravatar.cc/100?img=30', country: '🇮🇳', chatFrequency: 9 },
+  { id: 'v20', username: 'zaraaj', displayName: 'Zara Jones', level: 65, avatar: 'https://i.pravatar.cc/100?img=32', country: '🇺🇸', chatFrequency: 6 },
+  { id: 'v21', username: 'mateo.g', displayName: 'Mateo García', level: 19, avatar: 'https://i.pravatar.cc/100?img=33', country: '🇪🇸', chatFrequency: 14 },
+  { id: 'v22', username: 'elena_pop', displayName: 'Elena Popescu', level: 33, avatar: 'https://i.pravatar.cc/100?img=34', country: '🇷🇴', chatFrequency: 8 },
+  { id: 'v23', username: 'amir.h', displayName: 'Amir Hosseini', level: 25, avatar: 'https://i.pravatar.cc/100?img=36', country: '🇮🇷', chatFrequency: 17 },
+  { id: 'v24', username: 'lilytan_', displayName: 'Lily Tan', level: 58, avatar: 'https://i.pravatar.cc/100?img=38', country: '🇸🇬', chatFrequency: 7 },
+  { id: 'v25', username: 'tyler.b', displayName: 'Tyler Brooks', level: 11, avatar: 'https://i.pravatar.cc/100?img=39', country: '🇺🇸', chatFrequency: 25 },
+  { id: 'v26', username: 'sara_lind', displayName: 'Sara Lindqvist', level: 44, avatar: 'https://i.pravatar.cc/100?img=40', country: '🇸🇪', chatFrequency: 12 },
+  { id: 'v27', username: 'diego.v', displayName: 'Diego Vargas', level: 20, avatar: 'https://i.pravatar.cc/100?img=41', country: '🇵🇪', chatFrequency: 11 },
+  { id: 'v28', username: 'hannahlee', displayName: 'Hannah Lee', level: 36, avatar: 'https://i.pravatar.cc/100?img=43', country: '🇨🇦', chatFrequency: 9 },
+  { id: 'v29', username: 'kai.nkm', displayName: 'Kai Nakamura', level: 71, avatar: 'https://i.pravatar.cc/100?img=44', country: '🇺🇸', chatFrequency: 6 },
+  { id: 'v30', username: 'vale_rossi', displayName: 'Valentina Rossi', level: 50, avatar: 'https://i.pravatar.cc/100?img=45', country: '🇮🇹', chatFrequency: 8 },
+  { id: 'v31', username: 'adriana_buc', displayName: 'Adriana Bucur', level: 28, avatar: 'https://i.pravatar.cc/100?img=46', country: '🇷🇴', chatFrequency: 9 },
+  { id: 'v32', username: 'tomas.cz', displayName: 'Tomáš Novák', level: 15, avatar: 'https://i.pravatar.cc/100?img=47', country: '🇨🇿', chatFrequency: 19 },
+  { id: 'v33', username: 'priya_sh', displayName: 'Priya Sharma', level: 41, avatar: 'https://i.pravatar.cc/100?img=48', country: '🇮🇳', chatFrequency: 7 },
+  { id: 'v34', username: 'jake.miller', displayName: 'Jake Miller', level: 6, avatar: 'https://i.pravatar.cc/100?img=49', country: '🇺🇸', chatFrequency: 30 },
+  { id: 'v35', username: 'fatima_kw', displayName: 'Fatima Al-Sabah', level: 67, avatar: 'https://i.pravatar.cc/100?img=50', country: '🇰🇼', chatFrequency: 8 },
+  { id: 'v36', username: 'oscar.swe', displayName: 'Oscar Eriksson', level: 23, avatar: 'https://i.pravatar.cc/100?img=51', country: '🇸🇪', chatFrequency: 15 },
+  { id: 'v37', username: 'amelie_fr', displayName: 'Amélie Martin', level: 38, avatar: 'https://i.pravatar.cc/100?img=52', country: '🇫🇷', chatFrequency: 10 },
+  { id: 'v38', username: 'chen.wei', displayName: 'Chen Wei', level: 54, avatar: 'https://i.pravatar.cc/100?img=53', country: '🇨🇳', chatFrequency: 12 },
+  { id: 'v39', username: 'maria_pt', displayName: 'Maria Ferreira', level: 30, avatar: 'https://i.pravatar.cc/100?img=54', country: '🇵🇹', chatFrequency: 11 },
+  { id: 'v40', username: 'ethan.j', displayName: 'Ethan Johnson', level: 4, avatar: 'https://i.pravatar.cc/100?img=55', country: '🇺🇸', chatFrequency: 35 },
+  { id: 'v41', username: 'noor_eg', displayName: 'Noor Ibrahim', level: 46, avatar: 'https://i.pravatar.cc/100?img=56', country: '🇪🇬', chatFrequency: 9 },
+  { id: 'v42', username: 'anna.pol', displayName: 'Anna Kowalska', level: 32, avatar: 'https://i.pravatar.cc/100?img=57', country: '🇵🇱', chatFrequency: 13 },
+  { id: 'v43', username: 'ryu_kr', displayName: 'Ryu Ji-hoon', level: 59, avatar: 'https://i.pravatar.cc/100?img=58', country: '🇰🇷', chatFrequency: 6 },
+  { id: 'v44', username: 'jessica.au', displayName: 'Jessica Park', level: 21, avatar: 'https://i.pravatar.cc/100?img=59', country: '🇦🇺', chatFrequency: 14 },
+  { id: 'v45', username: 'omar_ma', displayName: 'Omar Benali', level: 35, avatar: 'https://i.pravatar.cc/100?img=60', country: '🇲🇦', chatFrequency: 10 },
+  { id: 'v46', username: 'eva.hrv', displayName: 'Eva Horvat', level: 17, avatar: 'https://i.pravatar.cc/100?img=61', country: '🇭🇷', chatFrequency: 20 },
+  { id: 'v47', username: 'brandon_tx', displayName: 'Brandon Lee', level: 43, avatar: 'https://i.pravatar.cc/100?img=62', country: '🇺🇸', chatFrequency: 8 },
+  { id: 'v48', username: 'ines.pt', displayName: 'Inês Costa', level: 26, avatar: 'https://i.pravatar.cc/100?img=63', country: '🇵🇹', chatFrequency: 12 },
+  { id: 'v49', username: 'andrei_md', displayName: 'Andrei Moraru', level: 40, avatar: 'https://i.pravatar.cc/100?img=64', country: '🇲🇩', chatFrequency: 9 },
+  { id: 'v50', username: 'maya.id', displayName: 'Maya Putri', level: 13, avatar: 'https://i.pravatar.cc/100?img=65', country: '🇮🇩', chatFrequency: 16 },
+  { id: 'v51', username: 'gabriel_co', displayName: 'Gabriel Rojas', level: 57, avatar: 'https://i.pravatar.cc/100?img=66', country: '🇨🇴', chatFrequency: 7 },
+  { id: 'v52', username: 'hana.jp', displayName: 'Hana Yamamoto', level: 69, avatar: 'https://i.pravatar.cc/100?img=67', country: '🇯🇵', chatFrequency: 5 },
+  { id: 'v53', username: 'mihai_ro', displayName: 'Mihai Dragomir', level: 24, avatar: 'https://i.pravatar.cc/100?img=68', country: '🇷🇴', chatFrequency: 11 },
+  { id: 'v54', username: 'aisha_ng', displayName: 'Aisha Okafor', level: 36, avatar: 'https://i.pravatar.cc/100?img=69', country: '🇳🇬', chatFrequency: 10 },
+  { id: 'v55', username: 'felix.de', displayName: 'Felix Schmidt', level: 9, avatar: 'https://i.pravatar.cc/100?img=70', country: '🇩🇪', chatFrequency: 24 },
+  { id: 'v56', username: 'luna_cl', displayName: 'Luna Vargas', level: 47, avatar: 'https://i.pravatar.cc/100?u=luna_cl', country: '🇨🇱', chatFrequency: 8 },
+  { id: 'v57', username: 'max.uk', displayName: 'Max Williams', level: 12, avatar: 'https://i.pravatar.cc/100?u=max_uk', country: '🇬🇧', chatFrequency: 18 },
+  { id: 'v58', username: 'selin_tr', displayName: 'Selin Yılmaz', level: 53, avatar: 'https://i.pravatar.cc/100?u=selin_tr', country: '🇹🇷', chatFrequency: 7 },
+  { id: 'v59', username: 'leo.bsas', displayName: 'Leo Fernández', level: 28, avatar: 'https://i.pravatar.cc/100?u=leo_bsas', country: '🇦🇷', chatFrequency: 13 },
+  { id: 'v60', username: 'naomi.ke', displayName: 'Naomi Wanjiku', level: 38, avatar: 'https://i.pravatar.cc/100?u=naomi_ke', country: '🇰🇪', chatFrequency: 11 },
+  { id: 'v61', username: 'daniel_ie', displayName: 'Daniel Murphy', level: 7, avatar: 'https://i.pravatar.cc/100?u=daniel_ie', country: '🇮🇪', chatFrequency: 28 },
+  { id: 'v62', username: 'thao.vn', displayName: 'Thao Nguyen', level: 62, avatar: 'https://i.pravatar.cc/100?u=thao_vn', country: '🇻🇳', chatFrequency: 6 },
+  { id: 'v63', username: 'adam_pl', displayName: 'Adam Wiśniewski', level: 19, avatar: 'https://i.pravatar.cc/100?u=adam_pl', country: '🇵🇱', chatFrequency: 15 },
+  { id: 'v64', username: 'zoe.nyc', displayName: 'Zoe Harper', level: 75, avatar: 'https://i.pravatar.cc/100?u=zoe_nyc', country: '🇺🇸', chatFrequency: 5 },
+  { id: 'v65', username: 'ivan_bg', displayName: 'Ivan Petrov', level: 31, avatar: 'https://i.pravatar.cc/100?u=ivan_bg', country: '🇧🇬', chatFrequency: 14 },
+  { id: 'v66', username: 'sakura_jp', displayName: 'Sakura Ito', level: 56, avatar: 'https://i.pravatar.cc/100?u=sakura_jp', country: '🇯🇵', chatFrequency: 7 },
+  { id: 'v67', username: 'carlos.mx', displayName: 'Carlos Mendoza', level: 22, avatar: 'https://i.pravatar.cc/100?u=carlos_mx', country: '🇲🇽', chatFrequency: 12 },
+  { id: 'v68', username: 'julia.at', displayName: 'Julia Steiner', level: 40, avatar: 'https://i.pravatar.cc/100?u=julia_at', country: '🇦🇹', chatFrequency: 10 },
+  { id: 'v69', username: 'rashid_ae', displayName: 'Rashid Al-Maktoum', level: 82, avatar: 'https://i.pravatar.cc/100?u=rashid_ae', country: '🇦🇪', chatFrequency: 6 },
+  { id: 'v70', username: 'bianca.ro', displayName: 'Bianca Ionescu', level: 29, avatar: 'https://i.pravatar.cc/100?u=bianca_ro', country: '🇷🇴', chatFrequency: 9 },
+  { id: 'v71', username: 'tom_nz', displayName: 'Tom Mitchell', level: 15, avatar: 'https://i.pravatar.cc/100?u=tom_nz', country: '🇳🇿', chatFrequency: 20 },
+  { id: 'v72', username: 'alina.ua', displayName: 'Alina Kovalenko', level: 44, avatar: 'https://i.pravatar.cc/100?u=alina_ua', country: '🇺🇦', chatFrequency: 8 },
+  { id: 'v73', username: 'ryan_sg', displayName: 'Ryan Lim', level: 33, avatar: 'https://i.pravatar.cc/100?u=ryan_sg', country: '🇸🇬', chatFrequency: 13 },
+  { id: 'v74', username: 'clara.es', displayName: 'Clara Hernández', level: 51, avatar: 'https://i.pravatar.cc/100?u=clara_es', country: '🇪🇸', chatFrequency: 7 },
+  { id: 'v75', username: 'arjun.in', displayName: 'Arjun Reddy', level: 26, avatar: 'https://i.pravatar.cc/100?u=arjun_in', country: '🇮🇳', chatFrequency: 11 },
+  { id: 'v76', username: 'sophie_ch', displayName: 'Sophie Keller', level: 18, avatar: 'https://i.pravatar.cc/100?u=sophie_ch', country: '🇨🇭', chatFrequency: 16 },
+  { id: 'v77', username: 'kofi.gh', displayName: 'Kofi Asante', level: 43, avatar: 'https://i.pravatar.cc/100?u=kofi_gh', country: '🇬🇭', chatFrequency: 10 },
+  { id: 'v78', username: 'victoria_se', displayName: 'Victoria Holm', level: 60, avatar: 'https://i.pravatar.cc/100?u=victoria_se', country: '🇸🇪', chatFrequency: 6 },
+  { id: 'v79', username: 'pedro.br', displayName: 'Pedro Oliveira', level: 35, avatar: 'https://i.pravatar.cc/100?u=pedro_br', country: '🇧🇷', chatFrequency: 9 },
+  { id: 'v80', username: 'nadia_dz', displayName: 'Nadia Benmoussa', level: 49, avatar: 'https://i.pravatar.cc/100?u=nadia_dz', country: '🇩🇿', chatFrequency: 8 },
+  { id: 'v81', username: 'finn.no', displayName: 'Finn Johansen', level: 14, avatar: 'https://i.pravatar.cc/100?u=finn_no', country: '🇳🇴', chatFrequency: 22 },
+  { id: 'v82', username: 'mei_tw', displayName: 'Mei-Ling Wu', level: 66, avatar: 'https://i.pravatar.cc/100?u=mei_tw', country: '🇹🇼', chatFrequency: 6 },
+  { id: 'v83', username: 'stefan.rs', displayName: 'Stefan Jovanović', level: 27, avatar: 'https://i.pravatar.cc/100?u=stefan_rs', country: '🇷🇸', chatFrequency: 13 },
+  { id: 'v84', username: 'leila.lb', displayName: 'Leila Khoury', level: 41, avatar: 'https://i.pravatar.cc/100?u=leila_lb', country: '🇱🇧', chatFrequency: 9 },
+  { id: 'v85', username: 'ashley_ca', displayName: 'Ashley Nguyen', level: 20, avatar: 'https://i.pravatar.cc/100?u=ashley_ca', country: '🇨🇦', chatFrequency: 14 },
+  { id: 'v86', username: 'hugo.fr', displayName: 'Hugo Laurent', level: 37, avatar: 'https://i.pravatar.cc/100?u=hugo_fr', country: '🇫🇷', chatFrequency: 11 },
+  { id: 'v87', username: 'daria.ro', displayName: 'Daria Munteanu', level: 55, avatar: 'https://i.pravatar.cc/100?u=daria_ro', country: '🇷🇴', chatFrequency: 7 },
+  { id: 'v88', username: 'josh_us', displayName: 'Josh Anderson', level: 3, avatar: 'https://i.pravatar.cc/100?u=josh_us', country: '🇺🇸', chatFrequency: 40 },
+  { id: 'v89', username: 'mila.hr', displayName: 'Mila Kovačević', level: 46, avatar: 'https://i.pravatar.cc/100?u=mila_hr', country: '🇭🇷', chatFrequency: 8 },
+  { id: 'v90', username: 'ravi_in', displayName: 'Ravi Kumar', level: 32, avatar: 'https://i.pravatar.cc/100?u=ravi_in', country: '🇮🇳', chatFrequency: 12 },
+  { id: 'v91', username: 'kim_ph', displayName: 'Kim Santos', level: 24, avatar: 'https://i.pravatar.cc/100?u=kim_ph', country: '🇵🇭', chatFrequency: 10 },
+  { id: 'v92', username: 'laura.it', displayName: 'Laura Conti', level: 63, avatar: 'https://i.pravatar.cc/100?u=laura_it', country: '🇮🇹', chatFrequency: 6 },
+  { id: 'v93', username: 'ben_za', displayName: 'Ben Nkosi', level: 39, avatar: 'https://i.pravatar.cc/100?u=ben_za', country: '🇿🇦', chatFrequency: 11 },
+  { id: 'v94', username: 'katya.ru', displayName: 'Katya Smirnova', level: 70, avatar: 'https://i.pravatar.cc/100?u=katya_ru', country: '🇷🇺', chatFrequency: 5 },
+  { id: 'v95', username: 'lucas_nl', displayName: 'Lucas de Vries', level: 16, avatar: 'https://i.pravatar.cc/100?u=lucas_nl', country: '🇳🇱', chatFrequency: 18 },
+  { id: 'v96', username: 'yara.sa', displayName: 'Yara Al-Rashid', level: 52, avatar: 'https://i.pravatar.cc/100?u=yara_sa', country: '🇸🇦', chatFrequency: 8 },
+  { id: 'v97', username: 'chris.nz', displayName: 'Chris Thompson', level: 11, avatar: 'https://i.pravatar.cc/100?u=chris_nz', country: '🇳🇿', chatFrequency: 25 },
+  { id: 'v98', username: 'ana.bg', displayName: 'Ana Dimitrova', level: 45, avatar: 'https://i.pravatar.cc/100?u=ana_bg', country: '🇧🇬', chatFrequency: 9 },
+  { id: 'v99', username: 'malik_pk', displayName: 'Malik Hassan', level: 34, avatar: 'https://i.pravatar.cc/100?u=malik_pk', country: '🇵🇰', chatFrequency: 12 },
+  { id: 'v100', username: 'celine.be', displayName: 'Céline Dubois', level: 58, avatar: 'https://i.pravatar.cc/100?u=celine_be', country: '🇧🇪', chatFrequency: 7 },
 ];
+
+// Realistic chat messages - hyper diverse, natural language with typos, slang, abbreviations
+const CHAT_MESSAGES = {
+  greeting: [
+    'Hey! Just joined 👋', 'Hello everyone!', 'Hi from {country}!', 'Finally caught you live! 🙌',
+    'Heyyy what did I miss?', 'Omg hiii 💕', 'Lets goo 🔥', 'Yooo whats up!',
+    'Just got here!', 'Hellooo 🎉', 'Whos here?? 👀', 'Hi hi hi!',
+    'Ayy im here now 🙋', 'Waddup everyone', 'hii just found this stream',
+    'ayoo 🔥', 'helloo from {country} 🥰', 'finally youre live omgg',
+    'Joined!! Whats happening?', 'heyy been waiting for this',
+    'sup everyone 😎', 'hiiii late but im here!', 'wassup fam',
+    'yooo lets get it', 'hello hello 🙋‍♀️', 'ayyy we back!',
+    'hiii from {country} anyone else here?', 'just clicked on this, glad i did',
+    'whats good everyone!', 'hola hola! 👋', 'heyyy first time here',
+    'omg finally live again!!', 'hiiii missed u ❤️', 'yoo we in here 🔥',
+  ],
+  reaction: [
+    'This is fire 🔥🔥🔥', 'Amazingg!! ✨', 'Love this!', 'So cool 😎',
+    'Youre the best! 💯', 'No way!! 😱', 'Hahaha 😂😂', 'Wowww',
+    'Im obsessed', 'This is everything 💖', 'Cant stop watching', 'Goosebumps rn',
+    'SLAYYY 💅', 'Iconic 👑', 'Talent!! 🌟', 'Pure vibes ✨',
+    'YESSS 🙌🙌', 'im deaddd 💀💀', 'bro whattt', 'lmaoooo',
+    'this is crazyy', 'wowwww ok 🔥', 'ngl this is good', 'W stream 🏆',
+    'bruhh 😂', 'sheeeesh', 'wait thats actually sick', 'yooo thats wild',
+    'ok that was cool ngl', 'im screamingg', 'LETSGOO', 'absolute fire 🔥',
+    'banger content fr fr', 'this is it chief 🫡', 'W W W', 'massive vibes',
+    'goated 🐐', 'thats tuff 🔥', 'holyyy', 'insanee',
+    'BRO 😭😭', 'no bc why is this so good', 'ayo??', 'ur crazy talented',
+    'ok i see you 👀', 'wait actually??? 😱', 'this hits different fr',
+    'living for this rn 💕', 'STOPPP 😍', 'chef kiss 🤌',
+  ],
+  question: [
+    'Where are you from?', 'How long have you been streaming?', 'Whats the song name?',
+    'Can you say hi to me? 🥺', 'Do you stream every day?', 'What time do you go live?',
+    'How old are you?', 'Are you single? 👀', 'Whats your favorite food?',
+    'Can you dance? 💃', 'Do a challenge!', 'Play some music 🎵',
+    'whats ur ig?', 'do u have tiktok?', 'how many followers u got?',
+    'wait how do u do that??', 'what country u in rn?', 'do u do this full time?',
+    'can u shoutout my friend pls 🙏', 'when is next stream?',
+    'whos ur fav streamer?', 'what phone do u use?', 'how long u been on the app?',
+    'r u gonna battle anyone?', 'can u play that song again?', 'what language is that?',
+    'do u speak other languages?', 'wait whats happening lol', 'can u see my msgs?',
+    'how old is the app?', 'anyone wanna battle? 👊', 'why is quality so good wtf',
+  ],
+  compliment: [
+    'You look amazing today! 😍', 'Your smile is beautiful ❤️', 'Love your energy!',
+    'Best streamer on the app! 🏆', 'You always make my day 🌞', 'So talented! 🎯',
+    'Your vibe is unmatched 💫', 'Keep shining! ✨', 'Goals tbh 💪',
+    'Love the outfit! 👗', 'You have the best laugh 😊', 'Never change! 💕',
+    'ur literally so pretty 🥺', 'i wish i had ur confidence', 'king/queen behavior 👑',
+    'fav creator on here fr', 'youre so underrated honestly', 'main character energy 💫',
+    'ok model alert 📸', 'legit the best vibes on the app', 'ur personality is 10/10',
+    'how r u so funny omgg 😂', 'i tell everyone about ur streams', 'u deserve a million followers',
+    'this is why ur my fav ❤️', 'actual talent right here', 'ngl u should be famous',
+    'ur so genuine i love it', 'the energy today is chefs kiss 🤌', 'protect this person at all costs',
+    'literally goals 😍', 'how are u even real', 'the BEST content creator period',
+  ],
+  general: [
+    'Who else is watching at 2am 😅', 'Send gifts! 🎁', 'Like if youre here! ❤️',
+    'First time here, this is great!', 'My wifi is struggling but worth it 😤',
+    'Share the stream everyone! 📲', 'Bring a friend!', 'Top fan right here 🙋',
+    'I need more of this content', 'Vibes are immaculate today ✨',
+    'Can we get 1000 likes? 🤞', 'Drop a ❤️ if youre enjoying this!',
+    'This live made my night 🌙', 'Whos watching from bed? 🛏️',
+    'Sending love from here 💗', 'Lets get this trending! 📈',
+    'brb getting snacks 🍿', 'my phone is dying but i cant leave 😩', 'lol wait what just happened',
+    'ok im addicted to this app', 'told my friends to come watch', 'anyone else lagging or just me?',
+    'ugh i have work tomorrow but cant stop 😂', 'alright im staying for 5 more mins... said that 30 min ago',
+    'this chat is moving fast lol', 'wait who sent that gift 😱', 'lmao the chat is wild rn',
+    'ok i followed 👆', 'shared to my story 📱', 'screenshot for the memories 📸',
+    'my mom just asked what im watching lol', 'watching from school rn shh 🤫',
+    'bro im in class rn but this is more important 😅', 'procrastinating with this live stream 😂',
+    'any night owls here? 🦉', 'its 3am here and i regret nothing', 'lunch break gang 🍕',
+    'waiting room vibes', 'dont leave us hanging!!', 'we need more streams like this fr',
+    'ok everyone drop a follow rn 👆', 'this app > everything else', 'lowkey the best community',
+  ],
+  emoji: [
+    '❤️❤️❤️', '🔥🔥🔥', '😍😍😍', '👏👏👏', '💯💯💯', '🎉🎉🎉', '💕💕💕', '🙌🙌🙌',
+    '😂😂', '💎💎💎', '🫶🫶🫶', '😭😭', '🥰🥰', '👑👑', '⭐⭐⭐', '🤩🤩🤩',
+    '💖💖💖', '😘😘', '🌟🌟🌟', '🫡', '💪💪', '🤌🤌', '🥳🥳🥳', '✨✨✨',
+  ],
+  gift_reaction: [
+    'omg that gift!! 🎁', 'who sent that 😍', 'big spender alert 💰', 'woww thanks for gifting!',
+    'thats so generous 🥺', 'gifts flying in 🔥', 'the gifts are crazyyy', 'someone dropped a big one 💎',
+    'wait that gift animation tho 😱', 'riichh 💸', 'goals honestly', 'i need to start gifting too 😅',
+    'yooo that gift was insane 🔥', 'respect to the gifters 🫡', 'ballerr 💰💰', 'sheesh big gift energy',
+    'the animation is so cool!! 😍', 'thats what i call support 💪', 'someone is feeling generous tonight',
+    'we love a supporter 👏', 'gift goals right there', 'ok im broke but that was amazing 😂',
+  ],
+  gift_encourage: [
+    'send gifts to show love 🎁❤️', 'lets support the creator! 💕', 'who else is gifting tonight? 🎁',
+    'come on everyone gift! 🔥', 'even small gifts matter ❤️', 'rose gang where u at 🌹',
+    'drop a gift if u love this 💎', 'the gifters carry this live ngl', 'gift battle who wins?? 🏆',
+    'show some love people!! 💗', 'a rose costs nothing send one 🌹', 'who wants top gifter spot? 👑',
+    'im saving up for a big gift 😤', 'the gift leaderboard is heating up 🔥', 'send hearts everyone ❤️',
+  ],
+  reply_style: [
+    'lol right??', 'facts 💯', 'saame', 'no literally', 'fr fr', 'thiss ^^',
+    'i was just thinking that', 'someone had to say it', 'exactly what i was gonna say',
+    'couldnt agree more', 'periodt.', 'say it louder 🗣️', 'real ones know 👊',
+    'underrated comment ngl', 'THIS 👆', 'louder for the people in the back',
+    'finally someone said it', 'yep yep yep', 'mhm 100%', 'truee',
+    'omg yes!!', 'literally me rn', 'haha exactly 😂', 'preach 🙌',
+    'u get it 💯', 'took the words right out my mouth', 'thisss right here ☝️',
+  ],
+  streamer_talk: [
+    'you should do a Q&A!', 'talk about your day!', 'can you tell a story?',
+    'do you like your fans?', 'we love youu 💕', 'youre our fav streamer fr',
+    'promise to go live tomorrow too! 🙏', 'how do you stay so positive?',
+    'do a dance for us!! 💃', 'show us your room!', 'what did you eat today? 😂',
+    'are you gonna battle tonight?', 'you should collab with someone!',
+    'sing something for us 🎤', 'tell us a secret 👀', 'do you remember me?',
+    'i been following since day 1 🥺', 'youre literally the best ever',
+    'never stop streaming please 🙏', 'can you do a shoutout? 🎤',
+    'love the energy tonight ✨', 'youre glowing today 🌟',
+    'what makes you happy?', 'how do you deal with haters?',
+    'you make everyone smile 😊', 'we appreciate you sm 💗',
+  ],
+  viewer_to_viewer: [
+    'haha {viewer} thats so true 😂', 'agree with {viewer}!!', '{viewer} knows whats up 💯',
+    'lol {viewer} same here', '{viewer} spitting facts', 'right {viewer}?? 😂',
+    '{viewer} welcome! 🙋', 'yoo {viewer} is here! 🔥', '{viewer} finally joined lol',
+    '{viewer} ur so funny 😂', 'haha {viewer} stop 💀', '{viewer} i was thinking the same',
+    '{viewer} preach 🙌', 'cosign what {viewer} said', '@{viewer} yesss',
+    '{viewer} u get it fr', 'what {viewer} said ☝️', 'lmao {viewer}',
+  ],
+};
+
+// Track recently used messages to avoid repetition
+const recentMessagesRef: string[] = [];
+const MAX_RECENT = 50;
+// Track recent chat usernames for viewer-to-viewer replies
+const recentChattersRef: string[] = [];
+
+const getRandomChatMessage = (
+  viewer: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>,
+  isFirstMessage = false,
+  context: 'normal' | 'gift_reaction' | 'gift_encourage' | 'streamer' = 'normal'
+): string => {
+  const categories = Object.keys(CHAT_MESSAGES) as (keyof typeof CHAT_MESSAGES)[];
+  // categories: greeting(0), reaction(1), question(2), compliment(3), general(4), emoji(5),
+  //             gift_reaction(6), gift_encourage(7), reply_style(8), streamer_talk(9), viewer_to_viewer(10)
+  
+  let weights: number[];
+  if (isFirstMessage) {
+    weights = [100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  } else if (context === 'gift_reaction') {
+    weights = [0, 5, 0, 0, 0, 10, 70, 5, 10, 0, 0];
+  } else if (context === 'gift_encourage') {
+    weights = [0, 0, 0, 0, 5, 5, 5, 75, 5, 0, 5];
+  } else if (context === 'streamer') {
+    weights = [0, 5, 10, 15, 5, 0, 0, 0, 5, 55, 5];
+  } else {
+    // Normal chat - natural mix with viewer interactions
+    weights = [2, 18, 8, 10, 18, 6, 4, 5, 10, 10, 9];
+  }
+  
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * totalWeight;
+  let categoryIndex = 0;
+  for (let i = 0; i < weights.length; i++) {
+    r -= weights[i];
+    if (r <= 0) { categoryIndex = i; break; }
+  }
+  const category = categories[categoryIndex];
+  const msgs = CHAT_MESSAGES[category];
+  
+  // Try to pick a message that hasn't been used recently
+  let msg = '';
+  let attempts = 0;
+  do {
+    msg = msgs[Math.floor(Math.random() * msgs.length)];
+    attempts++;
+  } while (recentMessagesRef.includes(msg) && attempts < 6);
+  
+  // Track recent messages
+  recentMessagesRef.push(msg);
+  if (recentMessagesRef.length > MAX_RECENT) recentMessagesRef.shift();
+  
+  // Replace {country} placeholder
+  msg = msg.replace('{country}', viewer.country);
+  
+  // Replace {viewer} with a recent chatter's name (for viewer-to-viewer)
+  if (msg.includes('{viewer}')) {
+    const otherChatters = recentChattersRef.filter(n => n !== viewer.displayName);
+    if (otherChatters.length > 0) {
+      const target = otherChatters[Math.floor(Math.random() * otherChatters.length)];
+      msg = msg.replace(/\{viewer\}/g, target);
+    } else {
+      // No recent chatters, fall back to a generic reaction
+      const fallbacks = CHAT_MESSAGES.reaction;
+      msg = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+  }
+  
+  // Random lowercase variation for realism (8% chance)
+  if (Math.random() < 0.08 && !msg.includes('🇺🇸') && !msg.includes('🇬🇧')) {
+    msg = msg.toLowerCase();
+  }
+  
+  // Track this viewer as a recent chatter
+  recentChattersRef.push(viewer.displayName);
+  if (recentChattersRef.length > 15) recentChattersRef.shift();
+  
+  return msg;
+};
 
 export default function LiveStream() {
   const { streamId } = useParams();
@@ -64,6 +382,8 @@ export default function LiveStream() {
   const location = useLocation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const opponentVideoRef = useRef<HTMLVideoElement>(null);
+  const player3VideoRef = useRef<HTMLVideoElement>(null);
+  const player4VideoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const setPromo = useLivePromoStore((s) => s.setPromo);
@@ -75,14 +395,18 @@ export default function LiveStream() {
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [currentGift, setCurrentGift] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
-  const [coinBalance, setCoinBalance] = useState(useRealApi ? 0 : 999999999);
+  const [coinBalance, setCoinBalance] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const isBroadcast = streamId === 'broadcast';
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [showCoinModal, setShowCoinModal] = useState(false);
+  const [coinPassword, setCoinPassword] = useState('');
+  const [showViewerList, setShowViewerList] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(true);
   const [isLiveSettingsOpen, setIsLiveSettingsOpen] = useState(false);
+  const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 500) + 50);
   const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
   const user = useAuthStore((s) => s.user);
   const formatStreamName = (id: string) =>
@@ -98,12 +422,12 @@ export default function LiveStream() {
       : 'ELIX STAR';
   const myCreatorName = creatorName;
   const myAvatar = isBroadcast
-    ? user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName)}&background=random`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(creatorName)}&background=random`;
+    ? user?.avatar || `https://i.pravatar.cc/150?u=young_creator_2026`
+    : `https://i.pravatar.cc/150?u=young_creator_2026`;
   const [opponentCreatorName, setOpponentCreatorName] = useState('Paul');
   const viewerName = user?.username || user?.name || 'viewer_123';
   const viewerAvatar =
-    user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(viewerName)}&background=random`;
+    user?.avatar || `https://i.pravatar.cc/150?u=${encodeURIComponent(viewerName)}`;
   const universeGiftLabel = 'Universe';
 
   // FaceAR State
@@ -118,7 +442,7 @@ export default function LiveStream() {
   }, [isBroadcast]);
 
   useEffect(() => {
-    if (!useRealApi || !user?.id) return;
+    if (!user?.id) return;
     let cancelled = false;
 
     const run = async () => {
@@ -133,13 +457,6 @@ export default function LiveStream() {
         if (data.level != null) setUserLevel(Number(data.level));
         if (data.xp != null) setUserXP(Number(data.xp));
         if (data.level != null) updateUser({ level: Number(data.level) });
-      }
-
-      // DEV BACKDOOR: Force max coins for everyone
-      if (user) {
-          setCoinBalance(999999999);
-      } else if (!cancelled && data?.coin_balance != null) {
-          return;
       }
 
       if (error) {
@@ -178,7 +495,7 @@ export default function LiveStream() {
   }, [updateUser, user?.id]);
 
   useEffect(() => {
-    if (!useRealApi || !user?.id) return;
+    if (!user?.id) return;
     const key = effectiveStreamId;
     if (!key) return;
 
@@ -203,7 +520,7 @@ export default function LiveStream() {
 
   // Refresh coins when gift panel opens to ensure balance is up to date
   useEffect(() => {
-    if (showGiftPanel && useRealApi && user?.id) {
+    if (showGiftPanel && user?.id) {
       supabase
         .from('profiles')
         .select('coin_balance')
@@ -229,14 +546,73 @@ export default function LiveStream() {
   ];
 
   const filteredCreators = creators.filter((c) => c.name.toLowerCase().includes(creatorQuery.trim().toLowerCase()));
-  
+
+  // Battle Player Slots (P1 = creator, P2-P4 = invited players)
+  type BattleSlot = { name: string; status: 'empty' | 'invited' | 'accepted'; avatar: string };
+  const [battleSlots, setBattleSlots] = useState<BattleSlot[]>([
+    { name: '', status: 'empty', avatar: '' },
+    { name: '', status: 'empty', avatar: '' },
+    { name: '', status: 'empty', avatar: '' },
+  ]);
+  const inviteTimersRef = useRef<NodeJS.Timeout[]>([]);
+
+  const inviteCreatorToSlot = (creatorName: string) => {
+    // Find first empty slot
+    const slotIndex = battleSlots.findIndex(s => s.status === 'empty');
+    if (slotIndex === -1) return; // All slots full
+    // Check if already invited
+    if (battleSlots.some(s => s.name === creatorName && s.status !== 'empty')) return;
+
+    const avatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(creatorName)}`;
+    setBattleSlots(prev => {
+      const next = [...prev];
+      next[slotIndex] = { name: creatorName, status: 'invited', avatar };
+      return next;
+    });
+
+    // Simulate acceptance after 2-4 seconds
+    const delay = 2000 + Math.random() * 2000;
+    const timer = setTimeout(() => {
+      setBattleSlots(prev => {
+        const next = [...prev];
+        const idx = next.findIndex(s => s.name === creatorName && s.status === 'invited');
+        if (idx !== -1) {
+          next[idx] = { ...next[idx], status: 'accepted' };
+        }
+        return next;
+      });
+    }, delay);
+    inviteTimersRef.current.push(timer);
+  };
+
+  // Mute state per player pane
+  const [mutedPlayers, setMutedPlayers] = useState<Record<string, boolean>>({});
+  const togglePlayerMute = (player: string) => {
+    setMutedPlayers(prev => ({ ...prev, [player]: !prev[player] }));
+  };
+
+  const removePlayerFromSlot = (slotIndex: number) => {
+    setBattleSlots(prev => {
+      const next = [...prev];
+      next[slotIndex] = { name: '', status: 'empty', avatar: '' };
+      return next;
+    });
+  };
+
+  const filledSlots = battleSlots.filter(s => s.status !== 'empty');
+  const allFilledAccepted = filledSlots.length > 0 && filledSlots.every(s => s.status === 'accepted');
+  const anySlotFilled = filledSlots.length > 0;
+  const allSlotsAccepted = allFilledAccepted;
+
   // Battle Mode State
   const [isBattleMode, setIsBattleMode] = useState(false);
   const [battleTime, setBattleTime] = useState(300); // 5 minutes
   const [myScore, setMyScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
-  const [battleWinner, setBattleWinner] = useState<'me' | 'opponent' | 'draw' | null>(null);
-  const [giftTarget, setGiftTarget] = useState<'me' | 'opponent'>('me');
+  const [player3Score, setPlayer3Score] = useState(0);
+  const [player4Score, setPlayer4Score] = useState(0);
+  const [battleWinner, setBattleWinner] = useState<'me' | 'opponent' | 'player3' | 'player4' | 'draw' | null>(null);
+  const [giftTarget, setGiftTarget] = useState<'me' | 'opponent' | 'player3' | 'player4'>('me');
   const lastScreenTapRef = useRef<number>(0);
   const battleTapScoreRemainingRef = useRef<number>(5);
   const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
@@ -250,6 +626,8 @@ export default function LiveStream() {
   const _battleKeyboardLikeArmedRef = useRef(true);
   const [liveLikes, setLiveLikes] = useState(0);
   const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
+  // Track top gifters per player: { 'me': { 'username': coins }, 'opponent': {...}, ... }
+  const [playerGifters, setPlayerGifters] = useState<Record<string, Record<string, number>>>({});
   const [floatingHearts, setFloatingHearts] = useState<
     Array<{ id: string; x: number; y: number; dx: number; rot: number; size: number; color: string }>
   >([]);
@@ -257,26 +635,41 @@ export default function LiveStream() {
   const [universeQueue, setUniverseQueue] = useState<UniverseTickerMessage[]>([]);
   const [currentUniverse, setCurrentUniverse] = useState<UniverseTickerMessage | null>(null);
 
+  // 2v2: Red Team (P1+P3) vs Blue Team (P2+P4)
+  const determine4PlayerWinner = useCallback(() => {
+    const red = myScore + player3Score;
+    const blue = opponentScore + player4Score;
+    if (red === blue) return 'draw';
+    // 'me' = red team wins, 'opponent' = blue team wins
+    return red > blue ? 'me' : 'opponent';
+  }, [myScore, opponentScore, player3Score, player4Score]);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isBattleMode && battleTime > 0) {
       interval = setInterval(() => {
         setBattleTime(prev => {
             if (prev <= 1) {
-                const winner = myScore === opponentScore ? 'draw' : myScore > opponentScore ? 'me' : 'opponent';
+                const winner = determine4PlayerWinner();
                 setBattleWinner(winner);
                 return 0;
             }
-            // Simulate opponent score randomly
+            // Simulate opponent scores randomly
             if (Math.random() > 0.7) {
                 setOpponentScore(s => s + Math.floor(Math.random() * 50));
+            }
+            if (Math.random() > 0.7) {
+                setPlayer3Score(s => s + Math.floor(Math.random() * 40));
+            }
+            if (Math.random() > 0.7) {
+                setPlayer4Score(s => s + Math.floor(Math.random() * 45));
             }
             return prev - 1;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isBattleMode, battleTime, myScore, opponentScore]);
+  }, [isBattleMode, battleTime, determine4PlayerWinner]);
 
   const toggleBattle = useCallback(() => {
     if (isBattleMode) {
@@ -287,22 +680,38 @@ export default function LiveStream() {
       battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
       battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
       setMiniProfile(null);
+      // Reset invite slots
+      setBattleSlots([
+        { name: '', status: 'empty', avatar: '' },
+        { name: '', status: 'empty', avatar: '' },
+        { name: '', status: 'empty', avatar: '' },
+      ]);
+      inviteTimersRef.current.forEach(t => clearTimeout(t));
+      inviteTimersRef.current = [];
       return;
     }
+    // Enter battle mode but DON'T start countdown yet - wait for invites
     setIsBattleMode(true);
     setBattleTime(0);
     setMyScore(0);
     setOpponentScore(0);
+    setPlayer3Score(0);
+    setPlayer4Score(0);
     setBattleWinner(null);
     setGiftTarget('me');
     setShowGiftPanel(false);
     battleTapScoreRemainingRef.current = 5;
     setBattleTapScoreRemaining(5);
     setBattleGifterCoins({});
-    setBattleCountdown(3);
+    setPlayerGifters({});
+    setBattleCountdown(null); // Don't start countdown until all accept
     battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
     battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
+    // Open invite panel
+    setIsFindCreatorsOpen(true);
   }, [isBattleMode]);
+
+  // No auto-start - user must press Match to begin
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -325,14 +734,27 @@ export default function LiveStream() {
 
   const startBattleWithCreator = (creatorName: string) => {
     setOpponentCreatorName(creatorName);
-    setIsFindCreatorsOpen(false);
-    setCreatorQuery('');
-    const params = new URLSearchParams(location.search);
-    params.set('battle', '1');
-    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    // If not in battle mode yet, enter it first
     if (!isBattleMode) {
-      toggleBattle();
+      setIsBattleMode(true);
+      setBattleTime(0);
+      setMyScore(0);
+      setOpponentScore(0);
+      setPlayer3Score(0);
+      setPlayer4Score(0);
+      setBattleWinner(null);
+      setGiftTarget('me');
+      setShowGiftPanel(false);
+      battleTapScoreRemainingRef.current = 5;
+      setBattleTapScoreRemaining(5);
+      setBattleGifterCoins({});
+      setBattleCountdown(null);
+      const params = new URLSearchParams(location.search);
+      params.set('battle', '1');
+      navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
     }
+    // Invite the creator to a slot
+    inviteCreatorToSlot(creatorName);
   };
 
   useEffect(() => {
@@ -342,12 +764,12 @@ export default function LiveStream() {
     setUniverseQueue((prev) => prev.slice(1));
   }, [currentUniverse, universeQueue]);
 
-  // Auto-clear universe message
+  // Auto-clear universe message after 8 seconds
   useEffect(() => {
     if (!currentUniverse) return;
     const timer = setTimeout(() => {
       setCurrentUniverse(null);
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(timer);
   }, [currentUniverse]);
 
@@ -387,19 +809,43 @@ export default function LiveStream() {
     });
   };
 
-  const awardBattlePoints = (target: 'me' | 'opponent', points: number) => {
+  const awardBattlePoints = (target: 'me' | 'opponent' | 'player3' | 'player4', points: number) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
     if (target === 'me') {
       setMyScore((prev) => prev + points);
-    } else {
+    } else if (target === 'opponent') {
       setOpponentScore((prev) => prev + points);
+    } else if (target === 'player3') {
+      setPlayer3Score((prev) => prev + points);
+    } else {
+      setPlayer4Score((prev) => prev + points);
     }
   };
 
-  const addBattleGifterCoins = (username: string, coins: number) => {
+  const addBattleGifterCoins = (username: string, coins: number, target?: string) => {
     if (!isBattleMode) return;
     if (!username || coins <= 0) return;
     setBattleGifterCoins((prev) => ({ ...prev, [username]: (prev[username] ?? 0) + coins }));
+    // Track per-player gifters
+    const playerTarget = target || giftTarget;
+    setPlayerGifters(prev => {
+      const playerRecord = { ...(prev[playerTarget] || {}) };
+      playerRecord[username] = (playerRecord[username] ?? 0) + coins;
+      return { ...prev, [playerTarget]: playerRecord };
+    });
+  };
+
+  // Get top 3 gifters for a player
+  const getTopGifters = (player: string) => {
+    const gifters = playerGifters[player] || {};
+    return Object.entries(gifters)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, coins]) => ({
+        name,
+        coins,
+        avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(name)}`,
+      }));
   };
 
   const formatCoinsShort = (coins: number) => {
@@ -413,16 +859,16 @@ export default function LiveStream() {
 
   const spawnHeartAt = useCallback((x: number, y: number, colorOverride?: string) => {
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const dx = Math.round((Math.random() * 2 - 1) * 48);
-    const rot = Math.round((Math.random() * 2 - 1) * 18);
-    const size = Math.round(16 + Math.random() * 10);
-    const colors = ['#E6B36A', '#F4C2C2', '#FFFFFF'];
+    const dx = Math.round((Math.random() * 2 - 1) * 60);
+    const rot = Math.round((Math.random() * 2 - 1) * 25);
+    const size = Math.round(20 + Math.random() * 14);
+    const colors = ['#FF0000', '#FF2D55', '#E60026', '#DC143C', '#FF1744', '#CC0000'];
     const color = colorOverride ?? colors[Math.floor(Math.random() * colors.length)];
 
-    setFloatingHearts((prev) => [...prev.slice(-28), { id, x, y, dx, rot, size, color }]);
+    setFloatingHearts((prev) => [...prev.slice(-40), { id, x, y, dx, rot, size, color }]);
     window.setTimeout(() => {
       setFloatingHearts((prev) => prev.filter((h) => h.id !== id));
-    }, 950);
+    }, 2300);
   }, []);
 
   const spawnHeartFromClient = (clientX: number, clientY: number, colorOverride?: string) => {
@@ -441,10 +887,15 @@ export default function LiveStream() {
     spawnHeartAt(x, y, '#FF2D55');
   }, [spawnHeartAt]);
 
-  const handleBattleTap = useCallback((target: 'me' | 'opponent') => {
+  const handleBattleTap = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4') => {
     setGiftTarget(target);
-    // Likes disconnected from battle tap/shortcuts
-  }, []);
+    // Each spectator tap awards 5 points, limited to 5 points total (1 tap)
+    if (battleTapScoreRemainingRef.current > 0 && !battleWinner && battleTime > 0) {
+      awardBattlePoints(target, 5);
+      battleTapScoreRemainingRef.current = 0;
+      setBattleTapScoreRemaining(0);
+    }
+  }, [battleWinner, battleTime]);
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -494,6 +945,8 @@ export default function LiveStream() {
   useEffect(() => {
     const sampleLeft = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
     const sampleRight = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    const sample3 = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+    const sample4 = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4';
 
     if (isBattleMode) {
       if (videoRef.current && !isBroadcast) {
@@ -506,6 +959,18 @@ export default function LiveStream() {
         if (opponentVideoRef.current.src !== sampleRight) opponentVideoRef.current.src = sampleRight;
         opponentVideoRef.current.muted = true;
         opponentVideoRef.current.play().catch(() => {});
+      }
+
+      if (player3VideoRef.current) {
+        if (player3VideoRef.current.src !== sample3) player3VideoRef.current.src = sample3;
+        player3VideoRef.current.muted = true;
+        player3VideoRef.current.play().catch(() => {});
+      }
+
+      if (player4VideoRef.current) {
+        if (player4VideoRef.current.src !== sample4) player4VideoRef.current.src = sample4;
+        player4VideoRef.current.muted = true;
+        player4VideoRef.current.play().catch(() => {});
       }
     }
 
@@ -548,8 +1013,6 @@ export default function LiveStream() {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              width: { ideal: 1080 },
-              height: { ideal: 1920 },
               facingMode: cameraFacing,
             },
             audio: true,
@@ -558,8 +1021,6 @@ export default function LiveStream() {
           try {
             stream = await navigator.mediaDevices.getUserMedia({
               video: {
-                width: { ideal: 1080 },
-                height: { ideal: 1920 },
                 facingMode: cameraFacing,
               },
               audio: false,
@@ -577,6 +1038,16 @@ export default function LiveStream() {
 
         cameraStreamRef.current = stream;
         stream.getAudioTracks().forEach((t) => (t.enabled = !isMicMuted));
+
+        // Set camera zoom to minimum for widest view
+        try {
+          const vTrack = stream.getVideoTracks()[0];
+          const caps = vTrack?.getCapabilities?.() as any;
+          if (caps?.zoom) {
+            await vTrack.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
+          }
+        } catch { /* zoom not supported */ }
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play().catch(() => {});
@@ -600,13 +1071,356 @@ export default function LiveStream() {
     stream.getAudioTracks().forEach((t) => (t.enabled = !isMicMuted));
   }, [isMicMuted]);
 
-  // Simulate incoming messages
+  // ═══════════════════════════════════════════════════════════
+  // ULTRA-REALISTIC VIEWER SIMULATION ENGINE (100 viewers)
+  // Phases: burst → growth → plateau → natural churn
+  // No repetition, natural timing, realistic behavior
+  // ═══════════════════════════════════════════════════════════
+  const [activeViewers, setActiveViewers] = useState<SimulatedViewer[]>([]);
+  const viewerTimersRef = useRef<NodeJS.Timeout[]>([]);
+  const chatTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const availablePoolRef = useRef<Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[]>([]);
+  const simulationPhaseRef = useRef<'burst' | 'growth' | 'plateau' | 'churn'>('burst');
+
+  useEffect(() => {
+    // Shuffle the entire 100-viewer pool
+    const shuffled = [...VIEWER_POOL].sort(() => Math.random() - 0.5);
+    availablePoolRef.current = [...shuffled];
+    const allIntervals: NodeJS.Timeout[] = [];
+
+    // Clear previous timers
+    viewerTimersRef.current.forEach(t => clearTimeout(t));
+    viewerTimersRef.current = [];
+
+    const addViewer = (viewer: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>, showJoinMsg: boolean, showGreeting: boolean) => {
+      const newViewer: SimulatedViewer = { ...viewer, joinedAt: Date.now(), isActive: true };
+      setActiveViewers(prev => {
+        if (prev.some(v => v.id === viewer.id)) return prev;
+        return [...prev, newViewer];
+      });
+
+      if (showJoinMsg) {
+        // "username joined the live 🇺🇸" system message
+        setMessages(prev => [...prev.slice(-30), {
+          id: `join_${Date.now()}_${viewer.id}`,
+          username: viewer.displayName,
+          text: `joined ${viewer.country}`,
+          level: viewer.level,
+          avatar: viewer.avatar,
+          isSystem: true,
+        }]);
+      }
+
+      // Some viewers say hello when they join (40% chance if showGreeting)
+      if (showGreeting && Math.random() < 0.4) {
+        const greetDelay = 2000 + Math.random() * 6000; // 2-8s after joining
+        const gt = setTimeout(() => {
+          const msg = getRandomChatMessage(viewer, true);
+          setMessages(prev => [...prev.slice(-30), {
+            id: `greet_${Date.now()}_${viewer.id}`,
+            username: viewer.displayName,
+            text: msg,
+            level: viewer.level,
+            avatar: viewer.avatar,
+          }]);
+        }, greetDelay);
+        viewerTimersRef.current.push(gt);
+      }
+
+      setViewerCount(prev => prev + 1);
+    };
+
+    const removeRandomViewer = () => {
+      setActiveViewers(prev => {
+        if (prev.length <= 8) return prev; // Keep minimum 8 viewers always
+        // Prefer removing viewers who've been here longest or have high chatFrequency (less engaged)
+        const candidates = prev.filter(v => Date.now() - v.joinedAt > 45000); // Only those here > 45s
+        if (candidates.length === 0) return prev;
+        // Higher chatFrequency = less engaged = more likely to leave
+        const weights = candidates.map(c => c.chatFrequency);
+        const totalW = weights.reduce((a, b) => a + b, 0);
+        let r = Math.random() * totalW;
+        let leaving = candidates[0];
+        for (let i = 0; i < candidates.length; i++) {
+          r -= weights[i];
+          if (r <= 0) { leaving = candidates[i]; break; }
+        }
+        // Return viewer to available pool so they can rejoin later
+        availablePoolRef.current.push({
+          id: leaving.id, username: leaving.username, displayName: leaving.displayName,
+          level: leaving.level, avatar: leaving.avatar, country: leaving.country, chatFrequency: leaving.chatFrequency,
+        });
+        // Clear their chat timer
+        const chatTimer = chatTimersRef.current.get(leaving.id);
+        if (chatTimer) { clearTimeout(chatTimer); chatTimersRef.current.delete(leaving.id); }
+        setViewerCount(p => Math.max(10, p - 1));
+        return prev.filter(v => v.id !== leaving.id);
+      });
+    };
+
+    const getNextViewer = (): Omit<SimulatedViewer, 'joinedAt' | 'isActive'> | null => {
+      if (availablePoolRef.current.length === 0) return null;
+      return availablePoolRef.current.shift()!;
+    };
+
+    // ─── PHASE 1: BURST (0-25s) ─── 8-15 viewers join quickly
+    simulationPhaseRef.current = 'burst';
+    const burstCount = 8 + Math.floor(Math.random() * 8); // 8-15
+    for (let i = 0; i < burstCount; i++) {
+      const viewer = getNextViewer();
+      if (!viewer) break;
+      const delay = 800 + Math.random() * 22000; // spread over 0.8-22s
+      const timer = setTimeout(() => {
+        addViewer(viewer, true, true);
+      }, delay);
+      viewerTimersRef.current.push(timer);
+    }
+
+    // ─── PHASE 2: GROWTH (25s-2min) ─── steady stream of new viewers
+    const growthStart = setTimeout(() => {
+      simulationPhaseRef.current = 'growth';
+      let growthAdded = 0;
+      const maxGrowth = 25 + Math.floor(Math.random() * 15); // 25-40 more
+      const growthInterval = setInterval(() => {
+        if (growthAdded >= maxGrowth) { clearInterval(growthInterval); return; }
+        const viewer = getNextViewer();
+        if (!viewer) { clearInterval(growthInterval); return; }
+        addViewer(viewer, Math.random() < 0.6, true); // 60% show join msg
+        growthAdded++;
+      }, 2000 + Math.random() * 4000); // every 2-6 seconds
+      allIntervals.push(growthInterval);
+    }, 25000);
+    viewerTimersRef.current.push(growthStart as unknown as NodeJS.Timeout);
+
+    // ─── PHASE 3: PLATEAU (2min+) ─── balance of joining/leaving
+    const plateauStart = setTimeout(() => {
+      simulationPhaseRef.current = 'plateau';
+      
+      // New viewers join every 8-20 seconds
+      const joinInterval = setInterval(() => {
+        const viewer = getNextViewer();
+        if (!viewer) return;
+        addViewer(viewer, Math.random() < 0.5, true);
+      }, 8000 + Math.random() * 12000);
+      allIntervals.push(joinInterval);
+
+      // Some viewers leave every 15-40 seconds
+      const leaveInterval = setInterval(() => {
+        if (Math.random() < 0.6) { // 60% chance each tick
+          removeRandomViewer();
+        }
+      }, 15000 + Math.random() * 25000);
+      allIntervals.push(leaveInterval);
+    }, 120000); // 2 minutes
+    viewerTimersRef.current.push(plateauStart as unknown as NodeJS.Timeout);
+
+    // ─── NATURAL CHURN ─── after 4 min, start a gentle rotate of viewers
+    const churnStart = setTimeout(() => {
+      simulationPhaseRef.current = 'churn';
+      const churnInterval = setInterval(() => {
+        // Remove 1-2 viewers
+        removeRandomViewer();
+        if (Math.random() < 0.4) removeRandomViewer();
+        // Add 1-2 new ones
+        setTimeout(() => {
+          const v1 = getNextViewer();
+          if (v1) addViewer(v1, Math.random() < 0.4, true);
+          if (Math.random() < 0.4) {
+            setTimeout(() => {
+              const v2 = getNextViewer();
+              if (v2) addViewer(v2, Math.random() < 0.3, true);
+            }, 3000 + Math.random() * 5000);
+          }
+        }, 2000 + Math.random() * 5000);
+      }, 20000 + Math.random() * 30000);
+      allIntervals.push(churnInterval);
+    }, 240000); // 4 minutes
+    viewerTimersRef.current.push(churnStart as unknown as NodeJS.Timeout);
+
+    return () => {
+      viewerTimersRef.current.forEach(t => clearTimeout(t));
+      allIntervals.forEach(t => clearInterval(t));
+      chatTimersRef.current.forEach(t => clearTimeout(t));
+      chatTimersRef.current.clear();
+    };
+  }, []);
+
+  // ─── CHAT SIMULATION ENGINE ───
+  // Each viewer chats independently at their own natural pace
+  // Includes: normal chat, streamer interaction, viewer-to-viewer replies,
+  // gift encouragement, and contextual reactions
+  const giftReactionTimersRef = useRef<NodeJS.Timeout[]>([]);
+  const simulatedGiftTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Find newly added viewers (not already having a chat timer)
+    activeViewers.forEach(viewer => {
+      if (chatTimersRef.current.has(viewer.id)) return;
+
+      const scheduleChat = (v: SimulatedViewer) => {
+        const baseDelay = v.chatFrequency * 1000;
+        const variance = baseDelay * 0.5;
+        const delay = Math.max(4000, baseDelay + (Math.random() * variance * 2 - variance));
+        
+        const timer = setTimeout(() => {
+          setActiveViewers(current => {
+            const stillActive = current.find(cv => cv.id === v.id);
+            if (!stillActive) {
+              chatTimersRef.current.delete(v.id);
+              return current;
+            }
+            
+            // Decide what kind of message to send based on natural distribution
+            const roll = Math.random();
+            let context: 'normal' | 'gift_reaction' | 'gift_encourage' | 'streamer' = 'normal';
+            if (roll < 0.12) context = 'streamer'; // 12% talk to streamer
+            else if (roll < 0.18) context = 'gift_encourage'; // 6% encourage gifting
+            // rest is normal (includes viewer-to-viewer, reactions, etc.)
+            
+            const msg = getRandomChatMessage(v, false, context);
+            setMessages(prev => [...prev.slice(-35), {
+              id: `chat_${Date.now()}_${v.id}_${Math.random().toString(36).slice(2, 6)}`,
+              username: v.displayName,
+              text: msg,
+              level: v.level,
+              avatar: v.avatar,
+            }]);
+            
+            // 15% chance to go quiet for a while
+            if (Math.random() < 0.15) {
+              const silentPeriod = setTimeout(() => scheduleChat(v), 15000 + Math.random() * 30000);
+              chatTimersRef.current.set(v.id, silentPeriod);
+            } else {
+              scheduleChat(v);
+            }
+            return current;
+          });
+        }, delay);
+        chatTimersRef.current.set(v.id, timer);
+      };
+
+      const initialDelay = 3000 + Math.random() * 8000;
+      const initTimer = setTimeout(() => scheduleChat(viewer), initialDelay);
+      chatTimersRef.current.set(viewer.id, initTimer);
+    });
+
+    // Clean up timers for viewers that left
+    chatTimersRef.current.forEach((timer, viewerId) => {
+      if (!activeViewers.some(v => v.id === viewerId)) {
+        clearTimeout(timer);
+        chatTimersRef.current.delete(viewerId);
+      }
+    });
+  }, [activeViewers]);
+
+  // ─── GIFT REACTION SYSTEM ───
+  // When a gift is sent (real or simulated), 2-5 random active viewers react
+  const triggerGiftReactions = useCallback((giftName: string, senderName: string) => {
+    if (activeViewers.length < 2) return;
+    const reactCount = 2 + Math.floor(Math.random() * 4); // 2-5 reactions
+    const shuffledViewers = [...activeViewers]
+      .filter(v => v.displayName !== senderName) // don't react to own gift
+      .sort(() => Math.random() - 0.5)
+      .slice(0, reactCount);
+    
+    shuffledViewers.forEach((v, i) => {
+      const delay = 800 + (i * (500 + Math.random() * 1500)); // staggered 0.8s-5s
+      const timer = setTimeout(() => {
+        const msg = getRandomChatMessage(v, false, 'gift_reaction');
+        setMessages(prev => [...prev.slice(-35), {
+          id: `giftreact_${Date.now()}_${v.id}_${Math.random().toString(36).slice(2, 5)}`,
+          username: v.displayName,
+          text: msg,
+          level: v.level,
+          avatar: v.avatar,
+        }]);
+      }, delay);
+      giftReactionTimersRef.current.push(timer);
+    });
+  }, [activeViewers]);
+
+  // ─── SIMULATED VIEWER GIFTS ───
+  // Active viewers occasionally send small gifts (realistic behavior)
+  useEffect(() => {
+    if (activeViewers.length < 3) return;
+
+    const scheduleSimulatedGift = () => {
+      // Random interval between 25-90 seconds
+      const delay = 25000 + Math.random() * 65000;
+      simulatedGiftTimerRef.current = setTimeout(() => {
+        setActiveViewers(current => {
+          if (current.length < 3) return current;
+          
+          // Pick a random active viewer to "send" a gift
+          const gifter = current[Math.floor(Math.random() * current.length)];
+          
+          // Simulated viewers mostly send small/medium gifts
+          const smallGiftNames = [
+            { name: 'Red Rose', icon: '🌹', coins: 1 },
+            { name: 'Love Heart', icon: '❤️', coins: 5 },
+            { name: 'Morning Coffee', icon: '☕', coins: 15 },
+            { name: 'Ice Cream', icon: '🍦', coins: 50 },
+            { name: 'Super Car', icon: '🏎️', coins: 500 },
+            { name: 'Diamond Ring', icon: '💍', coins: 1000 },
+            { name: 'Teddy Bear', icon: '🧸', coins: 100 },
+            { name: 'Star', icon: '⭐', coins: 25 },
+            { name: 'Crown', icon: '👑', coins: 200 },
+            { name: 'Rocket', icon: '🚀', coins: 300 },
+          ];
+          
+          // Higher level viewers send more expensive gifts
+          let giftPool = smallGiftNames;
+          if (gifter.level < 20) {
+            giftPool = smallGiftNames.filter(g => g.coins <= 50);
+          } else if (gifter.level < 40) {
+            giftPool = smallGiftNames.filter(g => g.coins <= 200);
+          }
+          // Level 40+ can send any
+          
+          const gift = giftPool[Math.floor(Math.random() * giftPool.length)];
+          
+          // Gift message in chat
+          setMessages(prev => [...prev.slice(-35), {
+            id: `simgift_${Date.now()}_${gifter.id}`,
+            username: gifter.displayName,
+            text: `Sent a ${gift.name} ${gift.icon}`,
+            isGift: true,
+            level: gifter.level,
+            avatar: gifter.avatar,
+          }]);
+
+          // Trigger reactions from other viewers
+          setTimeout(() => {
+            triggerGiftReactions(gift.name, gifter.displayName);
+          }, 500);
+          
+          return current;
+        });
+        
+        // Schedule next simulated gift
+        scheduleSimulatedGift();
+      }, delay);
+    };
+
+    // Start after initial delay
+    const initDelay = setTimeout(() => scheduleSimulatedGift(), 30000 + Math.random() * 20000);
+
+    return () => {
+      clearTimeout(initDelay);
+      if (simulatedGiftTimerRef.current) clearTimeout(simulatedGiftTimerRef.current);
+      giftReactionTimersRef.current.forEach(t => clearTimeout(t));
+      giftReactionTimersRef.current = [];
+    };
+  }, [activeViewers.length > 2, triggerGiftReactions]);
+
+  // Organic viewer count fluctuation (slight random ±1-3)
   useEffect(() => {
     const interval = setInterval(() => {
-        const randomMsg = MOCK_MESSAGES[Math.floor(Math.random() * MOCK_MESSAGES.length)];
-        const newMsg = { ...randomMsg, id: Date.now().toString() };
-        setMessages(prev => [...prev.slice(-10), newMsg]);
-    }, 3000);
+      setViewerCount(prev => {
+        const delta = Math.floor(Math.random() * 5) - 2;
+        return Math.max(10, prev + delta);
+      });
+    }, 6000 + Math.random() * 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -663,61 +1477,27 @@ export default function LiveStream() {
     
     let newLevel = userLevel;
     
-    if (useRealApi && user?.id) {
-      // DEV BACKDOOR: Skip API call for everyone to avoid DB balance check failure
-      const devSkipBalanceCheck = true;
-      if (devSkipBalanceCheck || user.username === 'bericaandrei') {
-          // Simulate success and update LEVEL/XP locally + DB
-          let currentLevel = userLevel;
-          let currentXP = userXP;
-          const xpGained = gift.coins;
-          currentXP += xpGained;
-          
-          while (true) {
-              const xpNeeded = currentLevel * 1000;
-              if (currentXP >= xpNeeded) {
-                  if (currentLevel < 150) {
-                      currentLevel++;
-                      currentXP -= xpNeeded;
-                  } else {
-                      currentXP = xpNeeded;
-                      break;
-                  }
-              } else {
-                  break;
-              }
-          }
-          
-          setUserLevel(currentLevel);
-          setUserXP(currentXP);
-          updateUser({ level: currentLevel });
-          newLevel = currentLevel;
-          
-          supabase.from('profiles')
-              .update({ level: currentLevel, xp: currentXP })
-              .eq('user_id', user.id)
-              .then(() => {});
-              
-      } else {
-          const { data, error } = await supabase.rpc('send_stream_gift', {
-            p_stream_key: effectiveStreamId,
-            p_gift_id: gift.id,
-          });
+    if (user?.id) {
+      try {
+        const { data, error } = await supabase.rpc('send_stream_gift', {
+          p_stream_key: effectiveStreamId,
+          p_gift_id: gift.id,
+        });
 
-          if (error) {
-            const msg = typeof error.message === 'string' ? error.message : '';
-            if (msg.includes('insufficient_funds')) {
-              alert('Not enough coins');
-              return;
-            }
-            if (msg.includes('stream_not_found')) {
-              alert('Stream not ready yet. Try again.');
-              return;
-            }
+        if (error) {
+          const msg = typeof error.message === 'string' ? error.message : '';
+          if (msg.includes('insufficient_funds')) {
+            alert('Not enough coins');
+            return;
+          }
+          if (msg.includes('stream_not_found')) {
+            // Fallback: deduct locally if stream RPC not set up yet
+            setCoinBalance(prev => Math.max(0, prev - gift.coins));
+          } else {
             alert('Gift failed');
             return;
           }
-
+        } else {
           const row = Array.isArray(data) ? data[0] : data;
           if (row?.new_balance != null) {
             setCoinBalance(Number(row.new_balance));
@@ -731,23 +1511,37 @@ export default function LiveStream() {
           if (row?.new_xp != null) {
             setUserXP(Number(row.new_xp));
           }
+        }
+      } catch {
+        // Fallback: deduct locally
+        setCoinBalance(prev => Math.max(0, prev - gift.coins));
       }
-    } else {
-      setCoinBalance(prev => prev - gift.coins);
-      // Update level/XP when not using real API
+
+      // Update level/XP locally
       const xpGained = gift.coins;
-      let newXP = userXP + xpGained;
-      let lvl = userLevel;
-      let xpNeeded = lvl * 1000;
-      while (newXP >= xpNeeded) {
-        lvl++;
-        newXP -= xpNeeded;
-        xpNeeded = lvl * 1000;
+      let currentXP = userXP + xpGained;
+      let currentLevel = userLevel;
+      while (true) {
+        const xpNeeded = currentLevel * 1000;
+        if (currentXP >= xpNeeded && currentLevel < 150) {
+          currentLevel++;
+          currentXP -= xpNeeded;
+        } else {
+          break;
+        }
       }
-      setUserXP(newXP);
-      setUserLevel(lvl);
-      updateUser({ level: lvl });
-      newLevel = lvl;
+      setUserLevel(currentLevel);
+      setUserXP(currentXP);
+      updateUser({ level: currentLevel });
+      newLevel = currentLevel;
+
+      // Sync level/xp to DB
+      supabase.from('profiles')
+        .update({ level: currentLevel, xp: currentXP })
+        .eq('user_id', user.id)
+        .then(() => {});
+    } else {
+      setCoinBalance(prev => Math.max(0, prev - gift.coins));
     }
 
     maybeEnqueueUniverse(gift.name, viewerName);
@@ -778,6 +1572,9 @@ export default function LiveStream() {
         avatar: viewerAvatar,
     };
     setMessages(prev => [...prev, giftMsg]);
+
+    // Viewers react to the gift being sent
+    setTimeout(() => triggerGiftReactions(gift.name, viewerName), 1000 + Math.random() * 2000);
 
     // Handle Combo Logic
     setLastSentGift(gift);
@@ -838,63 +1635,32 @@ export default function LiveStream() {
   const handleComboClick = async () => {
       if (!lastSentGift) return;
       
-      // Send same gift again
-      if (user?.username !== 'bericaandrei' && coinBalance < lastSentGift.coins) {
+      // Check balance
+      if (coinBalance < lastSentGift.coins) {
         alert("Not enough coins!");
         return;
       }
 
-      if (useRealApi && user?.id) {
-        if (user.username === 'bericaandrei') {
-            // Simulate success and update LEVEL/XP locally + DB
-            let currentLevel = userLevel;
-            let currentXP = userXP;
-            const xpGained = lastSentGift.coins;
-            currentXP += xpGained;
-            
-            while (true) {
-                const xpNeeded = currentLevel * 1000;
-                if (currentXP >= xpNeeded) {
-                    if (currentLevel < 150) {
-                        currentLevel++;
-                        currentXP -= xpNeeded;
-                    } else {
-                        currentXP = xpNeeded;
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-            
-            setUserLevel(currentLevel);
-            setUserXP(currentXP);
-            updateUser({ level: currentLevel });
-            
-            supabase.from('profiles')
-                .update({ level: currentLevel, xp: currentXP })
-                .eq('user_id', user.id)
-                .then(() => {});
-        } else {
-            const { data, error } = await supabase.rpc('send_stream_gift', {
-              p_stream_key: effectiveStreamId,
-              p_gift_id: lastSentGift.id,
-            });
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase.rpc('send_stream_gift', {
+            p_stream_key: effectiveStreamId,
+            p_gift_id: lastSentGift.id,
+          });
 
-            if (error) {
-              const msg = typeof error.message === 'string' ? error.message : '';
-              if (msg.includes('insufficient_funds')) {
-                alert('Not enough coins');
-                return;
-              }
-              if (msg.includes('stream_not_found')) {
-                alert('Stream not ready yet. Try again.');
-                return;
-              }
+          if (error) {
+            const msg = typeof error.message === 'string' ? error.message : '';
+            if (msg.includes('insufficient_funds')) {
+              alert('Not enough coins');
+              return;
+            }
+            if (msg.includes('stream_not_found')) {
+              setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
+            } else {
               alert('Gift failed');
               return;
             }
-
+          } else {
             const row = Array.isArray(data) ? data[0] : data;
             if (row?.new_balance != null) setCoinBalance(Number(row.new_balance));
             if (row?.new_level != null) {
@@ -902,9 +1668,33 @@ export default function LiveStream() {
               updateUser({ level: Number(row.new_level) });
             }
             if (row?.new_xp != null) setUserXP(Number(row.new_xp));
+          }
+        } catch {
+          setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
         }
       } else {
-        setCoinBalance(prev => prev - lastSentGift.coins);
+        setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
+      }
+
+      // Update level/XP locally
+      const xpGained = lastSentGift.coins;
+      let currentXP = userXP + xpGained;
+      let currentLevel = userLevel;
+      while (true) {
+        const xpNeeded = currentLevel * 1000;
+        if (currentXP >= xpNeeded && currentLevel < 150) {
+          currentLevel++;
+          currentXP -= xpNeeded;
+        } else break;
+      }
+      setUserLevel(currentLevel);
+      setUserXP(currentXP);
+      updateUser({ level: currentLevel });
+      if (user?.id) {
+        supabase.from('profiles')
+          .update({ level: currentLevel, xp: currentXP })
+          .eq('user_id', user.id)
+          .then(() => {});
       }
 
       maybeEnqueueUniverse(lastSentGift.name, viewerName);
@@ -914,22 +1704,7 @@ export default function LiveStream() {
         awardBattlePoints(giftTarget, lastSentGift.coins);
       }
 
-      const newLevel = useRealApi
-        ? userLevel
-        : (() => {
-            const xpGained = lastSentGift.coins;
-            let newXP = userXP + xpGained;
-            let lvl = userLevel;
-            let xpNeeded = lvl * 1000;
-            while (newXP >= xpNeeded) {
-              lvl++;
-              newXP -= xpNeeded;
-              xpNeeded = lvl * 1000;
-            }
-            setUserXP(newXP);
-            setUserLevel(lvl);
-            return lvl;
-          })();
+      const newLevel = currentLevel;
 
       setGiftQueue(prev => [...prev, lastSentGift.video]);
       setComboCount(prev => prev + 1);
@@ -944,12 +1719,32 @@ export default function LiveStream() {
       };
       setMessages(prev => [...prev, giftMsg]);
 
+      // Viewers react to combo gifts (50% chance to avoid spam)
+      if (Math.random() < 0.5) {
+        setTimeout(() => triggerGiftReactions(lastSentGift.name, viewerName), 800 + Math.random() * 1500);
+      }
+
       resetComboTimer();
   };
 
   const simulateIncomingGift = () => {
       const randomGift = GIFTS[Math.floor(Math.random() * GIFTS.length)];
-      const randomUser = ['fan_123', 'super_star', 'mystic_wolf'][Math.floor(Math.random() * 3)];
+      
+      // Use a real active viewer as the gifter (much more realistic)
+      let gifterName: string;
+      let gifterAvatar: string;
+      let gifterLevel: number | undefined;
+      if (activeViewers.length > 0) {
+        const gifter = activeViewers[Math.floor(Math.random() * activeViewers.length)];
+        gifterName = gifter.displayName;
+        gifterAvatar = gifter.avatar;
+        gifterLevel = gifter.level;
+      } else {
+        // Fallback for early stream before viewers join
+        const fallbackNames = ['Luna V.', 'Alex M.', 'Sofia B.'];
+        gifterName = fallbackNames[Math.floor(Math.random() * fallbackNames.length)];
+        gifterAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(gifterName)}`;
+      }
       
       const isFaceARGift = randomGift.id.startsWith('face_ar_');
       if (!isFaceARGift && randomGift.video) {
@@ -960,8 +1755,8 @@ export default function LiveStream() {
         maybeTriggerFaceARGift(randomGift);
       }
 
-      maybeEnqueueUniverse(randomGift.name, randomUser);
-      addBattleGifterCoins(randomUser, randomGift.coins);
+      maybeEnqueueUniverse(randomGift.name, gifterName);
+      addBattleGifterCoins(gifterName, randomGift.coins);
 
       if (isBattleMode && battleTime > 0 && !battleWinner) {
         const target = Math.random() > 0.5 ? 'me' : 'opponent';
@@ -970,12 +1765,16 @@ export default function LiveStream() {
       
       const giftMsg = {
           id: Date.now().toString(),
-          username: randomUser,
+          username: gifterName,
           text: `Sent a ${randomGift.name} ${randomGift.icon}`,
           isGift: true,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(randomUser)}&background=random`,
+          level: gifterLevel,
+          avatar: gifterAvatar,
       };
       setMessages(prev => [...prev, giftMsg]);
+
+      // Other viewers react to the gift
+      setTimeout(() => triggerGiftReactions(randomGift.name, gifterName), 800 + Math.random() * 2000);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -1026,7 +1825,7 @@ export default function LiveStream() {
     const avatar =
       username === myCreatorName
         ? myAvatar
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+        : `https://i.pravatar.cc/150?u=${encodeURIComponent(username)}`;
     const level = username === myCreatorName ? userLevel : null;
     setMiniProfile({ username, avatar, level, coins });
   };
@@ -1048,12 +1847,15 @@ export default function LiveStream() {
     if (!isBattleMode) return;
     setBattleCountdown(null);
     setBattleTime(0);
-    const winner = myScore === opponentScore ? 'draw' : myScore > opponentScore ? 'me' : 'opponent';
+    const winner = determine4PlayerWinner();
     setBattleWinner(winner);
   };
 
-  const totalScore = myScore + opponentScore;
-  const leftPctRaw = totalScore > 0 ? (myScore / totalScore) * 100 : 50;
+  // 2v2 Team Scores: Red Team (P1 + P3) vs Blue Team (P2 + P4)
+  const redTeamScore = myScore + player3Score;
+  const blueTeamScore = opponentScore + player4Score;
+  const totalScore = redTeamScore + blueTeamScore;
+  const leftPctRaw = totalScore > 0 ? (redTeamScore / totalScore) * 100 : 50;
   const leftPct = Math.max(3, Math.min(97, leftPctRaw));
   const universeText = currentUniverse
     ? `${currentUniverse.sender} sent ${universeGiftLabel} to ${currentUniverse.receiver}`
@@ -1070,25 +1872,7 @@ export default function LiveStream() {
 
       {/* Live Video Placeholder or Camera Feed */}
       <div ref={stageRef} className="relative w-full h-full">
-        <div className="absolute inset-0 pointer-events-none z-[240]">
-          {floatingHearts.map((h) => (
-            <div
-              key={h.id}
-              className="absolute elix-heart-float"
-              style={
-                {
-                  left: `${h.x}px`,
-                  top: `${h.y}px`,
-                  transform: 'translate(-50%, -50%)',
-                  '--elix-heart-dx': `${h.dx}px`,
-                  '--elix-heart-rot': `${h.rot}deg`,
-                } as React.CSSProperties
-              }
-            >
-              <Heart className="drop-shadow-[0_6px_14px_rgba(0,0,0,0.45)]" style={{ width: h.size, height: h.size, color: h.color, fill: h.color }} />
-            </div>
-          ))}
-        </div>
+        {/* Floating hearts removed */}
         
         {/* Base Video Layer - Always Show for Broadcaster */}
         {(!isBattleMode || isBroadcast) && (
@@ -1171,124 +1955,224 @@ export default function LiveStream() {
               </div>
             )}
 
-            <div className="relative w-full flex-1 flex border-l border-r border-b border-white/20">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setGiftTarget('me');
-                }}
-                onPointerDown={(e) => {
-                  console.log('Left tap:', e.clientX, e.clientY);
-                  spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
-                  addLiveLikes(1);
-                }}
-                className={`w-1/2 h-full overflow-hidden relative border-r border-white/10 bg-black pointer-events-auto ${giftTarget === 'me' ? 'ring-2 ring-[#FF4DA6]' : ''}`}
-              >
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover transform scale-x-[-1]"
-                  autoPlay
-                  playsInline
-                  muted
-                />
-              </button>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setGiftTarget('opponent');
-                }}
-                onPointerDown={(e) => {
-                  console.log('Right tap (chat):', e.clientX, e.clientY, 'Likes:', activeLikes);
-                  spawnHeartFromClient(e.clientX, e.clientY, '#FF2D55');
-                  addLiveLikes(1);
-                }}
-                className={`w-1/2 h-full bg-gray-900 relative overflow-hidden pointer-events-auto ${giftTarget === 'opponent' ? 'ring-2 ring-[#4A7DFF]' : ''}`}
-              >
-                <video
-                  ref={opponentVideoRef}
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  playsInline
-                  muted
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleBattle();
-                }}
-                className="absolute top-[-14px] left-0 right-0 z-20 w-full h-6 rounded-none overflow-hidden shadow-2xl pointer-events-auto"
-              >
-                {/* LUXURY BATTLE PROGRESS BAR */}
-                <div className="absolute inset-0 flex">
-                  <div
-                    className="h-full transition-all duration-500 ease-out relative overflow-hidden"
-                    style={{
-                      width: `${leftPct}%`,
-                      backgroundImage: 'linear-gradient(90deg, #DC143C, #FF1744, #C41E3A)',
-                    }}
+            {/* Dynamic Battle Grid: 2-split or 4-split based on players */}
+            {(() => {
+              const is4Player = battleSlots[1].status !== 'empty' || battleSlots[2].status !== 'empty';
+              return (
+                <div className={`relative w-full flex-none flex flex-col ${is4Player ? 'aspect-square' : 'h-[42vh]'}`}>
+                  {/* Score Bar on top - Red vs Blue */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleBattle(); }}
+                    className="relative z-20 w-full h-4 overflow-hidden shadow-2xl pointer-events-auto flex-none"
                   >
-                  </div>
-                  <div
-                    className="h-full flex-1 transition-all duration-500 ease-out relative overflow-hidden"
-                    style={{ backgroundImage: 'linear-gradient(90deg, #1E90FF, #4169E1, #0047AB)' }}
-                  >
-                  </div>
-                </div>
-                <div className="relative z-10 h-full flex items-center justify-between px-3">
-                  <div className="px-2 py-0.5 text-white font-black text-[11px] tabular-nums">
-                    {myScore.toLocaleString()}
-                  </div>
-                  <div className="px-2.5 py-0.5 text-[#E6B36A] text-[10px] font-black tabular-nums">
-                    {formatTime(battleTime)}
-                  </div>
-                  <div className="px-2 py-0.5 text-white font-black text-[11px] tabular-nums">
-                    {opponentScore.toLocaleString()}
-                  </div>
-                </div>
-              </button>
+                    <div className="absolute inset-0 flex">
+                      <div className="h-full transition-all duration-500 ease-out" style={{ width: `${leftPct}%`, backgroundImage: 'linear-gradient(90deg, #DC143C, #FF1744, #C41E3A)' }} />
+                      <div className="h-full flex-1 transition-all duration-500 ease-out" style={{ backgroundImage: 'linear-gradient(90deg, #1E90FF, #4169E1, #0047AB)' }} />
+                    </div>
+                    <div className="relative z-10 h-full flex items-center justify-between px-2">
+                      <div className="text-white font-black text-[8px] tabular-nums">{redTeamScore.toLocaleString()}</div>
+                      <div className="text-[#E6B36A] text-[8px] font-black tabular-nums">{formatTime(battleTime)}</div>
+                      <div className="text-white font-black text-[8px] tabular-nums">{blueTeamScore.toLocaleString()}</div>
+                    </div>
+                  </button>
 
-              {battleWinner && (
-                <div className="absolute left-3 right-3 top-3 z-50 pointer-events-none">
-                  {/* LUXURY BATTLE WINNER DISPLAY */}
-                  {battleWinner === 'draw' ? (
-                    <div className="mt-9 flex justify-center">
-                      <div className="px-4 py-2 animate-luxury-fade-in">
-                        <div className="text-[#E6B36A] text-sm font-black tracking-widest drop-shadow-[0_0_10px_rgba(230,179,106,0.8)]">
-                          DRAW
+                  {/* Top Row (or only row for 2-player): P1 & P2 */}
+                  <div className="flex flex-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setGiftTarget('me'); }}
+                      onPointerDown={() => { handleBattleTap('me'); }}
+                      className={`w-1/2 h-full overflow-hidden relative bg-black pointer-events-auto border-r border-white/5 ${is4Player ? 'border-b' : ''}`}
+                    >
+                      <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" autoPlay playsInline muted />
+                      <div className="absolute top-1 right-1 z-10 pointer-events-auto flex items-center gap-1">
+                        <div onClick={(e) => { e.stopPropagation(); togglePlayerMute('me'); }}>
+                          {mutedPlayers['me'] ? <VolumeX className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} /> : <Volume2 className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />}
+                        </div>
+                        <div onClick={(e) => { e.stopPropagation(); toggleBattle(); }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="mt-9 flex items-center justify-between animate-luxury-fade-in">
-                      <div
-                        className={`px-4 py-2 text-sm font-black tracking-widest transition-all ${
-                          battleWinner === 'me'
-                            ? 'bg-gradient-to-r from-[#FFD700] to-[#E6B36A] text-black animate-premium-glow scale-110'
-                            : 'text-white/50'
-                        }`}
-                      >
-                        {battleWinner === 'me' ? '🏆 WIN' : ''}
+                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ background: 'linear-gradient(135deg, rgba(220,20,60,0.7), rgba(220,20,60,0.3))' }}>{myCreatorName}</div>
+                      <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-black tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">{myScore.toLocaleString()}</div>
+                      {battleWinner && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className={`text-sm font-black drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] ${battleWinner === 'me' ? 'text-green-400' : battleWinner === 'draw' ? 'text-white' : 'text-red-400'}`}>
+                            {battleWinner === 'me' ? 'WIN' : battleWinner === 'draw' ? 'DRAW' : 'LOSS'}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setGiftTarget('opponent'); }}
+                      onPointerDown={() => { handleBattleTap('opponent'); }}
+                      className={`w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto ${is4Player ? 'border-b border-white/5' : ''}`}
+                    >
+                      {battleSlots[0].status === 'accepted' ? (
+                        <video ref={opponentVideoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                      ) : battleSlots[0].status === 'invited' ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900">
+                          <img src={battleSlots[0].avatar} alt={battleSlots[0].name} className="w-12 h-12 rounded-full border-2 border-[#E6B36A] opacity-60" />
+                          <div className="w-5 h-5 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                          <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                          <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/30 text-2xl">+</span>
+                          </div>
+                          <span className="text-white/40 text-[10px] font-bold">Invite P2</span>
+                        </div>
+                      )}
+                      {battleSlots[0].status !== 'empty' && (
+                        <div className="absolute top-1 right-1 z-10 pointer-events-auto flex items-center gap-1">
+                          <div onClick={(e) => { e.stopPropagation(); togglePlayerMute('opponent'); }}>
+                            {mutedPlayers['opponent'] ? <VolumeX className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} /> : <Volume2 className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />}
+                          </div>
+                          <div onClick={(e) => { e.stopPropagation(); removePlayerFromSlot(0); }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-black tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">{opponentScore.toLocaleString()}</div>
+                      <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ background: 'linear-gradient(135deg, rgba(30,144,255,0.7), rgba(30,144,255,0.3))' }}>
+                        {battleSlots[0].status !== 'empty' ? battleSlots[0].name : 'P2'}
                       </div>
-                      <div
-                        className={`px-4 py-2 text-sm font-black tracking-widest transition-all ${
-                          battleWinner === 'opponent'
-                            ? 'bg-gradient-to-r from-[#FFD700] to-[#E6B36A] text-black animate-premium-glow scale-110'
-                            : 'text-white/50'
-                        }`}
+                      {battleWinner && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className={`text-sm font-black drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] ${battleWinner === 'opponent' ? 'text-green-400' : battleWinner === 'draw' ? 'text-white' : 'text-red-400'}`}>
+                            {battleWinner === 'opponent' ? 'WIN' : battleWinner === 'draw' ? 'DRAW' : 'LOSS'}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Bottom Row: Player 3 & Player 4 - ONLY shown when 4 players */}
+                  {is4Player && (
+                    <div className="flex flex-1">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setGiftTarget('player3'); }}
+                        onPointerDown={() => { handleBattleTap('player3'); }}
+                        className="w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto border-r border-white/5"
                       >
-                        {battleWinner === 'opponent' ? '🏆 WIN' : ''}
-                      </div>
+                        {battleSlots[1].status === 'accepted' ? (
+                          <video ref={player3VideoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                        ) : battleSlots[1].status === 'invited' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900">
+                            <img src={battleSlots[1].avatar} alt={battleSlots[1].name} className="w-12 h-12 rounded-full border-2 border-[#E6B36A] opacity-60" />
+                            <div className="w-5 h-5 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                            <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                            <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                              <span className="text-white/30 text-2xl">+</span>
+                            </div>
+                            <span className="text-white/40 text-[10px] font-bold">Invite P3</span>
+                          </div>
+                        )}
+                        {battleSlots[1].status !== 'empty' && (
+                          <div className="absolute top-1 right-1 z-10 pointer-events-auto flex items-center gap-1">
+                            <div onClick={(e) => { e.stopPropagation(); togglePlayerMute('player3'); }}>
+                              {mutedPlayers['player3'] ? <VolumeX className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} /> : <Volume2 className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />}
+                            </div>
+                            <div onClick={(e) => { e.stopPropagation(); removePlayerFromSlot(1); }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ background: 'linear-gradient(135deg, rgba(0,200,83,0.7), rgba(0,200,83,0.3))' }}>
+                          {battleSlots[1].status !== 'empty' ? battleSlots[1].name : 'P3'}
+                        </div>
+                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-black tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">{player3Score.toLocaleString()}</div>
+                        {battleWinner && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className={`text-sm font-black drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] ${battleWinner === 'me' ? 'text-green-400' : battleWinner === 'draw' ? 'text-white' : 'text-red-400'}`}>
+                              {battleWinner === 'me' ? 'WIN' : battleWinner === 'draw' ? 'DRAW' : 'LOSS'}
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setGiftTarget('player4'); }}
+                        onPointerDown={() => { handleBattleTap('player4'); }}
+                        className="w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto"
+                      >
+                        {battleSlots[2].status === 'accepted' ? (
+                          <video ref={player4VideoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                        ) : battleSlots[2].status === 'invited' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900">
+                            <img src={battleSlots[2].avatar} alt={battleSlots[2].name} className="w-12 h-12 rounded-full border-2 border-[#E6B36A] opacity-60" />
+                            <div className="w-5 h-5 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                            <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                            <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                              <span className="text-white/30 text-2xl">+</span>
+                            </div>
+                            <span className="text-white/40 text-[10px] font-bold">Invite P4</span>
+                          </div>
+                        )}
+                        {battleSlots[2].status !== 'empty' && (
+                          <div className="absolute top-1 right-1 z-10 pointer-events-auto flex items-center gap-1">
+                            <div onClick={(e) => { e.stopPropagation(); togglePlayerMute('player4'); }}>
+                              {mutedPlayers['player4'] ? <VolumeX className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} /> : <Volume2 className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />}
+                            </div>
+                            <div onClick={(e) => { e.stopPropagation(); removePlayerFromSlot(2); }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-black tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">{player4Score.toLocaleString()}</div>
+                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ background: 'linear-gradient(135deg, rgba(156,39,176,0.7), rgba(156,39,176,0.3))' }}>
+                          {battleSlots[2].status !== 'empty' ? battleSlots[2].name : 'P4'}
+                        </div>
+                        {battleWinner && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className={`text-sm font-black drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] ${battleWinner === 'opponent' ? 'text-green-400' : battleWinner === 'draw' ? 'text-white' : 'text-red-400'}`}>
+                              {battleWinner === 'opponent' ? 'WIN' : battleWinner === 'draw' ? 'DRAW' : 'LOSS'}
+                            </span>
+                          </div>
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
+
+            {/* MVP Circles - between battle frame and chat, like TikTok */}
+            {battleTime > 0 && (
+              <div className="w-full px-3 py-1 flex items-center justify-between flex-none pointer-events-none">
+                <div className="flex items-center gap-1">
+                  {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                    const g = getTopGifters('me')[i];
+                    return g ? (
+                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ borderColor: c }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                    ) : (
+                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2" style={{ borderColor: c }}><img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover opacity-40" /></div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1">
+                  {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                    const g = getTopGifters('opponent')[i];
+                    return g ? (
+                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ borderColor: c }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                    ) : (
+                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2" style={{ borderColor: c }}><img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="" className="w-full h-full object-cover opacity-40" /></div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Chat Section for Spectators Only */}
             {!isBroadcast && (
@@ -1304,69 +2188,136 @@ export default function LiveStream() {
         )}
       </div>
 
+      {/* Rematch button moved to broadcaster bottom bar */}
+
       {/* Top Bar - Always show for broadcaster (both normal and battle mode) */}
       {isBroadcast && (
         <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
-          <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}>
+          <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2px)' }}>
             <div className="flex items-start justify-between gap-2">
               <div className="pointer-events-auto flex flex-col gap-2">
-                {/* LUXURY BROADCASTER INFO */}
-                <div className="px-3 py-2 animate-luxury-fade-in">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <img
-                        src={myAvatar}
-                        alt={myCreatorName}
-                        className="w-9 h-9 rounded-full object-cover border-2 border-[#E6B36A] shadow-lg"
-                      />
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-2 border-black animate-premium-glow" />
+                {/* BROADCASTER INFO - circle + capsule like LevelBadge */}
+                <div className="px-0 py-1 animate-luxury-fade-in -ml-2">
+                  <div className="flex items-center relative">
+                    {/* Profile circle */}
+                    <div className="relative z-10 w-14 h-14 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
+                      <img src={myAvatar} alt={myCreatorName} className="w-full h-full object-cover" />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-white text-sm font-bold truncate max-w-[120px]">
-                        {myCreatorName}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-gradient-to-r from-[#E6B36A] to-[#FFD700] rounded text-black text-[9px] font-black uppercase tracking-wide">
-                          LIVE
-                        </span>
+                    {/* Capsule with name + likes */}
+                    <div className="flex items-center -ml-4 pl-6 pr-2.5 h-8 rounded-full border border-white/60 bg-black/50" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}>
+                      {/* Semicircle separator */}
+                      <div className="flex flex-col items-start">
+                        <span className="text-white text-[11px] font-bold truncate max-w-[90px] leading-tight">{myCreatorName}</span>
+                        <button
+                          type="button"
+                          className="flex items-center gap-0.5 pointer-events-auto"
+                          onPointerDown={(e) => {
+                            spawnHeartFromClient(e.clientX, e.clientY);
+                            addLiveLikes(1);
+                          }}
+                        >
+                          <Heart className="w-3 h-3 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
+                          <span className="text-white/70 text-[9px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
+                        </button>
+                      </div>
+                      {/* Member heart at the end */}
+                      <div className="ml-2 flex-shrink-0">
+                        <Heart className="w-4 h-4 text-[#E6B36A] drop-shadow-[0_0_4px_rgba(230,179,106,0.6)]" strokeWidth={2} fill="#E6B36A" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pointer-events-auto flex items-center gap-2">
+              <div className="pointer-events-auto flex items-center gap-2 mt-1">
+                {/* Active viewer avatars + viewer count */}
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center -space-x-1.5">
+                    {(activeViewers.length > 0 ? activeViewers.slice(0, 5) : VIEWER_POOL.slice(0, 3)).map((v, i) => (
+                      <img
+                        key={v.id}
+                        src={v.avatar}
+                        alt={v.username}
+                        className="w-6 h-6 rounded-full border-[1.5px] border-black object-cover"
+                        style={{ zIndex: 5 - i }}
+                      />
+                    ))}
+                    {activeViewers.length > 5 && (
+                      <div className="w-6 h-6 rounded-full bg-black/60 border-[1.5px] border-white/20 flex items-center justify-center" style={{ zIndex: 0 }}>
+                        <span className="text-white text-[7px] font-bold">+{activeViewers.length - 5}</span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowViewerList(prev => !prev)}
+                    className="flex items-center gap-0.5"
+                    title="View all viewers"
+                  >
+                    <span className="text-white text-[11px] font-bold tabular-nums">{viewerCount.toLocaleString()}</span>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={stopBroadcast}
-                  className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+                  className="w-8 h-8 rounded-full bg-[#FF4D6A]/20 border border-[#FF4D6A]/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+                  title="End Live"
                 >
-                  <img src="/Icons/power-button.png" alt="Exit" className="w-8 h-8 object-contain" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
                 </button>
               </div>
             </div>
             {currentUniverse && (
-              <div className="mt-1">
-                <div className="pointer-events-auto h-7 rounded-lg bg-black border border-transparent flex items-center overflow-hidden">
-                  <div className="elix-marquee w-full">
-                    <div
-                      key={currentUniverse.id}
-                      className="elix-marquee__inner text-[#E6B36A] text-[13px] font-semibold"
-                      style={{
-                        animationDuration: `${universeDurationSeconds}s`,
-                        animationIterationCount: 1,
-                        animationTimingFunction: 'linear',
-                        animationFillMode: 'forwards',
-                      }}
-                      onAnimationEnd={() => setCurrentUniverse(null)}
-                    >
-                      {universeText}
-                    </div>
-                  </div>
+              <div className="mt-0 pointer-events-auto">
+                <div
+                  key={currentUniverse.id} 
+                  className="h-5 rounded-md bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-2 gap-1 shadow-[0_0_20px_rgba(220,20,60,0.3)]"
+                >
+                  <span className="text-black text-[12px] font-extrabold tracking-wide truncate">✨ {universeText} ✨</span>
                 </div>
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ═══ VIEWER LIST PANEL ═══ */}
+      {showViewerList && (
+        <div className="absolute top-[120px] left-2 right-2 z-[150] pointer-events-auto max-h-[50vh] rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden animate-in slide-in-from-top duration-200">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-bold text-sm">Viewers</span>
+              <span className="bg-white/10 px-2 py-0.5 rounded-full text-white/70 text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+            </div>
+            <button onClick={() => setShowViewerList(false)} title="Close viewer list" className="p-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div className="max-h-[40vh] overflow-y-auto">
+            {activeViewers.map(v => (
+              <div key={v.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5">
+                <img src={v.avatar} alt={v.displayName} className="w-9 h-9 rounded-full object-cover border border-white/10" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white text-xs font-semibold truncate">{v.displayName}</span>
+                    <span className="text-white/40 text-[10px]">{v.country}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[9px] font-bold text-[#E6B36A] bg-[#E6B36A]/10 px-1.5 py-0.5 rounded-full">LVL {v.level}</span>
+                    <span className="text-white/30 text-[9px]">@{v.username}</span>
+                  </div>
+                </div>
+                <button className="px-2.5 py-1 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 text-[#E6B36A] text-[10px] font-bold hover:bg-[#E6B36A]/25 transition-colors">
+                  Follow
+                </button>
+              </div>
+            ))}
+            {activeViewers.length === 0 && (
+              <div className="py-8 text-center text-white/40 text-xs">
+                Viewers are joining...
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1390,22 +2341,20 @@ export default function LiveStream() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-white font-black text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="px-1.5 py-0.5 bg-gradient-to-r from-[#E6B36A] to-[#FFD700] rounded text-black text-[9px] font-black uppercase tracking-wide">
-                        LIVE
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 mt-0.5 pointer-events-auto"
+                      onPointerDown={(e) => {
+                        spawnHeartFromClient(e.clientX, e.clientY);
+                        addLiveLikes(1);
+                      }}
+                    >
+                      <Heart className="w-3.5 h-3.5 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
+                      <span className="text-white/80 text-[10px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
+                    </button>
                   </div>
                 </div>
               </button>
-
-              {/* LIVE LIKES COUNTER - Under Profile */}
-              <div className="pl-2 flex items-center gap-1">
-                <Heart className="w-4 h-4 text-[#E6B36A]" strokeWidth={2.5} fill="#E6B36A" />
-                <span className="text-white text-sm font-black tabular-nums">
-                  {activeLikes.toLocaleString()}
-                </span>
-              </div>
             </div>
 
             <div className="pointer-events-auto flex flex-col items-center gap-2">
@@ -1428,6 +2377,19 @@ export default function LiveStream() {
 
             <div className="pointer-events-auto flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
+                {/* Viewer count + avatars */}
+                <button
+                  onClick={() => setShowViewerList(prev => !prev)}
+                  className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1"
+                  title="Viewers"
+                >
+                  <div className="flex -space-x-1">
+                    {activeViewers.slice(0, 3).map(v => (
+                      <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
+                    ))}
+                  </div>
+                  <span className="text-white text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+                </button>
                 <button
                   type="button"
                   onClick={isBroadcast ? stopBroadcast : () => navigate('/')}
@@ -1441,16 +2403,12 @@ export default function LiveStream() {
           </div>
 
           {currentUniverse && (
-            <div className="mt-0">
-              <div className="pointer-events-auto h-7 rounded-lg bg-red-950 border border-[#E6B36A] flex items-center justify-center overflow-hidden shadow-[0_0_16px_rgba(230,179,106,0.12)]">
-                <div className="w-full px-2 text-center">
-                  <div
-                    key={currentUniverse.id}
-                    className="text-white text-[14px] font-extrabold truncate"
-                  >
-                    {universeText}
-                  </div>
-                </div>
+            <div className="mt-1 pointer-events-auto">
+              <div
+                key={currentUniverse.id}
+                className="h-9 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-4 gap-2 shadow-[0_0_20px_rgba(220,20,60,0.3)]"
+              >
+                <span className="text-white text-[14px] font-extrabold tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">✨ {universeText} ✨</span>
               </div>
             </div>
           )}
@@ -1463,7 +2421,7 @@ export default function LiveStream() {
         <div className="fixed inset-0 z-[500] bg-black  flex items-end justify-center">
           <div className="w-full max-w-[500px] bg-black overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6B36A]">
-              <p className="text-[#E6B36A] font-extrabold">Invite to Battle</p>
+              <p className="text-[#E6B36A] font-extrabold">{isBattleMode ? 'Invite to Battle' : 'Find Creators'}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -1472,7 +2430,7 @@ export default function LiveStream() {
                 }}
                 className="p-2 text-[#E6B36A]"
               >
-                <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5 object-contain" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
@@ -1488,36 +2446,107 @@ export default function LiveStream() {
               </div>
             </div>
 
-            <div className="max-h-[55vh] overflow-y-auto">
-              {filteredCreators.map((c) => (
-                <div
-                  key={c.id}
-                  className="px-4 py-3 flex items-center justify-between border-b border-transparent"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 flex items-center justify-center text-[#E6B36A] font-extrabold">
-                      {c.name.slice(0, 1).toUpperCase()}
+            {/* Invited Players Status */}
+            {anySlotFilled && (
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-white/50 text-[10px] font-bold uppercase tracking-wider mb-2">Players Joining</p>
+                <div className="flex gap-3">
+                  {battleSlots.map((slot, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      {slot.status === 'empty' ? (
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                          <span className="text-white/30 text-lg">+</span>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <img src={slot.avatar} alt={slot.name} className="w-10 h-10 rounded-full object-cover border-2" style={{ borderColor: slot.status === 'accepted' ? '#00C853' : '#E6B36A' }} />
+                          {slot.status === 'invited' && (
+                            <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
+                              <div className="w-4 h-4 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          )}
+                          {slot.status === 'accepted' && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
+                              <span className="text-white text-[8px] font-bold">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-white/60 text-[9px] truncate max-w-[50px]">
+                        {slot.status === 'empty' ? `P${i + 2}` : slot.name}
+                      </span>
+                      {slot.status === 'invited' && (
+                        <span className="text-[#E6B36A] text-[8px]">Waiting...</span>
+                      )}
+                      {slot.status === 'accepted' && (
+                        <span className="text-green-400 text-[8px]">Joined!</span>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-white font-semibold truncate">{c.name}</p>
-                      <p className="text-white/60 text-xs">{c.followers} followers</p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => startBattleWithCreator(c.name)}
-                    className="px-3 py-1.5 bg-[#E6B36A] text-black text-xs font-extrabold"
-                  >
-                    Invite
-                  </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            <div className="max-h-[45vh] overflow-y-auto">
+              {filteredCreators.map((c) => {
+                const slotStatus = battleSlots.find(s => s.name === c.name)?.status;
+                const isInvited = slotStatus === 'invited';
+                const isAccepted = slotStatus === 'accepted';
+                const allFull = battleSlots.every(s => s.status !== 'empty');
+
+                return (
+                  <div
+                    key={c.id}
+                    className="px-4 py-3 flex items-center justify-between border-b border-transparent"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={`https://i.pravatar.cc/150?u=${encodeURIComponent(c.name)}`}
+                        alt={c.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-white font-semibold truncate">{c.name}</p>
+                        <p className="text-white/60 text-xs">{c.followers} followers</p>
+                      </div>
+                    </div>
+
+                    {isAccepted ? (
+                      <span className="px-3 py-1.5 text-green-400 text-xs font-extrabold">Joined ✓</span>
+                    ) : isInvited ? (
+                      <span className="px-3 py-1.5 text-[#E6B36A] text-xs font-extrabold flex items-center gap-1">
+                        <div className="w-3 h-3 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                        Sent
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => inviteCreatorToSlot(c.name)}
+                        disabled={allFull}
+                        className={`px-3 py-1.5 text-xs font-extrabold rounded ${allFull ? 'bg-white/10 text-white/30' : 'bg-[#E6B36A] text-black active:scale-95 transition-transform'}`}
+                      >
+                        Invite
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
               {filteredCreators.length === 0 && (
                 <div className="px-4 py-10 text-center text-white/70 text-sm">No creators found</div>
               )}
             </div>
+
+            {/* Status bar - shows invited/accepted count */}
+            {battleSlots.some(s => s.status !== 'empty') && (
+              <div className="px-4 py-3 border-t border-white/10">
+                <div className="w-full py-2 rounded-xl bg-white/5 border border-white/10 text-center">
+                  <span className="text-white/60 text-sm font-bold">
+                    {battleSlots.filter(s => s.status === 'accepted').length} accepted · {battleSlots.filter(s => s.status === 'invited').length} waiting
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1565,7 +2594,7 @@ export default function LiveStream() {
                   </div>
                 </div>
                 <button type="button" onClick={closeMiniProfile} className="w-9 h-9 flex items-center justify-center text-white">
-                  <X className="w-5 h-5" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
 
@@ -1602,14 +2631,16 @@ export default function LiveStream() {
         <ChatOverlay
           messages={messages}
           variant="overlay"
+          compact={isBroadcast && isBattleMode}
           className={
             isLiveNormal
               ? "pb-[calc(84px+env(safe-area-inset-bottom))] z-[100]"
               : isBroadcast && isBattleMode
-                ? "pb-[calc(16px+env(safe-area-inset-bottom))] z-[100]"
+                ? "pb-[calc(56px+env(safe-area-inset-bottom))] z-[100]"
                 : "z-[100]"
           }
           onLike={() => addLiveLikes(1)}
+          onHeartSpawn={(cx, cy) => spawnHeartFromClient(cx, cy)}
         />
       )}
 
@@ -1637,125 +2668,202 @@ export default function LiveStream() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Controls - Higher z-index to be above video */}
+      {/* Bottom Controls - Spectator bar */}
       {!isBroadcast && (
-      <div className={`absolute bottom-4 left-4 right-4 z-[110] flex items-center gap-2 ${isPlayingGift ? 'justify-end' : ''}`}>
-        {!isPlayingGift && (
-            <form onSubmit={handleSendMessage} className="flex-1 bg-black px-4 py-2 flex items-center gap-2">
+      <div className="absolute bottom-0 left-0 right-0 z-[110] px-2 pb-[calc(6px+env(safe-area-inset-bottom))]">
+        <div className="flex items-end gap-1.5">
+          {/* Chat Input */}
+          {!isPlayingGift && (
+            <form onSubmit={handleSendMessage} className="flex-1 bg-white/10 backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-2 border border-white/10">
                 <input 
                     type="text" 
+                    inputMode="text"
+                    enterKeyHint="send"
+                    autoComplete="off"
+                    autoCorrect="off"
                     placeholder="Say something..." 
-                    className="text-white text-sm outline-none flex-1 placeholder:text-gray-400"
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder:text-white/40"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onPointerDown={() => addLiveLikes(1)}
                 />
-                <button type="submit" className="text-white">
+                <button type="submit" className="text-white/80 hover:text-white transition" title="Send">
                     <Send size={18} />
                 </button>
             </form>
-        )}
-        
-        {/* Debug: Add Test Coins */}
-        {!isBattleMode && (
-        <button 
-            onClick={() => {
-              setCoinBalance(999999999);
-              alert('💰 Added 999,999,999 test coins!');
-            }}
-            className="w-8 h-8 flex items-center justify-center text-xs text-white bg-yellow-600/20 rounded hover:bg-yellow-600/40 transition"
-            title="Add Test Coins"
-        >
-            💰
-        </button>
-        )}
+          )}
 
-        {/* Debug: Simulate Incoming Gift */}
-        {!isBattleMode && (
-        <button 
-            onClick={simulateIncomingGift}
-            className="w-8 h-8 flex items-center justify-center text-xs text-white bg-purple-600/20 rounded hover:bg-purple-600/40 transition"
-            title="Simulate Incoming Gift"
-        >
-            🧪
-        </button>
-        )}
+          {/* Heart */}
+          <button
+              type="button"
+              onPointerDown={(e) => {
+                spawnHeartFromClient(e.clientX, e.clientY);
+                addLiveLikes(1);
+              }}
+              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+              title="Heart"
+          >
+              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#FF4D6A]/20 to-[#FF4D6A]/5 backdrop-blur-md border border-[#FF4D6A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(255,77,106,0.15)]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#FF4D6A" stroke="none">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+              <span className="text-[9px] text-[#FF4D6A] font-semibold">Heart</span>
+          </button>
 
-        {/* Gift Button - Visible for everyone for testing */}
-        <button
-            onClick={() => setShowGiftPanel(true)}
-            className="w-6 h-6 flex items-center justify-center hover:scale-110 active:scale-125 transition"
-        >
-            <img src="/Icons/gift-button.png" alt="Gift" className="w-6 h-6 object-contain" />
-        </button>
+          {/* Gift */}
+          <button
+              type="button"
+              onClick={() => setShowGiftPanel(true)}
+              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+              title="Gift"
+          >
+              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/20 to-[#E6B36A]/5 backdrop-blur-md border border-[#E6B36A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.15)]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="8" width="18" height="13" rx="2"/>
+                  <path d="M12 8v13"/>
+                  <path d="M3 12h18"/>
+                  <path d="M12 8c-1.5-2-4-3-4-3s1.5-2 4 0c2.5-2 4 0 4 0s-2.5 1-4 3z"/>
+                </svg>
+              </div>
+              <span className="text-[9px] text-[#E6B36A] font-semibold">Gift</span>
+          </button>
+
+          {/* Share */}
+          <button
+              type="button"
+              onClick={handleShare}
+              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+              title="Share"
+          >
+              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-[0_0_12px_rgba(255,255,255,0.08)]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <span className="text-[9px] text-white/70 font-semibold">Share</span>
+          </button>
+        </div>
       </div>
       )}
 
       {/* Bottom Controls - Always show for broadcaster */}
       {isBroadcast && (
-        <div className="absolute bottom-0 left-0 right-0 z-[110]">
-          <div className="px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-            {/* LUXURY BROADCASTER CONTROLS */}
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {!isBattleMode && (
-                    <button
-                      type="button"
-                      onClick={toggleBattle}
-                      className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all relative"
-                    >
-                      <img src="/Icons/battle-button.png" alt="Battle" className="w-6 h-6 object-contain relative z-10" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCreatorsOpen(true)}
-                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                  >
-                    <img src="/Icons/friend-button.png" alt="Friends" className="w-6 h-6 object-contain" />
-                  </button>
-                </div>
+        <div className="absolute bottom-0 left-0 right-0 z-[110] pointer-events-auto">
+          <div className="px-2 pb-[calc(6px+env(safe-area-inset-bottom))]">
+            <div className="flex items-end justify-end gap-3">
+                {/* Invite - opens panel to add players (enters battle mode if needed) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isBattleMode) {
+                      toggleBattle(); // enters battle mode + opens invite
+                    } else {
+                      setIsFindCreatorsOpen(true);
+                    }
+                  }}
+                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                  title="Invite"
+                >
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#4DA6FF]/20 to-[#4DA6FF]/5 backdrop-blur-md border border-[#4DA6FF]/30 flex items-center justify-center shadow-[0_0_12px_rgba(77,166,255,0.15)]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4DA6FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="8.5" cy="7" r="4"/>
+                      <line x1="20" y1="8" x2="20" y2="14"/>
+                      <line x1="23" y1="11" x2="17" y2="11"/>
+                    </svg>
+                  </div>
+                  <span className="text-[9px] text-[#4DA6FF] font-semibold">Invite</span>
+                </button>
 
-                <div className="flex items-center gap-2">
-                  {/* Dev: Add Test Coins */}
+                {/* Match - start the game (only when players ready, game not started) */}
+                {isBattleMode && !battleWinner && battleTime === 0 && battleCountdown === null && battleSlots.some(s => s.status === 'accepted') && (
                   <button
                     type="button"
                     onClick={() => {
-                      setCoinBalance(999999999);
-                      alert('💰 Added 999,999,999 test coins!');
+                      setIsFindCreatorsOpen(false);
+                      setBattleCountdown(3);
                     }}
-                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all text-yellow-400"
-                    title="Add Test Coins"
+                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                    title="Match"
                   >
-                    💰
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/30 to-[#E6B36A]/10 backdrop-blur-md border border-[#E6B36A]/50 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.25)]">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    </div>
+                    <span className="text-[9px] text-[#E6B36A] font-semibold">Match</span>
                   </button>
+                )}
+
+                {/* Rematch - only when battle finished */}
+                {isBattleMode && battleWinner && (
                   <button
                     type="button"
                     onClick={() => {
-                      setGiftTarget('me');
-                      setShowGiftPanel(true);
+                      setMyScore(0);
+                      setOpponentScore(0);
+                      setPlayer3Score(0);
+                      setPlayer4Score(0);
+                      setBattleWinner(null);
+                      setBattleTime(0);
+                      battleTapScoreRemainingRef.current = 5;
+                      setBattleTapScoreRemaining(5);
+                      setBattleGifterCoins({});
+                      setPlayerGifters({});
+                      setBattleCountdown(3);
                     }}
-                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all relative"
+                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                    title="Rematch"
                   >
-                    <img src="/Icons/gift-button.png" alt="Gifts" className="w-6 h-6 object-contain relative z-10" />
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#00C851]/20 to-[#00C851]/5 backdrop-blur-md border border-[#00C851]/30 flex items-center justify-center shadow-[0_0_12px_rgba(0,200,81,0.15)]">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00C851" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 4v6h6"/>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                      </svg>
+                    </div>
+                    <span className="text-[9px] text-[#00C851] font-semibold">Rematch</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                  >
-                    <img src="/Icons/battle-share.png" alt="Share" className="w-6 h-6 object-contain" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsMoreMenuOpen(true)}
-                    className="w-7 h-7 flex items-center justify-center hover:scale-110 active:scale-125 transition-all"
-                  >
-                    <img src="/Icons/more-button.png" alt="More" className="w-6 h-6 object-contain" />
-                  </button>
-                </div>
-              </div>
+                )}
+
+                {/* Gift */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGiftTarget('me');
+                    setShowGiftPanel(true);
+                  }}
+                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                  title="Gift"
+                >
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/20 to-[#E6B36A]/5 backdrop-blur-md border border-[#E6B36A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.15)]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="8" width="18" height="13" rx="2"/>
+                      <path d="M12 8v13"/>
+                      <path d="M3 12h18"/>
+                      <path d="M12 8c-1.5-2-4-3-4-3s1.5-2 4 0c2.5-2 4 0 4 0s-2.5 1-4 3z"/>
+                    </svg>
+                  </div>
+                  <span className="text-[9px] text-[#E6B36A] font-semibold">Gift</span>
+                </button>
+
+                {/* More */}
+                <button
+                  type="button"
+                  onClick={() => setIsMoreMenuOpen(true)}
+                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                  title="More"
+                >
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-[0_0_12px_rgba(255,255,255,0.08)]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff">
+                      <circle cx="12" cy="5" r="2"/>
+                      <circle cx="12" cy="12" r="2"/>
+                      <circle cx="12" cy="19" r="2"/>
+                    </svg>
+                  </div>
+                  <span className="text-[9px] text-white/70 font-semibold">More</span>
+                </button>
             </div>
           </div>
         </div>
@@ -1832,7 +2940,87 @@ export default function LiveStream() {
                   <span className="font-semibold">{isChatVisible ? 'Hide comments' : 'Show comments'}</span>
                 </div>
               </button>
+              <div className="h-px bg-[#E6B36A]" />
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleShare();
+                  setIsMoreMenuOpen(false);
+                }}
+                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+              >
+                <div className="flex items-center gap-3">
+                  <Share2 className="w-5 h-5" strokeWidth={2} />
+                  <span className="font-semibold">Share</span>
+                </div>
+              </button>
+              <div className="h-px bg-[#E6B36A]" />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMoreMenuOpen(false);
+                  setCoinPassword('');
+                  setShowCoinModal(true);
+                }}
+                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">💰</span>
+                  <span className="font-semibold">Reload</span>
+                </div>
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Coin Reload Password Modal */}
+      {showCoinModal && (
+        <div
+          className="fixed inset-0 z-[800] bg-black/80 flex items-center justify-center"
+          onClick={() => setShowCoinModal(false)}
+        >
+          <div
+            className="bg-[#1a1a2e] rounded-2xl p-6 mx-4 w-full max-w-[320px] border border-[#E6B36A]/30"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[#E6B36A] text-lg font-bold text-center mb-4">Enter Password</h3>
+            <input
+              type="password"
+              value={coinPassword}
+              onChange={(e) => setCoinPassword(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  if (coinPassword === 'elixstar2026') {
+                    setCoinBalance(99999999);
+                    if (user?.id) {
+                      await supabase.from('profiles').update({ coin_balance: 99999999 }).eq('user_id', user.id);
+                    }
+                    setShowCoinModal(false);
+                    setCoinPassword('');
+                  }
+                }
+              }}
+              placeholder="Password..."
+              className="w-full px-4 py-3 bg-black/50 border border-[#E6B36A]/40 rounded-xl text-white text-center outline-none focus:border-[#E6B36A] transition"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                if (coinPassword === 'elixstar2026') {
+                  setCoinBalance(99999999);
+                  if (user?.id) {
+                    await supabase.from('profiles').update({ coin_balance: 99999999 }).eq('user_id', user.id);
+                  }
+                  setShowCoinModal(false);
+                  setCoinPassword('');
+                }
+              }}
+              className="w-full mt-3 py-3 bg-[#E6B36A] text-black font-bold rounded-xl hover:bg-[#d4a35a] transition"
+            >
+              Confirm
+            </button>
           </div>
         </div>
       )}
@@ -1857,7 +3045,7 @@ export default function LiveStream() {
                   <span className="text-[10px] text-white/40 font-mono">v1.5 (Clean UI)</span>
                 </div>
                 <button type="button" onClick={() => setIsLiveSettingsOpen(false)} className="p-2">
-                  <X className="w-5 h-5" strokeWidth={2} />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
               <div className="h-px bg-[#E6B36A]" />
@@ -1899,7 +3087,7 @@ export default function LiveStream() {
                   className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A] hover:brightness-125"
                 >
                   <div className="flex items-center gap-3">
-                    <img src="/Icons/battle-share.png" alt="Share" className="w-7 h-7 object-contain" />
+                    <Share2 className="w-5 h-5" strokeWidth={2} />
                     <span className="font-semibold">Share</span>
                   </div>
                 </button>

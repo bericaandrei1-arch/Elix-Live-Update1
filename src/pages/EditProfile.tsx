@@ -131,7 +131,7 @@ export default function EditProfile() {
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 py-4 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-          <X className="w-6 h-6" />
+          <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
         </button>
         <h1 className="text-lg font-bold">Edit Profile</h1>
         <button

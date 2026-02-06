@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Share2, Menu, Lock, Play, Heart, EyeOff, Camera, Sparkles, Sword } from 'lucide-react';
+import { Share2, Menu, Lock, Play, Heart, EyeOff, Camera, Sparkles, Sword, LogOut, UserPlus, X } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { supabase } from '../lib/supabase';
@@ -29,8 +29,7 @@ export default function Profile() {
   const { userId: routeUserId } = useParams<{ userId?: string }>();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const { user, updateUser } = useAuthStore();
-  const isDev = import.meta.env.DEV;
+  const { user, updateUser, signOut } = useAuthStore();
   
   const [activeTab, setActiveTab] = useState<'videos' | 'private' | 'liked' | 'battles'>(
     (tabParam as any) || 'videos'
@@ -41,6 +40,7 @@ export default function Profile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   
   const isOwnProfile = !routeUserId || routeUserId === user?.id;
   const displayUserId = routeUserId || user?.id;
@@ -175,41 +175,97 @@ export default function Profile() {
     }
   };
 
-  const handleDevTopUp = async () => {
-    if (!user) return;
-    if (!isDev) return;
-    if (!window.confirm('Recharge 999,999 coins for testing?')) return;
-    
-    try {
-        // Update profiles (source for LiveStream)
-        const { error } = await supabase
-            .from('profiles')
-            .update({ coin_balance: 999999 })
-            .eq('user_id', user.id);
-            
-        if (error) throw error;
-        alert('Coins updated successfully! You now have 999,999 coins.');
-    } catch (e) {
-        console.error(e);
-        alert('Failed to update coins. You might need admin rights.');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-black text-white pb-24 pt-4 flex justify-center">
       <div className="w-full max-w-[500px]">
         <header className="flex justify-between items-center px-4 mb-6">
-            <div className="w-6"></div> {/* Spacer */}
+            <div className="w-6"></div>
             <h1 className="font-black text-2xl flex items-center gap-2 text-white/90 tracking-tight drop-shadow-sm">
                 {displayName}
             </h1>
             <div className="flex space-x-4">
                 <EyeOff size={24} />
-                <button type="button" onClick={() => navigate('/settings')} className="cursor-pointer" aria-label="Settings" title="Settings">
+                <button type="button" onClick={() => setShowAccountMenu(true)} className="cursor-pointer" aria-label="Account menu" title="Account menu">
                   <Menu size={24} />
                 </button>
             </div>
         </header>
+
+        {/* ═══ Account Menu Modal ═══ */}
+        {showAccountMenu && (
+          <div className="fixed inset-0 z-[200] bg-black/70 flex items-end justify-center" onClick={() => setShowAccountMenu(false)}>
+            <div 
+              className="w-full max-w-[500px] bg-[#111] rounded-t-2xl border-t border-white/10 pb-safe animate-in slide-in-from-bottom duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
+                <h3 className="text-white font-bold text-base">Account</h3>
+                <button onClick={() => setShowAccountMenu(false)} title="Close">
+                  <X size={20} className="text-white/50" />
+                </button>
+              </div>
+
+              {/* Current Account Info */}
+              <div className="px-5 py-4 flex items-center gap-3 border-b border-white/5">
+                <img src={displayAvatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" />
+                <div>
+                  <p className="text-white font-semibold text-sm">{displayName}</p>
+                  <p className="text-white/50 text-xs">{user?.email || '@' + displayUsername}</p>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-2">
+                {/* Settings */}
+                <button
+                  onClick={() => { setShowAccountMenu(false); navigate('/settings'); }}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <Menu size={20} className="text-white/70" />
+                  <span className="text-white text-sm font-medium">Settings</span>
+                </button>
+
+                {/* Switch Account */}
+                <button
+                  onClick={async () => {
+                    setShowAccountMenu(false);
+                    await signOut();
+                    navigate('/login', { replace: true });
+                  }}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <UserPlus size={20} className="text-[#D6A088]" />
+                  <span className="text-[#D6A088] text-sm font-medium">Switch Account</span>
+                </button>
+
+                {/* Log Out */}
+                <button
+                  onClick={async () => {
+                    setShowAccountMenu(false);
+                    await signOut();
+                    navigate('/login', { replace: true });
+                  }}
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors"
+                >
+                  <LogOut size={20} className="text-rose-400" />
+                  <span className="text-rose-400 text-sm font-medium">Log Out</span>
+                </button>
+              </div>
+
+              {/* Cancel */}
+              <div className="px-5 pb-4 pt-1">
+                <button
+                  onClick={() => setShowAccountMenu(false)}
+                  className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col items-center mb-6">
             <div className="w-24 h-24 bg-gray-700 rounded-full mb-3 border-2 border-secondary/50 relative p-1 group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
@@ -322,17 +378,6 @@ export default function Profile() {
             <div className="text-xs text-[#E6B36A] font-semibold">Open</div>
           </button>
         </div>
-
-        {isDev && (
-          <div className="px-4 mb-6">
-            <button
-              onClick={handleDevTopUp}
-              className="w-full p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 font-bold text-sm hover:bg-emerald-500/20 transition flex items-center justify-center gap-2"
-            >
-              <Sparkles size={16} /> DEV: Recharge 999,999 Coins
-            </button>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="border-b border-gray-800 flex justify-around text-gray-500">

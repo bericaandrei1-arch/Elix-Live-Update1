@@ -66,7 +66,7 @@ export default function SearchPage() {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">
           <button onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft size={24} />
+            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
           </button>
           <form onSubmit={handleSearch} className="flex-1 relative">
             <input 

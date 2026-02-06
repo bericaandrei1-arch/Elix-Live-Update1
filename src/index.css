@@ -195,20 +195,36 @@
 
 /* ========== LUXURY PREMIUM ANIMATIONS ========== */
 
-/* Floating Heart Animation */
+/* Floating Heart Animation - TikTok-style flying hearts */
 @keyframes elix-heart-float {
   0% {
-    transform: translate(-50%, -50%) translateY(0) translateX(0) rotate(0deg) scale(1);
+    transform: translate(-50%, -50%) translateY(0) translateX(0) rotate(0deg) scale(0.4);
+    opacity: 0;
+  }
+  8% {
+    transform: translate(-50%, -50%) translateY(-20px) translateX(0) rotate(0deg) scale(1.2);
     opacity: 1;
   }
+  20% {
+    transform: translate(-50%, -50%) translateY(-80px) translateX(calc(var(--elix-heart-dx, 0px) * 0.3)) rotate(calc(var(--elix-heart-rot, 0deg) * 0.3)) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-220px) translateX(calc(var(--elix-heart-dx, 0px) * 0.7)) rotate(calc(var(--elix-heart-rot, 0deg) * 0.6)) scale(0.85);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(-50%, -50%) translateY(-360px) translateX(var(--elix-heart-dx, 0px)) rotate(var(--elix-heart-rot, 0deg)) scale(0.6);
+    opacity: 0.5;
+  }
   100% {
-    transform: translate(-50%, -50%) translateY(-200px) translateX(var(--elix-heart-dx, 0)) rotate(var(--elix-heart-rot, 0deg)) scale(0.3);
+    transform: translate(-50%, -50%) translateY(-480px) translateX(calc(var(--elix-heart-dx, 0px) * 1.2)) rotate(calc(var(--elix-heart-rot, 0deg) * 1.3)) scale(0.2);
     opacity: 0;
   }
 }
 
 .elix-heart-float {
-  animation: elix-heart-float 0.95s ease-out forwards;
+  animation: elix-heart-float 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   pointer-events: none;
 }
 

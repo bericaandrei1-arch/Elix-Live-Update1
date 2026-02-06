@@ -1,23 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ChevronDown,
-  Image as ImageIcon,
-  Mic,
-  MicOff,
   Music,
-  RotateCcw,
   Square,
   Play,
   Pause,
-  Timer,
-  UsersRound,
-  Wand2,
   X,
   CameraOff,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { setCachedCameraStream } from '../lib/cameraStream';
 import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
+import ElixCameraLayout from '../components/ElixCameraLayout';
 
 type CreateMode = 'upload' | 'post' | 'create' | 'live';
 
@@ -131,7 +124,7 @@ function SoundPickerModal({
               Add URL
             </button>
             <button onClick={onClose} className="p-2">
-              <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5 object-contain" />
+              <img src="/Icons/power-button.png" alt="Close" className="w-4 h-4 object-contain" />
             </button>
           </div>
         </div>
@@ -229,6 +222,11 @@ export default function Create() {
   const [recordingDelaySeconds, setRecordingDelaySeconds] = useState<0 | 3 | 10>(0);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [flashEnabled, setFlashEnabled] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isLandscapeStream, setIsLandscapeStream] = useState(false);
+  const [hwZoomRange, setHwZoomRange] = useState<{ min: number; max: number } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -237,6 +235,8 @@ export default function Create() {
   const keepStreamOnUnmountRef = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1);
 
   useEffect(() => {
     const stopStream = () => {
@@ -264,11 +264,11 @@ export default function Create() {
 
         stopStream();
 
+        // No resolution constraints = camera uses its widest native field of view
+        // This prevents the browser from cropping/zooming the camera feed
         const nextStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: isFrontCamera ? 'user' : 'environment',
-            width: { ideal: 1080 },
-            height: { ideal: 1920 },
           },
           audio: false,
         });
@@ -279,9 +279,35 @@ export default function Create() {
         }
 
         streamRef.current = nextStream;
+
+        // Detect stream orientation & set hardware zoom to minimum
+        const track = nextStream.getVideoTracks()[0];
+        if (track) {
+          const settings = track.getSettings();
+          const w = settings.width || 0;
+          const h = settings.height || 0;
+          setIsLandscapeStream(w > h);
+
+          // Set camera zoom to minimum for widest view
+          try {
+            const caps = track.getCapabilities?.() as any;
+            if (caps?.zoom) {
+              setHwZoomRange({ min: caps.zoom.min, max: caps.zoom.max });
+              await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
+            } else {
+              setHwZoomRange(null);
+            }
+          } catch {
+            setHwZoomRange(null);
+          }
+        }
+
         if (videoRef.current) {
           videoRef.current.srcObject = nextStream;
         }
+
+        // Reset zoom on new camera stream
+        setZoomLevel(1);
       } catch (e: unknown) {
         if (cancelled) return;
 
@@ -325,6 +351,7 @@ export default function Create() {
 
   const flipCamera = () => {
     setIsFrontCamera((v) => !v);
+    setZoomLevel(1); // Reset zoom when flipping camera
   };
 
   const showToast = (msg: string) => {
@@ -345,8 +372,6 @@ export default function Create() {
         const nextStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: isFrontCamera ? 'user' : 'environment',
-            width: { ideal: 1080 },
-            height: { ideal: 1920 },
           },
           audio: true,
         });
@@ -371,6 +396,106 @@ export default function Create() {
 
   const cycleTimer = () => {
     setRecordingDelaySeconds((v) => (v === 0 ? 3 : v === 3 ? 10 : 0));
+  };
+
+  // ── Flash / Torch toggle ──
+  const handleFlashToggle = async () => {
+    const stream = streamRef.current;
+    if (!stream) {
+      showToast('Camera not ready');
+      return;
+    }
+    const track = stream.getVideoTracks()[0];
+    if (!track) {
+      showToast('No camera track');
+      return;
+    }
+    try {
+      const capabilities = track.getCapabilities?.() as any;
+      if (capabilities?.torch) {
+        const newTorch = !flashEnabled;
+        await track.applyConstraints({ advanced: [{ torch: newTorch } as any] });
+        setFlashEnabled(newTorch);
+        showToast(newTorch ? 'Flash ON' : 'Flash OFF');
+      } else {
+        showToast('Flash not available on this device');
+      }
+    } catch {
+      showToast('Flash not supported');
+    }
+  };
+
+  // ── Zoom helpers ──
+  const applyZoom = async (newZoom: number) => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    // Try hardware zoom first (uses actual camera optics)
+    try {
+      const caps = track.getCapabilities?.() as any;
+      if (caps?.zoom) {
+        const clamped = Math.max(caps.zoom.min, Math.min(newZoom, caps.zoom.max));
+        await track.applyConstraints({ advanced: [{ zoom: clamped } as any] });
+        setZoomLevel(parseFloat(clamped.toFixed(1)));
+        return;
+      }
+    } catch { /* hardware zoom not supported */ }
+
+    // Fallback: CSS zoom (clamped 1-5)
+    setZoomLevel(Math.max(1, Math.min(newZoom, 5)));
+  };
+
+  const handleZoomIn = async () => {
+    await applyZoom(zoomLevel + 0.5);
+  };
+
+  const handleZoomOut = async () => {
+    const minZoom = hwZoomRange?.min ?? 1;
+    await applyZoom(Math.max(zoomLevel - 0.5, minZoom));
+  };
+
+  const handleZoomReset = async () => {
+    const minZoom = hwZoomRange?.min ?? 1;
+    await applyZoom(minZoom);
+    showToast('Zoom reset');
+  };
+
+  // ── Pinch-to-zoom touch handlers ──
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDistRef.current = Math.sqrt(dx * dx + dy * dy);
+      pinchStartZoomRef.current = zoomLevel;
+    }
+  };
+
+  const handleTouchMove = async (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistRef.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Calculate zoom ratio from pinch gesture
+      const scale = dist / pinchStartDistRef.current;
+      const maxZoom = hwZoomRange?.max ?? 5;
+      const minZoom = hwZoomRange?.min ?? 1;
+      const newZoom = Math.max(minZoom, Math.min(pinchStartZoomRef.current * scale, maxZoom));
+
+      await applyZoom(parseFloat(newZoom.toFixed(1)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    pinchStartDistRef.current = null;
+  };
+
+  // ── Speed change ──
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    showToast(`Speed ${speed}x`);
   };
 
   const startRecordingNow = () => {
@@ -493,8 +618,6 @@ export default function Create() {
           nextStream = await navigator.mediaDevices.getUserMedia({
             video: {
               facingMode: isFrontCamera ? 'user' : 'environment',
-              width: { ideal: 1080 },
-              height: { ideal: 1920 },
             },
             audio: true,
           });
@@ -503,8 +626,6 @@ export default function Create() {
             nextStream = await navigator.mediaDevices.getUserMedia({
               video: {
                 facingMode: isFrontCamera ? 'user' : 'environment',
-                width: { ideal: 1080 },
-                height: { ideal: 1920 },
               },
               audio: false,
             });
@@ -572,14 +693,26 @@ export default function Create() {
               onPause={() => setIsPreviewPlaying(false)}
             />
           ) : (
-            <div className="w-full h-full bg-black relative">
+            <div
+              className="w-full h-full bg-black relative flex items-center justify-center"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className={`w-full h-full ${isLandscapeStream ? 'object-contain' : 'object-cover'}`}
                 autoPlay
                 muted
                 playsInline
-                style={isFrontCamera ? { transform: 'scaleX(-1)' } : undefined}
+                style={{
+                  // CSS zoom only used when hardware zoom not available
+                  transform: isFrontCamera
+                    ? (zoomLevel > 1 && !hwZoomRange ? `scaleX(-1) scale(${zoomLevel})` : 'scaleX(-1)')
+                    : (zoomLevel > 1 && !hwZoomRange ? `scale(${zoomLevel})` : undefined),
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease-out',
+                }}
               />
 
               {cameraError && (
@@ -613,27 +746,6 @@ export default function Create() {
           </div>
         )}
 
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[20]">
-          <button
-            onClick={() => setIsSoundOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-black border border-[#E6B36A]/35"
-          >
-            <Music className="w-5 h-5 text-[#E6B36A]" strokeWidth={2} />
-            <span className="text-[#E6B36A] font-semibold">{sound ? `${sound.title}` : 'Add sound (no copyright)'}</span>
-          </button>
-        </div>
-
-        <div className="absolute right-4 top-[88px] z-[20] flex flex-col items-center gap-5">
-          <ToolbarButton icon={RotateCcw} onClick={flipCamera} />
-          <ToolbarButton icon={isMicEnabled ? Mic : MicOff} onClick={toggleMic} active={isMicEnabled} />
-          <div className="w-6 h-px bg-[#E6B36A]/30" />
-          <ToolbarButton icon={Timer} onClick={cycleTimer} active={recordingDelaySeconds !== 0} />
-          <ToolbarButton icon={Wand2} onClick={() => showToast('Effects coming soon.')} />
-          <ToolbarButton icon={UsersRound} onClick={() => navigate('/friends')} badge="check" />
-          <ToolbarButton icon={ChevronDown} onClick={() => navigate('/')} />
-          <ToolbarButton icon={X} onClick={() => navigate(-1)} />
-        </div>
-
         {countdownSeconds !== null && (
           <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black">
             <div className="w-24 h-24 rounded-full bg-black border border-[#E6B36A]/35 flex items-center justify-center">
@@ -650,65 +762,32 @@ export default function Create() {
           </div>
         )}
 
-        <div className="absolute left-4 bottom-[96px] z-[20]">
-          <button
-            onClick={openUploadPicker}
-            className="w-10 h-10 rounded-lg border border-[#E6B36A]/35 bg-black flex items-center justify-center"
-          >
-            <ImageIcon className="w-5 h-5 text-[#E6B36A]" strokeWidth={2} />
-          </button>
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-[132px] z-[20] flex justify-center">
-          {mode === 'live' ? (
-            <button
-              onClick={startLive}
-              className="px-8 py-3 rounded-full bg-[#E6B36A] text-black font-extrabold tracking-wide"
-            >
-              Start Live
-            </button>
-          ) : (
-            <button
-              onClick={isRecording ? stopRecording : startRecording}
-              className="w-20 h-20 rounded-full border-4 border-[#E6B36A] flex items-center justify-center"
-            >
-              <span className={`w-14 h-14 rounded-full ${isRecording ? 'bg-white' : 'bg-[#E6B36A]'}`} />
-            </button>
-          )}
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-0 z-[30] pb-safe">
-          <div className="px-6 pb-6">
-            <div className="flex items-center justify-between text-[#E6B36A]">
-              <button
-                onClick={() => onMode('upload')}
-                className={`text-sm font-semibold transition-opacity ${mode === 'upload' ? 'opacity-100' : 'opacity-80'}`}
-              >
-                Upload
-              </button>
-              <div className="flex items-center gap-8">
-                <button
-                  onClick={() => onMode('post')}
-                  className={`text-sm font-semibold tracking-wide transition-opacity ${mode === 'post' ? 'opacity-100' : 'opacity-80'}`}
-                >
-                  POST
-                </button>
-                <button
-                  onClick={() => onMode('create')}
-                  className={`text-sm font-semibold tracking-wide transition-opacity ${mode === 'create' ? 'opacity-100' : 'opacity-80'}`}
-                >
-                  CREATE
-                </button>
-                <button
-                  onClick={() => onMode('live')}
-                  className={`text-sm font-semibold tracking-wide transition-opacity ${mode === 'live' ? 'opacity-100' : 'opacity-80'}`}
-                >
-                  LIVE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ElixCameraLayout - New Camera UI */}
+        <ElixCameraLayout
+          videoRef={videoRef}
+          isRecording={isRecording}
+          isPaused={false}
+          onRecord={mode === 'live' ? startLive : (isRecording ? stopRecording : startRecording)}
+          onClose={() => navigate(-1)}
+          onFlipCamera={flipCamera}
+          onSelectMusic={() => setIsSoundOpen(true)}
+          onAIMusicGenerator={() => setIsSoundOpen(true)}
+          zoomLevel={zoomLevel}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomReset={handleZoomReset}
+          onGalleryOpen={openUploadPicker}
+          onPostTab={() => onMode('post')}
+          onCreateTab={() => onMode('create')}
+          onLiveTab={() => onMode('live')}
+          selectedTab={mode === 'live' ? 'live' : mode === 'post' ? 'post' : 'create'}
+          onFlashToggle={handleFlashToggle}
+          flashActive={flashEnabled}
+          timerDelay={recordingDelaySeconds}
+          onTimerCycle={cycleTimer}
+          onSpeedChange={handleSpeedChange}
+          currentSpeed={playbackSpeed}
+        />
 
         <SoundPickerModal
           isOpen={isSoundOpen}

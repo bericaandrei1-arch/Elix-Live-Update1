@@ -1,5 +1,4 @@
 import React from 'react';
-import { Gem } from 'lucide-react';
 
 interface LevelBadgeProps {
   level: number;
@@ -7,82 +6,216 @@ interface LevelBadgeProps {
   size?: number;
   layout?: 'fit' | 'fixed';
   variant?: 'clean' | 'default' | 'chat';
+  avatar?: string;
 }
 
-export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", size = 40, layout = 'fit', variant = 'clean' }) => {
-  const tier = level >= 100 ? 'red' : level >= 75 ? 'pink' : level >= 50 ? 'orange' : level >= 25 ? 'green' : 'blue';
+export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", size = 40, layout = 'fit', variant = 'clean', avatar }) => {
   const safeLevel = Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
-  const isChat = variant === 'chat';
 
-  const colors =
-    tier === 'blue'
-      ? { bg: '#1e40af', border: '#3b82f6' } // Blue 800 bg, Blue 500 border
-      : tier === 'green'
-        ? { bg: '#166534', border: '#22c55e' } // Green 800 bg, Green 500 border
-        : tier === 'orange'
-          ? { bg: '#9a3412', border: '#f97316' } // Orange 800 bg, Orange 500 border
-          : tier === 'pink'
-            ? { bg: '#db2777', border: '#ec4899' } // Pink 700 bg, Pink 500 border
-            : { bg: '#9d174d', border: '#ec4899' }; // Red (default)
+  // Tier color for oval fill - based on level
+  const tier = safeLevel >= 100 ? 'red' : safeLevel >= 75 ? 'pink' : safeLevel >= 50 ? 'orange' : safeLevel >= 25 ? 'green' : 'blue';
+  const tierFill: Record<string, string> = {
+    blue:   '#0a1628',
+    green:  '#0a2810',
+    orange: '#2a1a08',
+    pink:   '#2a0a1e',
+    red:    '#2a0a0a',
+  };
 
-  // size=10 is used in chat. We are bumping it up significantly as requested.
-  // ~4mm is approx 15px. User asked for +4mm height/width relative to original small size.
-  // Original was 14px height. New target ~24px.
-  // Original width 28px. New target ~50px.
-  
-  const height = size === 10 ? 28 : (size === 2 ? 2 : (size === 14 ? 14 : (size === 28 ? 42 : (size === 70 ? 105 : Math.max(46, Math.round(size * 1.5))))));
-  const width = size === 10 ? 60 : (size === 2 ? 3 : (size === 14 ? 16 : (size === 28 ? 168 : (size === 70 ? 280 : (layout === 'fixed' ? Math.round(height * 4.0) : undefined)))));
-  const radius = size === 10 ? 6 : (size === 2 ? 1 : (size === 14 ? 4 : (isChat ? 6 : Math.max(8, Math.round(height * 0.214)))));
-  const fontSize = size === 10 ? 13 : size === 2 ? 1 : size === 14 ? 12 : size === 28 ? 14 : Math.max(18, Math.round(height * 0.45));
-  const iconSize = size === 10 ? 10 : Math.max(8, Math.round(fontSize * 0.8));
+  const frameColor = '#ffffff';  // cerc, oval, semiluna
+  const accentColor = '#E6B36A'; // diamant si scris - rose gold champagne
+  const ovalFill = tierFill[tier];
+
+  const isChat = variant === 'chat' || size === 10;
+
+  // Circle and capsule sizing
+  const circleR = isChat ? 8 : size === 2 ? 3 : size === 14 ? 6 : size === 28 ? 12 : size === 70 ? 20 : Math.max(11, Math.round(size * 0.4));
+  const strokeW = isChat ? 1.5 : size === 2 ? 0.5 : circleR >= 20 ? 2.5 : 2;
+  const fontSize = isChat ? 8 : size === 2 ? 3 : size === 14 ? 7 : size === 28 ? 11 : size === 70 ? 14 : Math.max(9, Math.round(circleR * 0.55));
+
+  // Capsule dimensions
+  const capsuleH = isChat ? 14 : Math.round(circleR * 1.2);
+  const capsuleW = isChat ? 32 : Math.round(circleR * 2.4);
+  const capsuleR2 = capsuleH / 2;
+
+  // Layout
+  const pad = 2;
+  const cx = pad + circleR;
+  const cy = pad + circleR;
+
+  const capsuleX = cx + circleR * 0.3;
+  const capsuleY = cy - capsuleH / 2;
+  const totalW = capsuleX + capsuleW + capsuleR2 + pad;
+  const totalH = (circleR + pad) * 2;
+
+  // Diamond wireframe inside capsule (left side of capsule)
+  const dSize = isChat ? 4 : Math.round(capsuleH * 0.38);
+  const dCx = capsuleX + capsuleW * 0.5; // diamond center x
+  const dCy = cy; // vertically centered
+
+  // Classic gem diamond shape: flat top, angled sides, bottom point, facet lines
+  const dTopW = dSize * 0.7;  // half-width of flat top
+  const dMidW = dSize * 1.0;  // half-width at widest (crown)
+  const dCrownH = dSize * 0.35; // crown height
+  const dPavH = dSize * 0.8;   // pavilion height (bottom part)
+
+  const dTop = dCy - dCrownH - dPavH * 0.1; // top of diamond
+  const dCrown = dCy - dPavH * 0.1 + dCrownH * 0.2; // crown/girdle line
+  const dBottom = dCy + dPavH; // bottom point
+
+  // Diamond outline path
+  const diamondOutline = [
+    // Top flat edge
+    `M ${dCx - dTopW} ${dTop}`,
+    `L ${dCx + dTopW} ${dTop}`,
+    // Right side to girdle
+    `L ${dCx + dMidW} ${dCrown}`,
+    // Right side to bottom point
+    `L ${dCx} ${dBottom}`,
+    // Left side back up to girdle
+    `L ${dCx - dMidW} ${dCrown}`,
+    // Back to top left
+    `L ${dCx - dTopW} ${dTop}`,
+  ].join(' ');
+
+  // Facet lines inside diamond
+  const facetLines = [
+    // Girdle line (horizontal across widest point)
+    `M ${dCx - dMidW} ${dCrown} L ${dCx + dMidW} ${dCrown}`,
+    // Top facets - lines from top corners down to girdle
+    `M ${dCx - dTopW} ${dTop} L ${dCx - dMidW * 0.3} ${dCrown}`,
+    `M ${dCx + dTopW} ${dTop} L ${dCx + dMidW * 0.3} ${dCrown}`,
+    `M ${dCx} ${dTop} L ${dCx - dMidW * 0.6} ${dCrown}`,
+    `M ${dCx} ${dTop} L ${dCx + dMidW * 0.6} ${dCrown}`,
+    // Bottom facets - lines from girdle to bottom point
+    `M ${dCx - dMidW * 0.5} ${dCrown} L ${dCx} ${dBottom}`,
+    `M ${dCx + dMidW * 0.5} ${dCrown} L ${dCx} ${dBottom}`,
+  ].join(' ');
+
+  // Level text position (right of diamond inside capsule)
+  const textX = capsuleX + capsuleW * 0.95;
+  const textY = cy;
+
+  // Outer wrapper for layout compatibility
+  const outerWidth = size === 10 ? 60 : size === 2 ? 3 : size === 14 ? 16 : size === 28 ? 168 : size === 70 ? 280 : totalW;
+  const outerHeight = size === 10 ? 28 : size === 2 ? 2 : size === 14 ? 14 : size === 28 ? 42 : size === 70 ? 105 : totalH;
+
+  const uid = `lb-${safeLevel}-${size}-${Math.random().toString(36).slice(2, 6)}`;
 
   return (
     <span
       className={`relative inline-flex items-center justify-center select-none shrink-0 ${className}`}
       style={{
-        height,
-        width,
+        width: outerWidth,
+        height: outerHeight,
         flexShrink: 0,
-        paddingLeft: (layout === 'fixed' || size === 10) ? 0 : Math.round(height * 1.4),
-        paddingRight: (layout === 'fixed' || size === 10) ? 0 : Math.round(height * 1.4),
-        filter: 'none',
       }}
     >
-      {/* Use custom image for level badge - dynamic color based on tier */}
-      <img 
-        src={
-          tier === 'blue' ? '/Icons/level-badge-blue.png?v=6' :
-          tier === 'green' ? '/Icons/level-badge-green.png?v=6' :
-          tier === 'orange' ? '/Icons/level-badge-orange.png?v=6' :
-          tier === 'pink' ? '/Icons/level-badge-pink.png?v=6' :
-          tier === 'red' ? '/Icons/level-badge-red.png?v=6' :
-          '/Icons/level-badge-green.png?v=6'
-        } 
-        alt={`Level ${safeLevel}`}
-        className="absolute inset-0 h-full object-contain"
-        style={{
-          width: size === 70 ? '40%' : '100%',
-          left: size === 70 ? '30%' : '0%',
-        }}
-      />
-      
-      {/* Level number overlay */}
-      <span
-        className={`relative z-10 antialiased ${size === 10 ? 'font-bold' : 'font-black'}`}
-        style={{
-          color: '#000000',
-          fontSize: size === 70 ? 14 : fontSize,
-          textShadow: '0 1px 0 rgba(255,255,255,0.4), 0 2px 3px rgba(255,255,255,0.2), 0 3px 6px rgba(0,0,0,0.3)',
-          WebkitTextStroke: '0.5px rgba(255,255,255,0.3)',
-          letterSpacing: '-0.02em',
-          fontVariantNumeric: 'tabular-nums',
-          whiteSpace: 'nowrap',
-          transform: size === 10 ? 'translateY(2px)' : size === 70 ? 'translateX(15px)' : 'none',
-          fontWeight: '900',
-        }}
+      <svg
+        width={totalW}
+        height={totalH}
+        viewBox={`0 0 ${totalW} ${totalH}`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        {safeLevel}
-      </span>
+        {avatar && (
+          <defs>
+            <clipPath id={uid}>
+              <circle cx={cx} cy={cy} r={circleR - strokeW} />
+            </clipPath>
+          </defs>
+        )}
+
+        {/* Separator arc (semiluna) - follows circle edge exactly */}
+        <path
+          d={`M ${cx + Math.cos(Math.asin(capsuleH / 2 / circleR)) * circleR} ${cy - capsuleH / 2} A ${circleR} ${circleR} 0 0 1 ${cx + Math.cos(Math.asin(capsuleH / 2 / circleR)) * circleR} ${cy + capsuleH / 2}`}
+          stroke={frameColor}
+          strokeWidth={strokeW}
+          fill="none"
+        />
+
+        {/* Capsule/oval - outline only */}
+        <rect
+          x={capsuleX}
+          y={capsuleY}
+          width={capsuleW + capsuleR2}
+          height={capsuleH}
+          rx={capsuleR2}
+          ry={capsuleR2}
+          stroke={frameColor}
+          strokeWidth={strokeW}
+          fill={ovalFill}
+        />
+
+        {/* Diamond wireframe inside capsule - rose gold */}
+        <path
+          d={diamondOutline}
+          stroke={accentColor}
+          strokeWidth={isChat ? 0.8 : 1.3}
+          fill="none"
+          strokeLinejoin="round"
+        />
+        <path
+          d={facetLines}
+          stroke={accentColor}
+          strokeWidth={isChat ? 0.5 : 0.9}
+          fill="none"
+          opacity={0.7}
+        />
+
+        {/* Level number inside capsule - rose gold */}
+        <text
+          x={textX}
+          y={textY + 1}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill={accentColor}
+          fontSize={fontSize}
+          fontWeight="800"
+          fontFamily="system-ui, -apple-system, sans-serif"
+        >
+          {safeLevel}
+        </text>
+
+        {/* Avatar inside circle */}
+        {avatar && (
+          <image
+            href={avatar}
+            x={cx - circleR + strokeW}
+            y={cy - circleR + strokeW}
+            width={(circleR - strokeW) * 2}
+            height={(circleR - strokeW) * 2}
+            clipPath={`url(#${uid})`}
+            preserveAspectRatio="xMidYMid slice"
+          />
+        )}
+
+        {/* Circle - outline only, on top */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={circleR - strokeW / 2}
+          stroke={frameColor}
+          strokeWidth={strokeW}
+          fill="none"
+        />
+
+        {/* Level in circle center when no avatar */}
+        {!avatar && (
+          <text
+            x={cx}
+            y={cy + 1}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={accentColor}
+            fontSize={Math.round(circleR * 0.7)}
+            fontWeight="800"
+            fontFamily="system-ui, -apple-system, sans-serif"
+          >
+            {safeLevel}
+          </text>
+        )}
+      </svg>
     </span>
   );
 };

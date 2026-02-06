@@ -10,7 +10,7 @@ export default function LegalUGC() {
       <div className="w-full max-w-[700px]">
         <header className="flex items-center justify-between mb-4">
           <button onClick={() => navigate(-1)} aria-label="Back">
-            <ArrowLeft size={24} />
+            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
           </button>
           <h1 className="font-bold text-lg">UGC Disclaimer</h1>
           <div className="w-6" />

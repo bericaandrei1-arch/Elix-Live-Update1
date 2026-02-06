@@ -101,7 +101,7 @@ export default function Report() {
       {/* Header */}
       <div className="sticky top-0 bg-black z-10 px-4 py-4 border-b border-transparent flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-          <X className="w-6 h-6" />
+          <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
         </button>
         <h1 className="text-lg font-bold">Report {contentType}</h1>
         <div className="w-10"></div>
