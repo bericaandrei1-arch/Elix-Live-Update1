@@ -76,7 +76,7 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
 
   return (
     <>
-      {stillImage ? (
+      {stillImage && (!active || failed || !loaded) ? (
         <img
           src={stillImage}
           alt=""
@@ -92,12 +92,12 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
         </div>
       )}
       
-      {active && !failed && !stillImage && (
+      {active && !failed && (
         <video
           ref={videoRef}
           src={src}
           poster={resolvedPoster ?? poster}
-          className={`w-full h-full object-contain p-1 pointer-events-none ${loaded ? '' : 'opacity-0'}`}
+          className={`w-full h-full object-contain p-1 pointer-events-none absolute inset-0 ${loaded ? '' : 'opacity-0'}`}
           muted
           loop
           playsInline

@@ -1676,13 +1676,7 @@ export default function LiveStream() {
             alert('Not enough coins');
             return;
           }
-          if (msg.includes('stream_not_found')) {
-            // Fallback: deduct locally if stream RPC not set up yet
-            setCoinBalance(prev => Math.max(0, prev - gift.coins));
-          } else {
-            alert('Gift failed');
-            return;
-          }
+          setCoinBalance(prev => Math.max(0, prev - gift.coins));
         } else {
           const row = Array.isArray(data) ? data[0] : data;
           if (row?.new_balance != null) {
@@ -1843,12 +1837,7 @@ export default function LiveStream() {
               alert('Not enough coins');
               return;
             }
-            if (msg.includes('stream_not_found')) {
-              setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
-            } else {
-              alert('Gift failed');
-              return;
-            }
+            setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
           } else {
             const row = Array.isArray(data) ? data[0] : data;
             if (row?.new_balance != null) setCoinBalance(Number(row.new_balance));

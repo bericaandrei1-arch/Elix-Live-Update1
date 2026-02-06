@@ -42,6 +42,8 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     paddingTop: '8px',
     boxSizing: 'border-box',
     background: 'transparent',
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
   };
 
   const scrollStyle: React.CSSProperties = {
@@ -72,8 +74,7 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     maxWidth: '90%',
     alignSelf: 'flex-start',
     pointerEvents: 'auto',
-    textShadow: '0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6)',
-    background: 'transparent',
+    background: 'rgba(0, 0, 0, 0.22)',
     borderRadius: '8px',
   };
 
@@ -81,14 +82,20 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     fontWeight: 'bold',
     color: '#B8BCC4',
     fontSize: '14px',
+    lineHeight: '18px',
     flexShrink: 0,
     marginLeft: '0px',
+    textShadow: 'none',
+    WebkitTextStroke: '0px transparent',
   };
 
   const textStyle = (isGift?: boolean): React.CSSProperties => ({
     color: isGift ? '#facc15' : '#C8CCD4',
     fontWeight: isGift ? 'bold' : 'normal',
     fontSize: '14px',
+    lineHeight: '18px',
+    textShadow: 'none',
+    WebkitTextStroke: '0px transparent',
   });
 
   return (

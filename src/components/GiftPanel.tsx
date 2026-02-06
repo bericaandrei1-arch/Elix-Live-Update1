@@ -1,7 +1,9 @@
 
 const giftUrl = (path: string) => {
-  // Simply return the path - Vite will handle it correctly
-  return path;
+  const base = import.meta.env.BASE_URL ?? '/';
+  const normalizedBase = base.length > 0 ? (base.endsWith('/') ? base : `${base}/`) : '/';
+  const trimmedPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${normalizedBase}${trimmedPath}`;
 };
 
 export type GiftType = 'universe' | 'big' | 'small';
