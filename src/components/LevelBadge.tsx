@@ -13,17 +13,17 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
   const safeLevel = Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
 
   // Tier color for oval fill - based on level
-  const tier = safeLevel >= 100 ? 'red' : safeLevel >= 75 ? 'pink' : safeLevel >= 50 ? 'orange' : safeLevel >= 25 ? 'green' : 'blue';
+  const tier = safeLevel >= 100 ? 'pink' : safeLevel >= 75 ? 'green' : safeLevel >= 50 ? 'blue' : safeLevel >= 25 ? 'orange' : 'red';
   const tierFill: Record<string, string> = {
-    blue:   '#0a1628',
-    green:  '#0a2810',
-    orange: '#2a1a08',
-    pink:   '#2a0a1e',
-    red:    '#2a0a0a',
+    blue:   '#0055FF',   // Level 50-74: intense blue
+    green:  '#00CC44',   // Level 75-99: intense green
+    orange: '#FF8800',   // Level 25-49: intense orange
+    pink:   '#FF1493',   // Level 100+: intense pink
+    red:    '#FF0000',   // Level 1-24: intense red
   };
 
   const frameColor = '#ffffff';  // cerc, oval, semiluna
-  const accentColor = '#E6B36A'; // diamant si scris - rose gold champagne
+  const accentColor = '#FFFFFF'; // diamant si scris - white for max visibility
   const ovalFill = tierFill[tier];
 
   const isChat = variant === 'chat' || size === 10;
@@ -147,32 +147,33 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
           fill={ovalFill}
         />
 
-        {/* Diamond wireframe inside capsule - rose gold */}
+        {/* Diamond filled with cyan/ice blue - clearly visible */}
         <path
           d={diamondOutline}
-          stroke={accentColor}
-          strokeWidth={isChat ? 0.8 : 1.3}
-          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth={isChat ? 1.2 : 2}
+          fill="#00D4FF"
           strokeLinejoin="round"
         />
         <path
           d={facetLines}
-          stroke={accentColor}
-          strokeWidth={isChat ? 0.5 : 0.9}
+          stroke="#FFFFFF"
+          strokeWidth={isChat ? 0.6 : 1.1}
           fill="none"
-          opacity={0.7}
+          opacity={0.8}
         />
 
-        {/* Level number inside capsule - rose gold */}
+        {/* Level number inside capsule */}
         <text
           x={textX}
-          y={textY + 1}
+          y={textY}
           textAnchor="middle"
           dominantBaseline="central"
           fill={accentColor}
           fontSize={fontSize}
           fontWeight="800"
           fontFamily="system-ui, -apple-system, sans-serif"
+          dy="0.05em"
         >
           {safeLevel}
         </text>
@@ -204,13 +205,14 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", s
         {!avatar && (
           <text
             x={cx}
-            y={cy + 1}
+            y={cy}
             textAnchor="middle"
             dominantBaseline="central"
             fill={accentColor}
             fontSize={Math.round(circleR * 0.7)}
             fontWeight="800"
             fontFamily="system-ui, -apple-system, sans-serif"
+            dy="0.05em"
           >
             {safeLevel}
           </text>

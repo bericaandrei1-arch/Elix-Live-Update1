@@ -18,9 +18,10 @@ interface ChatOverlayProps {
   className?: string;
   onLike?: () => void;
   onHeartSpawn?: (clientX: number, clientY: number) => void;
+  onProfileTap?: (username: string) => void;
 }
 
-export function ChatOverlay({ messages, variant = 'panel', compact = false, className, onLike, onHeartSpawn }: ChatOverlayProps) {
+export function ChatOverlay({ messages, variant = 'panel', compact = false, className, onLike, onHeartSpawn, onProfileTap }: ChatOverlayProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,20 +73,20 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     alignSelf: 'flex-start',
     pointerEvents: 'auto',
     textShadow: '0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6)',
-    background: 'rgba(0,0,0,0.45)',
+    background: 'transparent',
     borderRadius: '8px',
   };
 
   const usernameStyle: React.CSSProperties = {
     fontWeight: 'bold',
-    color: '#d1d5db',
+    color: '#B8BCC4',
     fontSize: '14px',
     flexShrink: 0,
     marginLeft: '0px',
   };
 
   const textStyle = (isGift?: boolean): React.CSSProperties => ({
-    color: isGift ? '#facc15' : 'rgba(255,255,255,0.9)',
+    color: isGift ? '#facc15' : '#C8CCD4',
     fontWeight: isGift ? 'bold' : 'normal',
     fontSize: '14px',
   });
@@ -102,9 +103,15 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
       <div style={scrollStyle} className="chat-scroll">
         {messages.map((msg) => (
           <div key={msg.id} style={messageStyle}>
-            {!msg.isSystem && (
-              <LevelBadge level={msg.level || 1} size={20} layout="fixed" avatar={msg.avatar} />
-            )}
+            <div
+              style={{ cursor: 'pointer', flexShrink: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onProfileTap) onProfileTap(msg.username);
+              }}
+            >
+              <LevelBadge level={msg.level || 1} size={32} layout="fixed" avatar={msg.avatar} />
+            </div>
             <span style={usernameStyle}>{msg.username}</span>
             <span style={textStyle(msg.isGift)}>{msg.text}</span>
           </div>

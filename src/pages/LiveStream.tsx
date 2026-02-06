@@ -65,109 +65,111 @@ interface SimulatedViewer {
   joinedAt: number;
   isActive: boolean;
   chatFrequency: number; // seconds between messages (lower = more active)
+  supportDays: number; // how many days this user has supported the streamer (1 heart per day)
+  lastVisitDaysAgo: number; // how many days since last visit (0 = today, 1 = yesterday, 2+ = inactive/grey heart)
 }
 
 const VIEWER_POOL: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[] = [
-  { id: 'v1', username: 'emma_rose22', displayName: 'Emma Rose', level: 34, avatar: 'https://i.pravatar.cc/100?img=1', country: '🇺🇸', chatFrequency: 8 },
-  { id: 'v2', username: 'alex.madrid', displayName: 'Alex Madrid', level: 18, avatar: 'https://i.pravatar.cc/100?img=3', country: '🇪🇸', chatFrequency: 12 },
-  { id: 'v3', username: 'sofiab_', displayName: 'Sofia Bianchi', level: 45, avatar: 'https://i.pravatar.cc/100?img=5', country: '🇮🇹', chatFrequency: 6 },
-  { id: 'v4', username: 'lucassilva7', displayName: 'Lucas Silva', level: 27, avatar: 'https://i.pravatar.cc/100?img=7', country: '🇧🇷', chatFrequency: 10 },
-  { id: 'v5', username: 'mia.chen_', displayName: 'Mia Chen', level: 52, avatar: 'https://i.pravatar.cc/100?img=9', country: '🇬🇧', chatFrequency: 15 },
-  { id: 'v6', username: 'david_k99', displayName: 'David Kim', level: 8, avatar: 'https://i.pravatar.cc/100?img=11', country: '🇰🇷', chatFrequency: 20 },
-  { id: 'v7', username: 'anya.pet', displayName: 'Anya Petrova', level: 61, avatar: 'https://i.pravatar.cc/100?img=13', country: '🇷🇺', chatFrequency: 7 },
-  { id: 'v8', username: 'marcosantos_', displayName: 'Marco Santos', level: 14, avatar: 'https://i.pravatar.cc/100?img=14', country: '🇧🇷', chatFrequency: 9 },
-  { id: 'v9', username: 'chloe.dpt', displayName: 'Chloé Dupont', level: 39, avatar: 'https://i.pravatar.cc/100?img=16', country: '🇫🇷', chatFrequency: 11 },
-  { id: 'v10', username: 'jamesww_', displayName: 'James Wilson', level: 22, avatar: 'https://i.pravatar.cc/100?img=17', country: '🇺🇸', chatFrequency: 14 },
-  { id: 'v11', username: 'yuki.tnk', displayName: 'Yuki Tanaka', level: 73, avatar: 'https://i.pravatar.cc/100?img=19', country: '🇯🇵', chatFrequency: 5 },
-  { id: 'v12', username: 'isa_reyes', displayName: 'Isabella Reyes', level: 31, avatar: 'https://i.pravatar.cc/100?img=20', country: '🇲🇽', chatFrequency: 13 },
-  { id: 'v13', username: 'noah.mllr', displayName: 'Noah Müller', level: 16, avatar: 'https://i.pravatar.cc/100?img=22', country: '🇩🇪', chatFrequency: 18 },
-  { id: 'v14', username: 'lara_h', displayName: 'Lara Al-Hassan', level: 55, avatar: 'https://i.pravatar.cc/100?img=24', country: '🇦🇪', chatFrequency: 8 },
-  { id: 'v15', username: 'olibrown', displayName: 'Oliver Brown', level: 10, avatar: 'https://i.pravatar.cc/100?img=25', country: '🇬🇧', chatFrequency: 22 },
-  { id: 'v16', username: 'cami.lopez', displayName: 'Camila López', level: 42, avatar: 'https://i.pravatar.cc/100?img=26', country: '🇦🇷', chatFrequency: 7 },
-  { id: 'v17', username: 'liamtaylor_', displayName: 'Liam Taylor', level: 29, avatar: 'https://i.pravatar.cc/100?img=28', country: '🇦🇺', chatFrequency: 16 },
-  { id: 'v18', username: 'nina.w', displayName: 'Nina Weber', level: 37, avatar: 'https://i.pravatar.cc/100?img=29', country: '🇦🇹', chatFrequency: 10 },
-  { id: 'v19', username: 'raj_p', displayName: 'Raj Patel', level: 48, avatar: 'https://i.pravatar.cc/100?img=30', country: '🇮🇳', chatFrequency: 9 },
-  { id: 'v20', username: 'zaraaj', displayName: 'Zara Jones', level: 65, avatar: 'https://i.pravatar.cc/100?img=32', country: '🇺🇸', chatFrequency: 6 },
-  { id: 'v21', username: 'mateo.g', displayName: 'Mateo García', level: 19, avatar: 'https://i.pravatar.cc/100?img=33', country: '🇪🇸', chatFrequency: 14 },
-  { id: 'v22', username: 'elena_pop', displayName: 'Elena Popescu', level: 33, avatar: 'https://i.pravatar.cc/100?img=34', country: '🇷🇴', chatFrequency: 8 },
-  { id: 'v23', username: 'amir.h', displayName: 'Amir Hosseini', level: 25, avatar: 'https://i.pravatar.cc/100?img=36', country: '🇮🇷', chatFrequency: 17 },
-  { id: 'v24', username: 'lilytan_', displayName: 'Lily Tan', level: 58, avatar: 'https://i.pravatar.cc/100?img=38', country: '🇸🇬', chatFrequency: 7 },
-  { id: 'v25', username: 'tyler.b', displayName: 'Tyler Brooks', level: 11, avatar: 'https://i.pravatar.cc/100?img=39', country: '🇺🇸', chatFrequency: 25 },
-  { id: 'v26', username: 'sara_lind', displayName: 'Sara Lindqvist', level: 44, avatar: 'https://i.pravatar.cc/100?img=40', country: '🇸🇪', chatFrequency: 12 },
-  { id: 'v27', username: 'diego.v', displayName: 'Diego Vargas', level: 20, avatar: 'https://i.pravatar.cc/100?img=41', country: '🇵🇪', chatFrequency: 11 },
-  { id: 'v28', username: 'hannahlee', displayName: 'Hannah Lee', level: 36, avatar: 'https://i.pravatar.cc/100?img=43', country: '🇨🇦', chatFrequency: 9 },
-  { id: 'v29', username: 'kai.nkm', displayName: 'Kai Nakamura', level: 71, avatar: 'https://i.pravatar.cc/100?img=44', country: '🇺🇸', chatFrequency: 6 },
-  { id: 'v30', username: 'vale_rossi', displayName: 'Valentina Rossi', level: 50, avatar: 'https://i.pravatar.cc/100?img=45', country: '🇮🇹', chatFrequency: 8 },
-  { id: 'v31', username: 'adriana_buc', displayName: 'Adriana Bucur', level: 28, avatar: 'https://i.pravatar.cc/100?img=46', country: '🇷🇴', chatFrequency: 9 },
-  { id: 'v32', username: 'tomas.cz', displayName: 'Tomáš Novák', level: 15, avatar: 'https://i.pravatar.cc/100?img=47', country: '🇨🇿', chatFrequency: 19 },
-  { id: 'v33', username: 'priya_sh', displayName: 'Priya Sharma', level: 41, avatar: 'https://i.pravatar.cc/100?img=48', country: '🇮🇳', chatFrequency: 7 },
-  { id: 'v34', username: 'jake.miller', displayName: 'Jake Miller', level: 6, avatar: 'https://i.pravatar.cc/100?img=49', country: '🇺🇸', chatFrequency: 30 },
-  { id: 'v35', username: 'fatima_kw', displayName: 'Fatima Al-Sabah', level: 67, avatar: 'https://i.pravatar.cc/100?img=50', country: '🇰🇼', chatFrequency: 8 },
-  { id: 'v36', username: 'oscar.swe', displayName: 'Oscar Eriksson', level: 23, avatar: 'https://i.pravatar.cc/100?img=51', country: '🇸🇪', chatFrequency: 15 },
-  { id: 'v37', username: 'amelie_fr', displayName: 'Amélie Martin', level: 38, avatar: 'https://i.pravatar.cc/100?img=52', country: '🇫🇷', chatFrequency: 10 },
-  { id: 'v38', username: 'chen.wei', displayName: 'Chen Wei', level: 54, avatar: 'https://i.pravatar.cc/100?img=53', country: '🇨🇳', chatFrequency: 12 },
-  { id: 'v39', username: 'maria_pt', displayName: 'Maria Ferreira', level: 30, avatar: 'https://i.pravatar.cc/100?img=54', country: '🇵🇹', chatFrequency: 11 },
-  { id: 'v40', username: 'ethan.j', displayName: 'Ethan Johnson', level: 4, avatar: 'https://i.pravatar.cc/100?img=55', country: '🇺🇸', chatFrequency: 35 },
-  { id: 'v41', username: 'noor_eg', displayName: 'Noor Ibrahim', level: 46, avatar: 'https://i.pravatar.cc/100?img=56', country: '🇪🇬', chatFrequency: 9 },
-  { id: 'v42', username: 'anna.pol', displayName: 'Anna Kowalska', level: 32, avatar: 'https://i.pravatar.cc/100?img=57', country: '🇵🇱', chatFrequency: 13 },
-  { id: 'v43', username: 'ryu_kr', displayName: 'Ryu Ji-hoon', level: 59, avatar: 'https://i.pravatar.cc/100?img=58', country: '🇰🇷', chatFrequency: 6 },
-  { id: 'v44', username: 'jessica.au', displayName: 'Jessica Park', level: 21, avatar: 'https://i.pravatar.cc/100?img=59', country: '🇦🇺', chatFrequency: 14 },
-  { id: 'v45', username: 'omar_ma', displayName: 'Omar Benali', level: 35, avatar: 'https://i.pravatar.cc/100?img=60', country: '🇲🇦', chatFrequency: 10 },
-  { id: 'v46', username: 'eva.hrv', displayName: 'Eva Horvat', level: 17, avatar: 'https://i.pravatar.cc/100?img=61', country: '🇭🇷', chatFrequency: 20 },
-  { id: 'v47', username: 'brandon_tx', displayName: 'Brandon Lee', level: 43, avatar: 'https://i.pravatar.cc/100?img=62', country: '🇺🇸', chatFrequency: 8 },
-  { id: 'v48', username: 'ines.pt', displayName: 'Inês Costa', level: 26, avatar: 'https://i.pravatar.cc/100?img=63', country: '🇵🇹', chatFrequency: 12 },
-  { id: 'v49', username: 'andrei_md', displayName: 'Andrei Moraru', level: 40, avatar: 'https://i.pravatar.cc/100?img=64', country: '🇲🇩', chatFrequency: 9 },
-  { id: 'v50', username: 'maya.id', displayName: 'Maya Putri', level: 13, avatar: 'https://i.pravatar.cc/100?img=65', country: '🇮🇩', chatFrequency: 16 },
-  { id: 'v51', username: 'gabriel_co', displayName: 'Gabriel Rojas', level: 57, avatar: 'https://i.pravatar.cc/100?img=66', country: '🇨🇴', chatFrequency: 7 },
-  { id: 'v52', username: 'hana.jp', displayName: 'Hana Yamamoto', level: 69, avatar: 'https://i.pravatar.cc/100?img=67', country: '🇯🇵', chatFrequency: 5 },
-  { id: 'v53', username: 'mihai_ro', displayName: 'Mihai Dragomir', level: 24, avatar: 'https://i.pravatar.cc/100?img=68', country: '🇷🇴', chatFrequency: 11 },
-  { id: 'v54', username: 'aisha_ng', displayName: 'Aisha Okafor', level: 36, avatar: 'https://i.pravatar.cc/100?img=69', country: '🇳🇬', chatFrequency: 10 },
-  { id: 'v55', username: 'felix.de', displayName: 'Felix Schmidt', level: 9, avatar: 'https://i.pravatar.cc/100?img=70', country: '🇩🇪', chatFrequency: 24 },
-  { id: 'v56', username: 'luna_cl', displayName: 'Luna Vargas', level: 47, avatar: 'https://i.pravatar.cc/100?u=luna_cl', country: '🇨🇱', chatFrequency: 8 },
-  { id: 'v57', username: 'max.uk', displayName: 'Max Williams', level: 12, avatar: 'https://i.pravatar.cc/100?u=max_uk', country: '🇬🇧', chatFrequency: 18 },
-  { id: 'v58', username: 'selin_tr', displayName: 'Selin Yılmaz', level: 53, avatar: 'https://i.pravatar.cc/100?u=selin_tr', country: '🇹🇷', chatFrequency: 7 },
-  { id: 'v59', username: 'leo.bsas', displayName: 'Leo Fernández', level: 28, avatar: 'https://i.pravatar.cc/100?u=leo_bsas', country: '🇦🇷', chatFrequency: 13 },
-  { id: 'v60', username: 'naomi.ke', displayName: 'Naomi Wanjiku', level: 38, avatar: 'https://i.pravatar.cc/100?u=naomi_ke', country: '🇰🇪', chatFrequency: 11 },
-  { id: 'v61', username: 'daniel_ie', displayName: 'Daniel Murphy', level: 7, avatar: 'https://i.pravatar.cc/100?u=daniel_ie', country: '🇮🇪', chatFrequency: 28 },
-  { id: 'v62', username: 'thao.vn', displayName: 'Thao Nguyen', level: 62, avatar: 'https://i.pravatar.cc/100?u=thao_vn', country: '🇻🇳', chatFrequency: 6 },
-  { id: 'v63', username: 'adam_pl', displayName: 'Adam Wiśniewski', level: 19, avatar: 'https://i.pravatar.cc/100?u=adam_pl', country: '🇵🇱', chatFrequency: 15 },
-  { id: 'v64', username: 'zoe.nyc', displayName: 'Zoe Harper', level: 75, avatar: 'https://i.pravatar.cc/100?u=zoe_nyc', country: '🇺🇸', chatFrequency: 5 },
-  { id: 'v65', username: 'ivan_bg', displayName: 'Ivan Petrov', level: 31, avatar: 'https://i.pravatar.cc/100?u=ivan_bg', country: '🇧🇬', chatFrequency: 14 },
-  { id: 'v66', username: 'sakura_jp', displayName: 'Sakura Ito', level: 56, avatar: 'https://i.pravatar.cc/100?u=sakura_jp', country: '🇯🇵', chatFrequency: 7 },
-  { id: 'v67', username: 'carlos.mx', displayName: 'Carlos Mendoza', level: 22, avatar: 'https://i.pravatar.cc/100?u=carlos_mx', country: '🇲🇽', chatFrequency: 12 },
-  { id: 'v68', username: 'julia.at', displayName: 'Julia Steiner', level: 40, avatar: 'https://i.pravatar.cc/100?u=julia_at', country: '🇦🇹', chatFrequency: 10 },
-  { id: 'v69', username: 'rashid_ae', displayName: 'Rashid Al-Maktoum', level: 82, avatar: 'https://i.pravatar.cc/100?u=rashid_ae', country: '🇦🇪', chatFrequency: 6 },
-  { id: 'v70', username: 'bianca.ro', displayName: 'Bianca Ionescu', level: 29, avatar: 'https://i.pravatar.cc/100?u=bianca_ro', country: '🇷🇴', chatFrequency: 9 },
-  { id: 'v71', username: 'tom_nz', displayName: 'Tom Mitchell', level: 15, avatar: 'https://i.pravatar.cc/100?u=tom_nz', country: '🇳🇿', chatFrequency: 20 },
-  { id: 'v72', username: 'alina.ua', displayName: 'Alina Kovalenko', level: 44, avatar: 'https://i.pravatar.cc/100?u=alina_ua', country: '🇺🇦', chatFrequency: 8 },
-  { id: 'v73', username: 'ryan_sg', displayName: 'Ryan Lim', level: 33, avatar: 'https://i.pravatar.cc/100?u=ryan_sg', country: '🇸🇬', chatFrequency: 13 },
-  { id: 'v74', username: 'clara.es', displayName: 'Clara Hernández', level: 51, avatar: 'https://i.pravatar.cc/100?u=clara_es', country: '🇪🇸', chatFrequency: 7 },
-  { id: 'v75', username: 'arjun.in', displayName: 'Arjun Reddy', level: 26, avatar: 'https://i.pravatar.cc/100?u=arjun_in', country: '🇮🇳', chatFrequency: 11 },
-  { id: 'v76', username: 'sophie_ch', displayName: 'Sophie Keller', level: 18, avatar: 'https://i.pravatar.cc/100?u=sophie_ch', country: '🇨🇭', chatFrequency: 16 },
-  { id: 'v77', username: 'kofi.gh', displayName: 'Kofi Asante', level: 43, avatar: 'https://i.pravatar.cc/100?u=kofi_gh', country: '🇬🇭', chatFrequency: 10 },
-  { id: 'v78', username: 'victoria_se', displayName: 'Victoria Holm', level: 60, avatar: 'https://i.pravatar.cc/100?u=victoria_se', country: '🇸🇪', chatFrequency: 6 },
-  { id: 'v79', username: 'pedro.br', displayName: 'Pedro Oliveira', level: 35, avatar: 'https://i.pravatar.cc/100?u=pedro_br', country: '🇧🇷', chatFrequency: 9 },
-  { id: 'v80', username: 'nadia_dz', displayName: 'Nadia Benmoussa', level: 49, avatar: 'https://i.pravatar.cc/100?u=nadia_dz', country: '🇩🇿', chatFrequency: 8 },
-  { id: 'v81', username: 'finn.no', displayName: 'Finn Johansen', level: 14, avatar: 'https://i.pravatar.cc/100?u=finn_no', country: '🇳🇴', chatFrequency: 22 },
-  { id: 'v82', username: 'mei_tw', displayName: 'Mei-Ling Wu', level: 66, avatar: 'https://i.pravatar.cc/100?u=mei_tw', country: '🇹🇼', chatFrequency: 6 },
-  { id: 'v83', username: 'stefan.rs', displayName: 'Stefan Jovanović', level: 27, avatar: 'https://i.pravatar.cc/100?u=stefan_rs', country: '🇷🇸', chatFrequency: 13 },
-  { id: 'v84', username: 'leila.lb', displayName: 'Leila Khoury', level: 41, avatar: 'https://i.pravatar.cc/100?u=leila_lb', country: '🇱🇧', chatFrequency: 9 },
-  { id: 'v85', username: 'ashley_ca', displayName: 'Ashley Nguyen', level: 20, avatar: 'https://i.pravatar.cc/100?u=ashley_ca', country: '🇨🇦', chatFrequency: 14 },
-  { id: 'v86', username: 'hugo.fr', displayName: 'Hugo Laurent', level: 37, avatar: 'https://i.pravatar.cc/100?u=hugo_fr', country: '🇫🇷', chatFrequency: 11 },
-  { id: 'v87', username: 'daria.ro', displayName: 'Daria Munteanu', level: 55, avatar: 'https://i.pravatar.cc/100?u=daria_ro', country: '🇷🇴', chatFrequency: 7 },
-  { id: 'v88', username: 'josh_us', displayName: 'Josh Anderson', level: 3, avatar: 'https://i.pravatar.cc/100?u=josh_us', country: '🇺🇸', chatFrequency: 40 },
-  { id: 'v89', username: 'mila.hr', displayName: 'Mila Kovačević', level: 46, avatar: 'https://i.pravatar.cc/100?u=mila_hr', country: '🇭🇷', chatFrequency: 8 },
-  { id: 'v90', username: 'ravi_in', displayName: 'Ravi Kumar', level: 32, avatar: 'https://i.pravatar.cc/100?u=ravi_in', country: '🇮🇳', chatFrequency: 12 },
-  { id: 'v91', username: 'kim_ph', displayName: 'Kim Santos', level: 24, avatar: 'https://i.pravatar.cc/100?u=kim_ph', country: '🇵🇭', chatFrequency: 10 },
-  { id: 'v92', username: 'laura.it', displayName: 'Laura Conti', level: 63, avatar: 'https://i.pravatar.cc/100?u=laura_it', country: '🇮🇹', chatFrequency: 6 },
-  { id: 'v93', username: 'ben_za', displayName: 'Ben Nkosi', level: 39, avatar: 'https://i.pravatar.cc/100?u=ben_za', country: '🇿🇦', chatFrequency: 11 },
-  { id: 'v94', username: 'katya.ru', displayName: 'Katya Smirnova', level: 70, avatar: 'https://i.pravatar.cc/100?u=katya_ru', country: '🇷🇺', chatFrequency: 5 },
-  { id: 'v95', username: 'lucas_nl', displayName: 'Lucas de Vries', level: 16, avatar: 'https://i.pravatar.cc/100?u=lucas_nl', country: '🇳🇱', chatFrequency: 18 },
-  { id: 'v96', username: 'yara.sa', displayName: 'Yara Al-Rashid', level: 52, avatar: 'https://i.pravatar.cc/100?u=yara_sa', country: '🇸🇦', chatFrequency: 8 },
-  { id: 'v97', username: 'chris.nz', displayName: 'Chris Thompson', level: 11, avatar: 'https://i.pravatar.cc/100?u=chris_nz', country: '🇳🇿', chatFrequency: 25 },
-  { id: 'v98', username: 'ana.bg', displayName: 'Ana Dimitrova', level: 45, avatar: 'https://i.pravatar.cc/100?u=ana_bg', country: '🇧🇬', chatFrequency: 9 },
-  { id: 'v99', username: 'malik_pk', displayName: 'Malik Hassan', level: 34, avatar: 'https://i.pravatar.cc/100?u=malik_pk', country: '🇵🇰', chatFrequency: 12 },
-  { id: 'v100', username: 'celine.be', displayName: 'Céline Dubois', level: 58, avatar: 'https://i.pravatar.cc/100?u=celine_be', country: '🇧🇪', chatFrequency: 7 },
+  { id: 'v1', username: 'emma_rose22', displayName: 'Emma Rose', level: 34, avatar: 'https://i.pravatar.cc/100?img=1', country: '🇺🇸', chatFrequency: 8, supportDays: 127, lastVisitDaysAgo: 0 },
+  { id: 'v2', username: 'alex.madrid', displayName: 'Alex Madrid', level: 18, avatar: 'https://i.pravatar.cc/100?img=3', country: '🇪🇸', chatFrequency: 12, supportDays: 45, lastVisitDaysAgo: 1 },
+  { id: 'v3', username: 'sofiab_', displayName: 'Sofia Bianchi', level: 45, avatar: 'https://i.pravatar.cc/100?img=5', country: '🇮🇹', chatFrequency: 6, supportDays: 203, lastVisitDaysAgo: 0 },
+  { id: 'v4', username: 'lucassilva7', displayName: 'Lucas Silva', level: 27, avatar: 'https://i.pravatar.cc/100?img=7', country: '🇧🇷', chatFrequency: 10, supportDays: 89, lastVisitDaysAgo: 3 },
+  { id: 'v5', username: 'mia.chen_', displayName: 'Mia Chen', level: 52, avatar: 'https://i.pravatar.cc/100?img=9', country: '🇬🇧', chatFrequency: 15, supportDays: 312, lastVisitDaysAgo: 0 },
+  { id: 'v6', username: 'david_k99', displayName: 'David Kim', level: 8, avatar: 'https://i.pravatar.cc/100?img=11', country: '🇰🇷', chatFrequency: 20, supportDays: 12, lastVisitDaysAgo: 5 },
+  { id: 'v7', username: 'anya.pet', displayName: 'Anya Petrova', level: 61, avatar: 'https://i.pravatar.cc/100?img=13', country: '🇷🇺', chatFrequency: 7, supportDays: 365, lastVisitDaysAgo: 0 },
+  { id: 'v8', username: 'marcosantos_', displayName: 'Marco Santos', level: 14, avatar: 'https://i.pravatar.cc/100?img=14', country: '🇧🇷', chatFrequency: 9, supportDays: 34, lastVisitDaysAgo: 4 },
+  { id: 'v9', username: 'chloe.dpt', displayName: 'Chloé Dupont', level: 39, avatar: 'https://i.pravatar.cc/100?img=16', country: '🇫🇷', chatFrequency: 11, supportDays: 156, lastVisitDaysAgo: 0 },
+  { id: 'v10', username: 'jamesww_', displayName: 'James Wilson', level: 22, avatar: 'https://i.pravatar.cc/100?img=17', country: '🇺🇸', chatFrequency: 14, supportDays: 67, lastVisitDaysAgo: 1 },
+  { id: 'v11', username: 'yuki.tnk', displayName: 'Yuki Tanaka', level: 73, avatar: 'https://i.pravatar.cc/100?img=19', country: '🇯🇵', chatFrequency: 5, supportDays: 420, lastVisitDaysAgo: 0 },
+  { id: 'v12', username: 'isa_reyes', displayName: 'Isabella Reyes', level: 31, avatar: 'https://i.pravatar.cc/100?img=20', country: '🇲🇽', chatFrequency: 13, supportDays: 98, lastVisitDaysAgo: 2 },
+  { id: 'v13', username: 'noah.mllr', displayName: 'Noah Müller', level: 16, avatar: 'https://i.pravatar.cc/100?img=22', country: '🇩🇪', chatFrequency: 18, supportDays: 23, lastVisitDaysAgo: 7 },
+  { id: 'v14', username: 'lara_h', displayName: 'Lara Al-Hassan', level: 55, avatar: 'https://i.pravatar.cc/100?img=24', country: '🇦🇪', chatFrequency: 8, supportDays: 278, lastVisitDaysAgo: 0 },
+  { id: 'v15', username: 'olibrown', displayName: 'Oliver Brown', level: 10, avatar: 'https://i.pravatar.cc/100?img=25', country: '🇬🇧', chatFrequency: 22, supportDays: 7, lastVisitDaysAgo: 3 },
+  { id: 'v16', username: 'cami.lopez', displayName: 'Camila López', level: 42, avatar: 'https://i.pravatar.cc/100?img=26', country: '🇦🇷', chatFrequency: 7, supportDays: 189, lastVisitDaysAgo: 0 },
+  { id: 'v17', username: 'liamtaylor_', displayName: 'Liam Taylor', level: 29, avatar: 'https://i.pravatar.cc/100?img=28', country: '🇦🇺', chatFrequency: 16, supportDays: 54, lastVisitDaysAgo: 1 },
+  { id: 'v18', username: 'nina.w', displayName: 'Nina Weber', level: 37, avatar: 'https://i.pravatar.cc/100?img=29', country: '🇦🇹', chatFrequency: 10, supportDays: 142, lastVisitDaysAgo: 0 },
+  { id: 'v19', username: 'raj_p', displayName: 'Raj Patel', level: 48, avatar: 'https://i.pravatar.cc/100?img=30', country: '🇮🇳', chatFrequency: 9, supportDays: 231, lastVisitDaysAgo: 0 },
+  { id: 'v20', username: 'zaraaj', displayName: 'Zara Jones', level: 65, avatar: 'https://i.pravatar.cc/100?img=32', country: '🇺🇸', chatFrequency: 6, supportDays: 345, lastVisitDaysAgo: 0 },
+  { id: 'v21', username: 'mateo.g', displayName: 'Mateo García', level: 19, avatar: 'https://i.pravatar.cc/100?img=33', country: '🇪🇸', chatFrequency: 14, supportDays: 41, lastVisitDaysAgo: 6 },
+  { id: 'v22', username: 'elena_pop', displayName: 'Elena Popescu', level: 33, avatar: 'https://i.pravatar.cc/100?img=34', country: '🇷🇴', chatFrequency: 8, supportDays: 167, lastVisitDaysAgo: 0 },
+  { id: 'v23', username: 'amir.h', displayName: 'Amir Hosseini', level: 25, avatar: 'https://i.pravatar.cc/100?img=36', country: '🇮🇷', chatFrequency: 17, supportDays: 58, lastVisitDaysAgo: 4 },
+  { id: 'v24', username: 'lilytan_', displayName: 'Lily Tan', level: 58, avatar: 'https://i.pravatar.cc/100?img=38', country: '🇸🇬', chatFrequency: 7, supportDays: 290, lastVisitDaysAgo: 0 },
+  { id: 'v25', username: 'tyler.b', displayName: 'Tyler Brooks', level: 11, avatar: 'https://i.pravatar.cc/100?img=39', country: '🇺🇸', chatFrequency: 25, supportDays: 15, lastVisitDaysAgo: 8 },
+  { id: 'v26', username: 'sara_lind', displayName: 'Sara Lindqvist', level: 44, avatar: 'https://i.pravatar.cc/100?img=40', country: '🇸🇪', chatFrequency: 12, supportDays: 198, lastVisitDaysAgo: 1 },
+  { id: 'v27', username: 'diego.v', displayName: 'Diego Vargas', level: 20, avatar: 'https://i.pravatar.cc/100?img=41', country: '🇵🇪', chatFrequency: 11, supportDays: 73, lastVisitDaysAgo: 2 },
+  { id: 'v28', username: 'hannahlee', displayName: 'Hannah Lee', level: 36, avatar: 'https://i.pravatar.cc/100?img=43', country: '🇨🇦', chatFrequency: 9, supportDays: 134, lastVisitDaysAgo: 0 },
+  { id: 'v29', username: 'kai.nkm', displayName: 'Kai Nakamura', level: 71, avatar: 'https://i.pravatar.cc/100?img=44', country: '🇺🇸', chatFrequency: 6, supportDays: 401, lastVisitDaysAgo: 0 },
+  { id: 'v30', username: 'vale_rossi', displayName: 'Valentina Rossi', level: 50, avatar: 'https://i.pravatar.cc/100?img=45', country: '🇮🇹', chatFrequency: 8, supportDays: 256, lastVisitDaysAgo: 1 },
+  { id: 'v31', username: 'adriana_buc', displayName: 'Adriana Bucur', level: 28, avatar: 'https://i.pravatar.cc/100?img=46', country: '🇷🇴', chatFrequency: 9, supportDays: 82, lastVisitDaysAgo: 3 },
+  { id: 'v32', username: 'tomas.cz', displayName: 'Tomáš Novák', level: 15, avatar: 'https://i.pravatar.cc/100?img=47', country: '🇨🇿', chatFrequency: 19, supportDays: 29, lastVisitDaysAgo: 5 },
+  { id: 'v33', username: 'priya_sh', displayName: 'Priya Sharma', level: 41, avatar: 'https://i.pravatar.cc/100?img=48', country: '🇮🇳', chatFrequency: 7, supportDays: 175, lastVisitDaysAgo: 0 },
+  { id: 'v34', username: 'jake.miller', displayName: 'Jake Miller', level: 6, avatar: 'https://i.pravatar.cc/100?img=49', country: '🇺🇸', chatFrequency: 30, supportDays: 3, lastVisitDaysAgo: 10 },
+  { id: 'v35', username: 'fatima_kw', displayName: 'Fatima Al-Sabah', level: 67, avatar: 'https://i.pravatar.cc/100?img=50', country: '🇰🇼', chatFrequency: 8, supportDays: 334, lastVisitDaysAgo: 0 },
+  { id: 'v36', username: 'oscar.swe', displayName: 'Oscar Eriksson', level: 23, avatar: 'https://i.pravatar.cc/100?img=51', country: '🇸🇪', chatFrequency: 15, supportDays: 51, lastVisitDaysAgo: 2 },
+  { id: 'v37', username: 'amelie_fr', displayName: 'Amélie Martin', level: 38, avatar: 'https://i.pravatar.cc/100?img=52', country: '🇫🇷', chatFrequency: 10, supportDays: 145, lastVisitDaysAgo: 0 },
+  { id: 'v38', username: 'chen.wei', displayName: 'Chen Wei', level: 54, avatar: 'https://i.pravatar.cc/100?img=53', country: '🇨🇳', chatFrequency: 12, supportDays: 267, lastVisitDaysAgo: 1 },
+  { id: 'v39', username: 'maria_pt', displayName: 'Maria Ferreira', level: 30, avatar: 'https://i.pravatar.cc/100?img=54', country: '🇵🇹', chatFrequency: 11, supportDays: 93, lastVisitDaysAgo: 3 },
+  { id: 'v40', username: 'ethan.j', displayName: 'Ethan Johnson', level: 4, avatar: 'https://i.pravatar.cc/100?img=55', country: '🇺🇸', chatFrequency: 35, supportDays: 1, lastVisitDaysAgo: 14 },
+  { id: 'v41', username: 'noor_eg', displayName: 'Noor Ibrahim', level: 46, avatar: 'https://i.pravatar.cc/100?img=56', country: '🇪🇬', chatFrequency: 9, supportDays: 210, lastVisitDaysAgo: 0 },
+  { id: 'v42', username: 'anna.pol', displayName: 'Anna Kowalska', level: 32, avatar: 'https://i.pravatar.cc/100?img=57', country: '🇵🇱', chatFrequency: 13, supportDays: 104, lastVisitDaysAgo: 1 },
+  { id: 'v43', username: 'ryu_kr', displayName: 'Ryu Ji-hoon', level: 59, avatar: 'https://i.pravatar.cc/100?img=58', country: '🇰🇷', chatFrequency: 6, supportDays: 301, lastVisitDaysAgo: 0 },
+  { id: 'v44', username: 'jessica.au', displayName: 'Jessica Park', level: 21, avatar: 'https://i.pravatar.cc/100?img=59', country: '🇦🇺', chatFrequency: 14, supportDays: 62, lastVisitDaysAgo: 4 },
+  { id: 'v45', username: 'omar_ma', displayName: 'Omar Benali', level: 35, avatar: 'https://i.pravatar.cc/100?img=60', country: '🇲🇦', chatFrequency: 10, supportDays: 118, lastVisitDaysAgo: 0 },
+  { id: 'v46', username: 'eva.hrv', displayName: 'Eva Horvat', level: 17, avatar: 'https://i.pravatar.cc/100?img=61', country: '🇭🇷', chatFrequency: 20, supportDays: 19, lastVisitDaysAgo: 6 },
+  { id: 'v47', username: 'brandon_tx', displayName: 'Brandon Lee', level: 43, avatar: 'https://i.pravatar.cc/100?img=62', country: '🇺🇸', chatFrequency: 8, supportDays: 183, lastVisitDaysAgo: 0 },
+  { id: 'v48', username: 'ines.pt', displayName: 'Inês Costa', level: 26, avatar: 'https://i.pravatar.cc/100?img=63', country: '🇵🇹', chatFrequency: 12, supportDays: 76, lastVisitDaysAgo: 1 },
+  { id: 'v49', username: 'andrei_md', displayName: 'Andrei Moraru', level: 40, avatar: 'https://i.pravatar.cc/100?img=64', country: '🇲🇩', chatFrequency: 9, supportDays: 155, lastVisitDaysAgo: 0 },
+  { id: 'v50', username: 'maya.id', displayName: 'Maya Putri', level: 13, avatar: 'https://i.pravatar.cc/100?img=65', country: '🇮🇩', chatFrequency: 16, supportDays: 27, lastVisitDaysAgo: 5 },
+  { id: 'v51', username: 'gabriel_co', displayName: 'Gabriel Rojas', level: 57, avatar: 'https://i.pravatar.cc/100?img=66', country: '🇨🇴', chatFrequency: 7, supportDays: 284, lastVisitDaysAgo: 0 },
+  { id: 'v52', username: 'hana.jp', displayName: 'Hana Yamamoto', level: 69, avatar: 'https://i.pravatar.cc/100?img=67', country: '🇯🇵', chatFrequency: 5, supportDays: 378, lastVisitDaysAgo: 0 },
+  { id: 'v53', username: 'mihai_ro', displayName: 'Mihai Dragomir', level: 24, avatar: 'https://i.pravatar.cc/100?img=68', country: '🇷🇴', chatFrequency: 11, supportDays: 63, lastVisitDaysAgo: 1 },
+  { id: 'v54', username: 'aisha_ng', displayName: 'Aisha Okafor', level: 36, avatar: 'https://i.pravatar.cc/100?img=69', country: '🇳🇬', chatFrequency: 10, supportDays: 131, lastVisitDaysAgo: 0 },
+  { id: 'v55', username: 'felix.de', displayName: 'Felix Schmidt', level: 9, avatar: 'https://i.pravatar.cc/100?img=70', country: '🇩🇪', chatFrequency: 24, supportDays: 8, lastVisitDaysAgo: 9 },
+  { id: 'v56', username: 'luna_cl', displayName: 'Luna Vargas', level: 47, avatar: 'https://i.pravatar.cc/100?u=luna_cl', country: '🇨🇱', chatFrequency: 8, supportDays: 215, lastVisitDaysAgo: 0 },
+  { id: 'v57', username: 'max.uk', displayName: 'Max Williams', level: 12, avatar: 'https://i.pravatar.cc/100?u=max_uk', country: '🇬🇧', chatFrequency: 18, supportDays: 21, lastVisitDaysAgo: 3 },
+  { id: 'v58', username: 'selin_tr', displayName: 'Selin Yılmaz', level: 53, avatar: 'https://i.pravatar.cc/100?u=selin_tr', country: '🇹🇷', chatFrequency: 7, supportDays: 247, lastVisitDaysAgo: 0 },
+  { id: 'v59', username: 'leo.bsas', displayName: 'Leo Fernández', level: 28, avatar: 'https://i.pravatar.cc/100?u=leo_bsas', country: '🇦🇷', chatFrequency: 13, supportDays: 77, lastVisitDaysAgo: 2 },
+  { id: 'v60', username: 'naomi.ke', displayName: 'Naomi Wanjiku', level: 38, avatar: 'https://i.pravatar.cc/100?u=naomi_ke', country: '🇰🇪', chatFrequency: 11, supportDays: 149, lastVisitDaysAgo: 1 },
+  { id: 'v61', username: 'daniel_ie', displayName: 'Daniel Murphy', level: 7, avatar: 'https://i.pravatar.cc/100?u=daniel_ie', country: '🇮🇪', chatFrequency: 28, supportDays: 5, lastVisitDaysAgo: 12 },
+  { id: 'v62', username: 'thao.vn', displayName: 'Thao Nguyen', level: 62, avatar: 'https://i.pravatar.cc/100?u=thao_vn', country: '🇻🇳', chatFrequency: 6, supportDays: 319, lastVisitDaysAgo: 0 },
+  { id: 'v63', username: 'adam_pl', displayName: 'Adam Wiśniewski', level: 19, avatar: 'https://i.pravatar.cc/100?u=adam_pl', country: '🇵🇱', chatFrequency: 15, supportDays: 38, lastVisitDaysAgo: 4 },
+  { id: 'v64', username: 'zoe.nyc', displayName: 'Zoe Harper', level: 75, avatar: 'https://i.pravatar.cc/100?u=zoe_nyc', country: '🇺🇸', chatFrequency: 5, supportDays: 445, lastVisitDaysAgo: 0 },
+  { id: 'v65', username: 'ivan_bg', displayName: 'Ivan Petrov', level: 31, avatar: 'https://i.pravatar.cc/100?u=ivan_bg', country: '🇧🇬', chatFrequency: 14, supportDays: 102, lastVisitDaysAgo: 1 },
+  { id: 'v66', username: 'sakura_jp', displayName: 'Sakura Ito', level: 56, avatar: 'https://i.pravatar.cc/100?u=sakura_jp', country: '🇯🇵', chatFrequency: 7, supportDays: 273, lastVisitDaysAgo: 0 },
+  { id: 'v67', username: 'carlos.mx', displayName: 'Carlos Mendoza', level: 22, avatar: 'https://i.pravatar.cc/100?u=carlos_mx', country: '🇲🇽', chatFrequency: 12, supportDays: 56, lastVisitDaysAgo: 3 },
+  { id: 'v68', username: 'julia.at', displayName: 'Julia Steiner', level: 40, avatar: 'https://i.pravatar.cc/100?u=julia_at', country: '🇦🇹', chatFrequency: 10, supportDays: 164, lastVisitDaysAgo: 0 },
+  { id: 'v69', username: 'rashid_ae', displayName: 'Rashid Al-Maktoum', level: 82, avatar: 'https://i.pravatar.cc/100?u=rashid_ae', country: '🇦🇪', chatFrequency: 6, supportDays: 510, lastVisitDaysAgo: 0 },
+  { id: 'v70', username: 'bianca.ro', displayName: 'Bianca Ionescu', level: 29, avatar: 'https://i.pravatar.cc/100?u=bianca_ro', country: '🇷🇴', chatFrequency: 9, supportDays: 88, lastVisitDaysAgo: 1 },
+  { id: 'v71', username: 'tom_nz', displayName: 'Tom Mitchell', level: 15, avatar: 'https://i.pravatar.cc/100?u=tom_nz', country: '🇳🇿', chatFrequency: 20, supportDays: 18, lastVisitDaysAgo: 7 },
+  { id: 'v72', username: 'alina.ua', displayName: 'Alina Kovalenko', level: 44, avatar: 'https://i.pravatar.cc/100?u=alina_ua', country: '🇺🇦', chatFrequency: 8, supportDays: 195, lastVisitDaysAgo: 0 },
+  { id: 'v73', username: 'ryan_sg', displayName: 'Ryan Lim', level: 33, avatar: 'https://i.pravatar.cc/100?u=ryan_sg', country: '🇸🇬', chatFrequency: 13, supportDays: 110, lastVisitDaysAgo: 2 },
+  { id: 'v74', username: 'clara.es', displayName: 'Clara Hernández', level: 51, avatar: 'https://i.pravatar.cc/100?u=clara_es', country: '🇪🇸', chatFrequency: 7, supportDays: 253, lastVisitDaysAgo: 0 },
+  { id: 'v75', username: 'arjun.in', displayName: 'Arjun Reddy', level: 26, avatar: 'https://i.pravatar.cc/100?u=arjun_in', country: '🇮🇳', chatFrequency: 11, supportDays: 69, lastVisitDaysAgo: 1 },
+  { id: 'v76', username: 'sophie_ch', displayName: 'Sophie Keller', level: 18, avatar: 'https://i.pravatar.cc/100?u=sophie_ch', country: '🇨🇭', chatFrequency: 16, supportDays: 32, lastVisitDaysAgo: 5 },
+  { id: 'v77', username: 'kofi.gh', displayName: 'Kofi Asante', level: 43, avatar: 'https://i.pravatar.cc/100?u=kofi_gh', country: '🇬🇭', chatFrequency: 10, supportDays: 178, lastVisitDaysAgo: 0 },
+  { id: 'v78', username: 'victoria_se', displayName: 'Victoria Holm', level: 60, avatar: 'https://i.pravatar.cc/100?u=victoria_se', country: '🇸🇪', chatFrequency: 6, supportDays: 330, lastVisitDaysAgo: 0 },
+  { id: 'v79', username: 'pedro.br', displayName: 'Pedro Oliveira', level: 35, avatar: 'https://i.pravatar.cc/100?u=pedro_br', country: '🇧🇷', chatFrequency: 9, supportDays: 121, lastVisitDaysAgo: 1 },
+  { id: 'v80', username: 'nadia_dz', displayName: 'Nadia Benmoussa', level: 49, avatar: 'https://i.pravatar.cc/100?u=nadia_dz', country: '🇩🇿', chatFrequency: 8, supportDays: 222, lastVisitDaysAgo: 0 },
+  { id: 'v81', username: 'finn.no', displayName: 'Finn Johansen', level: 14, avatar: 'https://i.pravatar.cc/100?u=finn_no', country: '🇳🇴', chatFrequency: 22, supportDays: 11, lastVisitDaysAgo: 6 },
+  { id: 'v82', username: 'mei_tw', displayName: 'Mei-Ling Wu', level: 66, avatar: 'https://i.pravatar.cc/100?u=mei_tw', country: '🇹🇼', chatFrequency: 6, supportDays: 356, lastVisitDaysAgo: 0 },
+  { id: 'v83', username: 'stefan.rs', displayName: 'Stefan Jovanović', level: 27, avatar: 'https://i.pravatar.cc/100?u=stefan_rs', country: '🇷🇸', chatFrequency: 13, supportDays: 74, lastVisitDaysAgo: 2 },
+  { id: 'v84', username: 'leila.lb', displayName: 'Leila Khoury', level: 41, avatar: 'https://i.pravatar.cc/100?u=leila_lb', country: '🇱🇧', chatFrequency: 9, supportDays: 169, lastVisitDaysAgo: 0 },
+  { id: 'v85', username: 'ashley_ca', displayName: 'Ashley Nguyen', level: 20, avatar: 'https://i.pravatar.cc/100?u=ashley_ca', country: '🇨🇦', chatFrequency: 14, supportDays: 43, lastVisitDaysAgo: 3 },
+  { id: 'v86', username: 'hugo.fr', displayName: 'Hugo Laurent', level: 37, avatar: 'https://i.pravatar.cc/100?u=hugo_fr', country: '🇫🇷', chatFrequency: 11, supportDays: 137, lastVisitDaysAgo: 1 },
+  { id: 'v87', username: 'daria.ro', displayName: 'Daria Munteanu', level: 55, avatar: 'https://i.pravatar.cc/100?u=daria_ro', country: '🇷🇴', chatFrequency: 7, supportDays: 261, lastVisitDaysAgo: 0 },
+  { id: 'v88', username: 'josh_us', displayName: 'Josh Anderson', level: 3, avatar: 'https://i.pravatar.cc/100?u=josh_us', country: '🇺🇸', chatFrequency: 40, supportDays: 2, lastVisitDaysAgo: 15 },
+  { id: 'v89', username: 'mila.hr', displayName: 'Mila Kovačević', level: 46, avatar: 'https://i.pravatar.cc/100?u=mila_hr', country: '🇭🇷', chatFrequency: 8, supportDays: 207, lastVisitDaysAgo: 0 },
+  { id: 'v90', username: 'ravi_in', displayName: 'Ravi Kumar', level: 32, avatar: 'https://i.pravatar.cc/100?u=ravi_in', country: '🇮🇳', chatFrequency: 12, supportDays: 96, lastVisitDaysAgo: 1 },
+  { id: 'v91', username: 'kim_ph', displayName: 'Kim Santos', level: 24, avatar: 'https://i.pravatar.cc/100?u=kim_ph', country: '🇵🇭', chatFrequency: 10, supportDays: 59, lastVisitDaysAgo: 4 },
+  { id: 'v92', username: 'laura.it', displayName: 'Laura Conti', level: 63, avatar: 'https://i.pravatar.cc/100?u=laura_it', country: '🇮🇹', chatFrequency: 6, supportDays: 342, lastVisitDaysAgo: 0 },
+  { id: 'v93', username: 'ben_za', displayName: 'Ben Nkosi', level: 39, avatar: 'https://i.pravatar.cc/100?u=ben_za', country: '🇿🇦', chatFrequency: 11, supportDays: 150, lastVisitDaysAgo: 0 },
+  { id: 'v94', username: 'katya.ru', displayName: 'Katya Smirnova', level: 70, avatar: 'https://i.pravatar.cc/100?u=katya_ru', country: '🇷🇺', chatFrequency: 5, supportDays: 390, lastVisitDaysAgo: 0 },
+  { id: 'v95', username: 'lucas_nl', displayName: 'Lucas de Vries', level: 16, avatar: 'https://i.pravatar.cc/100?u=lucas_nl', country: '🇳🇱', chatFrequency: 18, supportDays: 25, lastVisitDaysAgo: 8 },
+  { id: 'v96', username: 'yara.sa', displayName: 'Yara Al-Rashid', level: 52, avatar: 'https://i.pravatar.cc/100?u=yara_sa', country: '🇸🇦', chatFrequency: 8, supportDays: 238, lastVisitDaysAgo: 0 },
+  { id: 'v97', username: 'chris.nz', displayName: 'Chris Thompson', level: 11, avatar: 'https://i.pravatar.cc/100?u=chris_nz', country: '🇳🇿', chatFrequency: 25, supportDays: 14, lastVisitDaysAgo: 10 },
+  { id: 'v98', username: 'ana.bg', displayName: 'Ana Dimitrova', level: 45, avatar: 'https://i.pravatar.cc/100?u=ana_bg', country: '🇧🇬', chatFrequency: 9, supportDays: 186, lastVisitDaysAgo: 0 },
+  { id: 'v99', username: 'malik_pk', displayName: 'Malik Hassan', level: 34, avatar: 'https://i.pravatar.cc/100?u=malik_pk', country: '🇵🇰', chatFrequency: 12, supportDays: 107, lastVisitDaysAgo: 2 },
+  { id: 'v100', username: 'celine.be', displayName: 'Céline Dubois', level: 58, avatar: 'https://i.pravatar.cc/100?u=celine_be', country: '🇧🇪', chatFrequency: 7, supportDays: 289, lastVisitDaysAgo: 0 },
 ];
 
 // Realistic chat messages - hyper diverse, natural language with typos, slang, abbreviations
@@ -510,10 +512,7 @@ export default function LiveStream() {
         { onConflict: 'stream_key' }
       );
       if (error) {
-        setMessages((prev) => [
-          ...prev.slice(-10),
-          { id: Date.now().toString(), username: 'system', text: 'Live status update failed.' },
-        ]);
+        console.warn('Live status update failed:', error.message);
       }
     })();
   }, [creatorName, effectiveStreamId, user?.id]);
@@ -625,13 +624,44 @@ export default function LiveStream() {
   const [battleCountdown, setBattleCountdown] = useState<number | null>(null);
   const _battleKeyboardLikeArmedRef = useRef(true);
   const [liveLikes, setLiveLikes] = useState(0);
+
+  // Speed Challenge State
+  // SPEED CHALLENGE
+  const SPEED_CHALLENGE_ENABLED = true;
+  const [speedChallengeActive, setSpeedChallengeActive] = useState(false);
+  const [speedChallengeCountdown, setSpeedChallengeCountdown] = useState<number | null>(null); // 3,2,1 before start
+  const [speedChallengeTime, setSpeedChallengeTime] = useState(10); // 10 seconds
+  const [speedChallengeTaps, setSpeedChallengeTaps] = useState<Record<string, number>>({ me: 0, opponent: 0, player3: 0, player4: 0 });
+  const speedChallengeTapsRef = useRef<Record<string, number>>({ me: 0, opponent: 0, player3: 0, player4: 0 });
+  const [speedChallengeResult, setSpeedChallengeResult] = useState<string | null>(null);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const speedChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSpeedChallengeRef = useRef<number>(0);
   const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
   // Track top gifters per player: { 'me': { 'username': coins }, 'opponent': {...}, ... }
   const [playerGifters, setPlayerGifters] = useState<Record<string, Record<string, number>>>({});
   const [floatingHearts, setFloatingHearts] = useState<
-    Array<{ id: string; x: number; y: number; dx: number; rot: number; size: number; color: string }>
+    Array<{ id: string; x: number; y: number; dx: number; rot: number; size: number; color: string; username?: string; avatar?: string }>
   >([]);
-  const [miniProfile, setMiniProfile] = useState<null | { username: string; avatar: string; level: number | null; coins?: number }>(null);
+  const [miniProfile, setMiniProfile] = useState<null | { username: string; avatar: string; level: number | null; coins?: number; donated?: number }>(null);
+  const [showMembershipBar, setShowMembershipBar] = useState(false);
+  const [membershipBarClosing, setMembershipBarClosing] = useState(false);
+  const [membershipHeartActive, setMembershipHeartActive] = useState(false);
+  const membershipTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const closeMembershipBar = useCallback(() => {
+    setMembershipBarClosing(true);
+    setTimeout(() => { setShowMembershipBar(false); setMembershipBarClosing(false); }, 200);
+  }, []);
+
+  const openMembershipBar = useCallback(() => {
+    if (membershipTimerRef.current) clearTimeout(membershipTimerRef.current);
+    setMembershipBarClosing(false);
+    setShowMembershipBar(true);
+    setMembershipHeartActive(true);
+    membershipTimerRef.current = setTimeout(() => closeMembershipBar(), 4000);
+  }, [closeMembershipBar]);
+  const [sessionContribution, setSessionContribution] = useState(0); // total coins gifted this session
   const [universeQueue, setUniverseQueue] = useState<UniverseTickerMessage[]>([]);
   const [currentUniverse, setCurrentUniverse] = useState<UniverseTickerMessage | null>(null);
 
@@ -645,31 +675,37 @@ export default function LiveStream() {
   }, [myScore, opponentScore, player3Score, player4Score]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isBattleMode && battleTime > 0) {
-      interval = setInterval(() => {
-        setBattleTime(prev => {
-            if (prev <= 1) {
-                const winner = determine4PlayerWinner();
-                setBattleWinner(winner);
-                return 0;
-            }
-            // Simulate opponent scores randomly
-            if (Math.random() > 0.7) {
-                setOpponentScore(s => s + Math.floor(Math.random() * 50));
-            }
-            if (Math.random() > 0.7) {
-                setPlayer3Score(s => s + Math.floor(Math.random() * 40));
-            }
-            if (Math.random() > 0.7) {
-                setPlayer4Score(s => s + Math.floor(Math.random() * 45));
-            }
-            return prev - 1;
-        });
-      }, 1000);
-    }
+    if (!isBattleMode || battleTime <= 0) return;
+    const interval = setInterval(() => {
+      setBattleTime(prev => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+      // Simulate opponent scores (outside setBattleTime updater)
+      if (Math.random() > 0.7) {
+        setOpponentScore(s => s + Math.floor(Math.random() * 50));
+      }
+      if (Math.random() > 0.7) {
+        setPlayer3Score(s => s + Math.floor(Math.random() * 40));
+      }
+      if (Math.random() > 0.7) {
+        setPlayer4Score(s => s + Math.floor(Math.random() * 45));
+      }
+    }, 1000);
     return () => clearInterval(interval);
-  }, [isBattleMode, battleTime, determine4PlayerWinner]);
+  }, [isBattleMode, battleTime]);
+
+  // Determine winner when battle time reaches 0
+  useEffect(() => {
+    if (isBattleMode && battleTime === 0 && !battleWinner && battleCountdown === null) {
+      // Only determine winner if the battle was actually started (scores exist)
+      const totalScore = myScore + opponentScore + player3Score + player4Score;
+      if (totalScore > 0) {
+        const winner = determine4PlayerWinner();
+        setBattleWinner(winner);
+      }
+    }
+  }, [isBattleMode, battleTime, battleWinner, battleCountdown, myScore, opponentScore, player3Score, player4Score, determine4PlayerWinner]);
 
   const toggleBattle = useCallback(() => {
     if (isBattleMode) {
@@ -680,6 +716,13 @@ export default function LiveStream() {
       battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
       battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
       setMiniProfile(null);
+      // Reset speed challenge
+      setSpeedChallengeActive(false);
+      setSpeedChallengeCountdown(null);
+      setSpeedChallengeTime(10);
+      setSpeedChallengeTaps({ me: 0, opponent: 0, player3: 0, player4: 0 });
+      setSpeedChallengeResult(null);
+      setSpeedMultiplier(1);
       // Reset invite slots
       setBattleSlots([
         { name: '', status: 'empty', avatar: '' },
@@ -849,6 +892,11 @@ export default function LiveStream() {
   };
 
   const formatCoinsShort = (coins: number) => {
+    if (coins >= 1_000_000) {
+      const m = Math.round((coins / 1_000_000) * 10) / 10;
+      const label = Number.isInteger(m) ? String(Math.trunc(m)) : String(m);
+      return `${label}M`;
+    }
     if (coins >= 1000) {
       const k = Math.round((coins / 1000) * 10) / 10;
       const label = Number.isInteger(k) ? String(Math.trunc(k)) : String(k);
@@ -857,18 +905,29 @@ export default function LiveStream() {
     return coins.toLocaleString();
   };
 
-  const spawnHeartAt = useCallback((x: number, y: number, colorOverride?: string) => {
+  const activeViewersRef = useRef<SimulatedViewer[]>([]);
+  const spawnHeartAt = useCallback((x: number, y: number, colorOverride?: string, likerName?: string, likerAvatar?: string) => {
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const dx = Math.round((Math.random() * 2 - 1) * 60);
-    const rot = Math.round((Math.random() * 2 - 1) * 25);
-    const size = Math.round(20 + Math.random() * 14);
+    const dx = Math.round((Math.random() * 2 - 1) * 120);
+    const rot = Math.round((Math.random() * 2 - 1) * 45);
+    const size = Math.round(24 + Math.random() * 12);
     const colors = ['#FF0000', '#FF2D55', '#E60026', '#DC143C', '#FF1744', '#CC0000'];
     const color = colorOverride ?? colors[Math.floor(Math.random() * colors.length)];
 
-    setFloatingHearts((prev) => [...prev.slice(-40), { id, x, y, dx, rot, size, color }]);
+    // Pick a random viewer name if none provided
+    let username = likerName;
+    let avatar = likerAvatar;
+    const viewers = activeViewersRef.current;
+    if (!username && viewers.length > 0) {
+      const randomViewer = viewers[Math.floor(Math.random() * viewers.length)];
+      username = randomViewer.displayName;
+      avatar = randomViewer.avatar;
+    }
+
+    setFloatingHearts((prev) => [...prev.slice(-40), { id, x, y, dx, rot, size, color, username, avatar }]);
     window.setTimeout(() => {
       setFloatingHearts((prev) => prev.filter((h) => h.id !== id));
-    }, 2300);
+    }, 500);
   }, []);
 
   const spawnHeartFromClient = (clientX: number, clientY: number, colorOverride?: string) => {
@@ -889,13 +948,145 @@ export default function LiveStream() {
 
   const handleBattleTap = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4') => {
     setGiftTarget(target);
+
+    // Speed challenge taps - unlimited tapping during challenge
+    if (speedChallengeActive) {
+      setSpeedChallengeTaps(prev => ({ ...prev, [target]: (prev[target] ?? 0) + 1 }));
+      awardBattlePoints(target, 2 * speedMultiplier); // Each speed tap = 2 × multiplier points
+      return;
+    }
+
     // Each spectator tap awards 5 points, limited to 5 points total (1 tap)
     if (battleTapScoreRemainingRef.current > 0 && !battleWinner && battleTime > 0) {
       awardBattlePoints(target, 5);
       battleTapScoreRemainingRef.current = 0;
       setBattleTapScoreRemaining(0);
     }
-  }, [battleWinner, battleTime]);
+  }, [battleWinner, battleTime, speedChallengeActive]);
+
+  // ─── SPEED CHALLENGE LOGIC ───
+  const startSpeedChallenge = useCallback(() => {
+    if (!SPEED_CHALLENGE_ENABLED) return; // Guard
+    if (speedChallengeActive || speedChallengeCountdown !== null || !isBattleMode || battleWinner) return;
+    setSpeedChallengeTaps({ me: 0, opponent: 0, player3: 0, player4: 0 });
+    setSpeedChallengeResult(null);
+    setSpeedMultiplier(1);
+    setSpeedChallengeCountdown(3); // 3, 2, 1 countdown
+  }, [speedChallengeActive, speedChallengeCountdown, isBattleMode, battleWinner, SPEED_CHALLENGE_ENABLED]);
+
+  // Auto-start speed challenge when 10+ viewers are active, at ~90s intervals
+  useEffect(() => {
+    if (!SPEED_CHALLENGE_ENABLED) return; // Guard
+    if (!isBattleMode || battleWinner || battleTime <= 0) return;
+    if (speedChallengeActive || speedChallengeCountdown !== null) return;
+    const timeSinceLast = (300 - battleTime) - lastSpeedChallengeRef.current;
+    const viewerCount = activeViewersRef.current.length;
+    if (viewerCount >= 10 && timeSinceLast >= 60) {
+      lastSpeedChallengeRef.current = 300 - battleTime;
+      startSpeedChallenge();
+    }
+  }, [battleTime, isBattleMode, battleWinner, speedChallengeActive, speedChallengeCountdown, startSpeedChallenge, SPEED_CHALLENGE_ENABLED]);
+
+  // Also trigger at fixed moments: 3:00 and 2:00
+  useEffect(() => {
+    if (!SPEED_CHALLENGE_ENABLED) return; // Guard
+    if (!isBattleMode || battleWinner) return;
+    if (battleTime === 180 || battleTime === 120) {
+      startSpeedChallenge();
+    }
+  }, [battleTime, isBattleMode, battleWinner, startSpeedChallenge, SPEED_CHALLENGE_ENABLED]);
+
+  // Speed challenge countdown: 3, 2, 1 → GO
+  useEffect(() => {
+    if (speedChallengeCountdown === null) return;
+    if (speedChallengeCountdown <= 0) {
+      // Start the challenge
+      setSpeedChallengeActive(true);
+      setSpeedChallengeTime(10);
+      setSpeedChallengeCountdown(null);
+      return;
+    }
+    const t = setTimeout(() => setSpeedChallengeCountdown(prev => (prev ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+  }, [speedChallengeCountdown]);
+
+  // Speed challenge timer: 10 → 0
+  useEffect(() => {
+    if (!speedChallengeActive) return;
+    if (speedChallengeTime <= 0) {
+      // Challenge ended - determine winner
+      setSpeedChallengeActive(false);
+
+      // Read taps from ref (avoids stale closure + avoids dependency on taps object)
+      const finalTaps = speedChallengeTapsRef.current;
+      const entries = Object.entries(finalTaps).filter(([k]) => {
+        if (k === 'me') return true;
+        if (k === 'opponent') return battleSlots[0].status === 'accepted';
+        if (k === 'player3') return battleSlots[1].status === 'accepted';
+        if (k === 'player4') return battleSlots[2].status === 'accepted';
+        return false;
+      });
+      if (entries.length > 0) {
+        const maxTaps = Math.max(...entries.map(([, v]) => v));
+        const winners = entries.filter(([, v]) => v === maxTaps);
+        if (winners.length > 1 || maxTaps === 0) {
+          setSpeedChallengeResult('DRAW!');
+        } else {
+          const winnerKey = winners[0][0];
+          const names: Record<string, string> = { me: myCreatorName, opponent: opponentCreatorName || 'P2', player3: battleSlots[1]?.name || 'P3', player4: battleSlots[2]?.name || 'P4' };
+          setSpeedChallengeResult(`${names[winnerKey]} wins!`);
+        }
+        // Auto-clear result after 3s
+        setTimeout(() => setSpeedChallengeResult(null), 3000);
+      }
+      return;
+    }
+    const t = setTimeout(() => setSpeedChallengeTime(prev => prev - 1), 1000);
+    return () => clearTimeout(t);
+  }, [speedChallengeActive, speedChallengeTime]);
+
+  // Simulate opponent taps during speed challenge
+  useEffect(() => {
+    if (!speedChallengeActive) {
+      if (speedChallengeTimerRef.current) clearInterval(speedChallengeTimerRef.current);
+      return;
+    }
+    speedChallengeTimerRef.current = setInterval(() => {
+      // Opponent taps randomly 3-8 times per second
+      if (battleSlots[0].status === 'accepted') {
+        const taps = Math.floor(Math.random() * 6) + 3;
+        setSpeedChallengeTaps(prev => ({ ...prev, opponent: (prev.opponent ?? 0) + taps }));
+        awardBattlePoints('opponent', taps * 2);
+      }
+      if (battleSlots[1].status === 'accepted') {
+        const taps = Math.floor(Math.random() * 5) + 2;
+        setSpeedChallengeTaps(prev => ({ ...prev, player3: (prev.player3 ?? 0) + taps }));
+        awardBattlePoints('player3', taps * 2);
+      }
+      if (battleSlots[2].status === 'accepted') {
+        const taps = Math.floor(Math.random() * 5) + 2;
+        setSpeedChallengeTaps(prev => ({ ...prev, player4: (prev.player4 ?? 0) + taps }));
+        awardBattlePoints('player4', taps * 2);
+      }
+    }, 1000);
+    return () => { if (speedChallengeTimerRef.current) clearInterval(speedChallengeTimerRef.current); };
+  }, [speedChallengeActive]);
+
+  // Auto-cycle multiplier during speed challenge (changes every 2-3s)
+  useEffect(() => {
+    if (!speedChallengeActive) {
+      setSpeedMultiplier(1);
+      return;
+    }
+    const multipliers = [2, 3, 5];
+    const cycle = () => {
+      const next = multipliers[Math.floor(Math.random() * multipliers.length)];
+      setSpeedMultiplier(next);
+    };
+    cycle(); // Start with a random multiplier
+    const interval = setInterval(cycle, 2000 + Math.random() * 1000);
+    return () => clearInterval(interval);
+  }, [speedChallengeActive]);
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -1077,6 +1268,8 @@ export default function LiveStream() {
   // No repetition, natural timing, realistic behavior
   // ═══════════════════════════════════════════════════════════
   const [activeViewers, setActiveViewers] = useState<SimulatedViewer[]>([]);
+  useEffect(() => { activeViewersRef.current = activeViewers; }, [activeViewers]);
+  useEffect(() => { speedChallengeTapsRef.current = speedChallengeTaps; }, [speedChallengeTaps]);
   const viewerTimersRef = useRef<NodeJS.Timeout[]>([]);
   const chatTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const availablePoolRef = useRef<Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[]>([]);
@@ -1111,8 +1304,8 @@ export default function LiveStream() {
         }]);
       }
 
-      // Some viewers say hello when they join (40% chance if showGreeting)
-      if (showGreeting && Math.random() < 0.4) {
+      // Some viewers say hello when they join (15% chance if showGreeting)
+      if (showGreeting && Math.random() < 0.15) {
         const greetDelay = 2000 + Math.random() * 6000; // 2-8s after joining
         const gt = setTimeout(() => {
           const msg = getRandomChatMessage(viewer, true);
@@ -1149,6 +1342,7 @@ export default function LiveStream() {
         availablePoolRef.current.push({
           id: leaving.id, username: leaving.username, displayName: leaving.displayName,
           level: leaving.level, avatar: leaving.avatar, country: leaving.country, chatFrequency: leaving.chatFrequency,
+          supportDays: leaving.supportDays, lastVisitDaysAgo: leaving.lastVisitDaysAgo,
         });
         // Clear their chat timer
         const chatTimer = chatTimersRef.current.get(leaving.id);
@@ -1185,7 +1379,7 @@ export default function LiveStream() {
         if (growthAdded >= maxGrowth) { clearInterval(growthInterval); return; }
         const viewer = getNextViewer();
         if (!viewer) { clearInterval(growthInterval); return; }
-        addViewer(viewer, Math.random() < 0.6, true); // 60% show join msg
+        addViewer(viewer, Math.random() < 0.6, true);
         growthAdded++;
       }, 2000 + Math.random() * 4000); // every 2-6 seconds
       allIntervals.push(growthInterval);
@@ -1196,7 +1390,6 @@ export default function LiveStream() {
     const plateauStart = setTimeout(() => {
       simulationPhaseRef.current = 'plateau';
       
-      // New viewers join every 8-20 seconds
       const joinInterval = setInterval(() => {
         const viewer = getNextViewer();
         if (!viewer) return;
@@ -1204,24 +1397,19 @@ export default function LiveStream() {
       }, 8000 + Math.random() * 12000);
       allIntervals.push(joinInterval);
 
-      // Some viewers leave every 15-40 seconds
       const leaveInterval = setInterval(() => {
-        if (Math.random() < 0.6) { // 60% chance each tick
-          removeRandomViewer();
-        }
+        if (Math.random() < 0.6) removeRandomViewer();
       }, 15000 + Math.random() * 25000);
       allIntervals.push(leaveInterval);
-    }, 120000); // 2 minutes
+    }, 120000);
     viewerTimersRef.current.push(plateauStart as unknown as NodeJS.Timeout);
 
-    // ─── NATURAL CHURN ─── after 4 min, start a gentle rotate of viewers
+    // ─── NATURAL CHURN ─── after 4 min, gentle rotate
     const churnStart = setTimeout(() => {
       simulationPhaseRef.current = 'churn';
       const churnInterval = setInterval(() => {
-        // Remove 1-2 viewers
         removeRandomViewer();
         if (Math.random() < 0.4) removeRandomViewer();
-        // Add 1-2 new ones
         setTimeout(() => {
           const v1 = getNextViewer();
           if (v1) addViewer(v1, Math.random() < 0.4, true);
@@ -1234,7 +1422,7 @@ export default function LiveStream() {
         }, 2000 + Math.random() * 5000);
       }, 20000 + Math.random() * 30000);
       allIntervals.push(churnInterval);
-    }, 240000); // 4 minutes
+    }, 240000);
     viewerTimersRef.current.push(churnStart as unknown as NodeJS.Timeout);
 
     return () => {
@@ -1253,14 +1441,17 @@ export default function LiveStream() {
   const simulatedGiftTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Only let 1 viewer chat at a time - messages come one by one
+    if (chatTimersRef.current.size >= 1) return;
     // Find newly added viewers (not already having a chat timer)
     activeViewers.forEach(viewer => {
+      if (chatTimersRef.current.size >= 1) return;
       if (chatTimersRef.current.has(viewer.id)) return;
 
       const scheduleChat = (v: SimulatedViewer) => {
-        const baseDelay = v.chatFrequency * 1000;
+        const baseDelay = v.chatFrequency * 8000; // 8x slower
         const variance = baseDelay * 0.5;
-        const delay = Math.max(4000, baseDelay + (Math.random() * variance * 2 - variance));
+        const delay = Math.max(40000, baseDelay + (Math.random() * variance * 2 - variance)); // minimum 40 seconds between messages
         
         const timer = setTimeout(() => {
           setActiveViewers(current => {
@@ -1286,13 +1477,8 @@ export default function LiveStream() {
               avatar: v.avatar,
             }]);
             
-            // 15% chance to go quiet for a while
-            if (Math.random() < 0.15) {
-              const silentPeriod = setTimeout(() => scheduleChat(v), 15000 + Math.random() * 30000);
-              chatTimersRef.current.set(v.id, silentPeriod);
-            } else {
-              scheduleChat(v);
-            }
+            // Release slot so a different viewer can chat next
+            chatTimersRef.current.delete(v.id);
             return current;
           });
         }, delay);
@@ -1317,7 +1503,7 @@ export default function LiveStream() {
   // When a gift is sent (real or simulated), 2-5 random active viewers react
   const triggerGiftReactions = useCallback((giftName: string, senderName: string) => {
     if (activeViewers.length < 2) return;
-    const reactCount = 2 + Math.floor(Math.random() * 4); // 2-5 reactions
+    const reactCount = 1; // only 1 reaction per gift
     const shuffledViewers = [...activeViewers]
       .filter(v => v.displayName !== senderName) // don't react to own gift
       .sort(() => Math.random() - 0.5)
@@ -1543,6 +1729,9 @@ export default function LiveStream() {
     } else {
       setCoinBalance(prev => Math.max(0, prev - gift.coins));
     }
+
+    // Track session contribution for membership
+    setSessionContribution(prev => prev + gift.coins);
 
     maybeEnqueueUniverse(gift.name, viewerName);
     addBattleGifterCoins(viewerName, gift.coins);
@@ -1822,12 +2011,14 @@ export default function LiveStream() {
   };
 
   const openMiniProfile = (username: string, coins?: number) => {
-    const avatar =
-      username === myCreatorName
-        ? myAvatar
-        : `https://i.pravatar.cc/150?u=${encodeURIComponent(username)}`;
-    const level = username === myCreatorName ? userLevel : null;
-    setMiniProfile({ username, avatar, level, coins });
+    const viewer = VIEWER_POOL.find(v => v.displayName === username || v.username === username);
+    const avatar = username === myCreatorName
+      ? myAvatar
+      : viewer?.avatar || `https://i.pravatar.cc/150?u=${encodeURIComponent(username)}`;
+    const level = username === myCreatorName ? userLevel : (viewer?.level ?? null);
+    // Each user's total donated coins: supportDays * coins per day based on level
+    const donated = viewer ? viewer.supportDays * (50 + Math.floor((viewer.level || 1) * 15)) : (username === myCreatorName ? sessionContribution : 0);
+    setMiniProfile({ username, avatar, level, coins, donated });
   };
 
   const closeMiniProfile = () => setMiniProfile(null);
@@ -1872,7 +2063,28 @@ export default function LiveStream() {
 
       {/* Live Video Placeholder or Camera Feed */}
       <div ref={stageRef} className="relative w-full h-full">
-        {/* Floating hearts removed */}
+        {/* Floating red hearts on tap - straight line up with name */}
+        {floatingHearts.map((h) => (
+          <div
+            key={h.id}
+            className="absolute elix-heart-float z-[200] flex items-center gap-1.5"
+            style={{
+              left: h.x,
+              top: h.y,
+              '--elix-heart-dx': '0px',
+              '--elix-heart-rot': '0deg',
+            } as React.CSSProperties}
+          >
+            <svg width={h.size} height={h.size} viewBox="0 0 24 24" fill={h.color} stroke="none" className="flex-shrink-0">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            {h.username && (
+              <span className="text-[#C8CCD4] text-[11px] font-bold whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                {h.username}
+              </span>
+            )}
+          </div>
+        ))}
         
         {/* Base Video Layer - Always Show for Broadcaster */}
         {(!isBattleMode || isBroadcast) && (
@@ -1942,7 +2154,7 @@ export default function LiveStream() {
         {/* Battle Split Screen Overlay - Shows ONLY when in battle mode */}
         {isBattleMode && (
           <div
-            className={`absolute inset-0 z-[80] flex flex-col bg-black ${isBroadcast ? 'pointer-events-none' : 'pb-24'}`}
+            className={`absolute inset-0 z-[80] flex flex-col ${isBroadcast ? 'pointer-events-none' : ''}`}
             style={{ paddingTop: isBroadcast ? '90px' : '90px', paddingBottom: isBroadcast ? '305px' : undefined }}
             onClick={!isBroadcast ? handleScreenTap : undefined}
           >
@@ -1955,6 +2167,84 @@ export default function LiveStream() {
               </div>
             )}
 
+            {/* ═══ SPEED CHALLENGE OVERLAY ═══ */}
+            {SPEED_CHALLENGE_ENABLED && speedChallengeCountdown !== null && (
+              <div className="absolute inset-0 z-[270] pointer-events-none flex items-center justify-center bg-black/40">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[#E6B36A] text-[11px] font-bold uppercase tracking-widest">Speed Challenge</span>
+                  <div className="text-white text-7xl font-black tabular-nums drop-shadow-[0_0_30px_rgba(230,179,106,1)] animate-pulse">
+                    {speedChallengeCountdown}
+                  </div>
+                  <span className="text-white/60 text-[10px] font-semibold">Get ready to tap!</span>
+                </div>
+              </div>
+            )}
+
+            {SPEED_CHALLENGE_ENABLED && speedChallengeActive && (
+              <>
+                {/* Top: Timer + Tap counters */}
+                <div className="absolute inset-x-0 top-0 z-[270] pointer-events-none flex flex-col items-center pt-2 gap-1">
+                  {/* Timer bar */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-[#E6B36A]/30">
+                    <span className="text-[#E6B36A] text-[9px] font-bold uppercase tracking-wider">⚡ Speed</span>
+                    <span className="text-white text-[14px] font-black tabular-nums">{speedChallengeTime}s</span>
+                    {speedMultiplier > 1 && (
+                      <span className="text-[#FF6B00] text-[11px] font-black">x{speedMultiplier}</span>
+                    )}
+                  </div>
+                  {/* Tap counters */}
+                  <div className="flex gap-3 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-md">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[8px] text-red-400 font-bold">{myCreatorName}</span>
+                      <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.me}</span>
+                    </div>
+                    {battleSlots[0].status === 'accepted' && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[8px] text-blue-400 font-bold">{opponentCreatorName || 'P2'}</span>
+                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.opponent}</span>
+                      </div>
+                    )}
+                    {battleSlots[1].status === 'accepted' && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[8px] text-green-400 font-bold">{battleSlots[1].name || 'P3'}</span>
+                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.player3}</span>
+                      </div>
+                    )}
+                    {battleSlots[2].status === 'accepted' && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[8px] text-purple-400 font-bold">{battleSlots[2].name || 'P4'}</span>
+                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.player4}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom center: Multiplier circles - auto-cycling */}
+                <div className="absolute inset-x-0 bottom-4 z-[270] pointer-events-none flex items-center justify-center gap-4">
+                  {[2, 3, 5].map((mult) => (
+                    <div
+                      key={mult}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 ${
+                        speedMultiplier === mult
+                          ? 'bg-[#FF6B00] text-white scale-125 shadow-[0_0_24px_rgba(255,107,0,0.7)] border-2 border-white/50 animate-pulse'
+                          : 'bg-black/50 text-white/30 border border-white/10 scale-90'
+                      }`}
+                    >
+                      x{mult}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {SPEED_CHALLENGE_ENABLED && speedChallengeResult && !speedChallengeActive && (
+              <div className="absolute inset-0 z-[270] pointer-events-none flex items-center justify-center">
+                <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-xl bg-black/70 backdrop-blur-md border border-[#E6B36A]/30">
+                  <span className="text-[#E6B36A] text-[10px] font-bold uppercase tracking-widest">⚡ Speed Challenge</span>
+                  <span className="text-white text-lg font-black drop-shadow-[0_0_15px_rgba(230,179,106,0.8)]">{speedChallengeResult}</span>
+                </div>
+              </div>
+            )}
 
             {/* Dynamic Battle Grid: 2-split or 4-split based on players */}
             {(() => {
@@ -1983,7 +2273,7 @@ export default function LiveStream() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setGiftTarget('me'); }}
-                      onPointerDown={() => { handleBattleTap('me'); }}
+                      onPointerDown={(e) => { handleBattleTap('me'); spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }}
                       className={`w-1/2 h-full overflow-hidden relative bg-black pointer-events-auto border-r border-white/5 ${is4Player ? 'border-b' : ''}`}
                     >
                       <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" autoPlay playsInline muted />
@@ -2008,7 +2298,7 @@ export default function LiveStream() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setGiftTarget('opponent'); }}
-                      onPointerDown={() => { handleBattleTap('opponent'); }}
+                      onPointerDown={(e) => { handleBattleTap('opponent'); spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }}
                       className={`w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto ${is4Player ? 'border-b border-white/5' : ''}`}
                     >
                       {battleSlots[0].status === 'accepted' ? (
@@ -2057,7 +2347,7 @@ export default function LiveStream() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setGiftTarget('player3'); }}
-                        onPointerDown={() => { handleBattleTap('player3'); }}
+                        onPointerDown={(e) => { handleBattleTap('player3'); spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }}
                         className="w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto border-r border-white/5"
                       >
                         {battleSlots[1].status === 'accepted' ? (
@@ -2101,7 +2391,7 @@ export default function LiveStream() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setGiftTarget('player4'); }}
-                        onPointerDown={() => { handleBattleTap('player4'); }}
+                        onPointerDown={(e) => { handleBattleTap('player4'); spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }}
                         className="w-1/2 h-full overflow-hidden relative bg-gray-900 pointer-events-auto"
                       >
                         {battleSlots[2].status === 'accepted' ? (
@@ -2148,42 +2438,33 @@ export default function LiveStream() {
               );
             })()}
 
-            {/* MVP Circles - between battle frame and chat, like TikTok */}
-            {battleTime > 0 && (
-              <div className="w-full px-3 py-1 flex items-center justify-between flex-none pointer-events-none">
-                <div className="flex items-center gap-1">
-                  {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
-                    const g = getTopGifters('me')[i];
-                    return g ? (
-                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ borderColor: c }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
-                    ) : (
-                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2" style={{ borderColor: c }}><img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover opacity-40" /></div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-1">
-                  {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
-                    const g = getTopGifters('opponent')[i];
-                    return g ? (
-                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ borderColor: c }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
-                    ) : (
-                      <div key={i} className="w-7 h-7 rounded-full overflow-hidden border-2" style={{ borderColor: c }}><img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="" className="w-full h-full object-cover opacity-40" /></div>
-                    );
-                  })}
-                </div>
+            {/* MVP Circles - outside below battle frame, 3 left + 3 right */}
+            <div className="w-full px-3 py-2 flex items-center justify-between flex-none pointer-events-none mt-1 relative z-30">
+              {/* Left side - top gifters for P1 */}
+              <div className="flex items-center -space-x-1.5">
+                {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                  const g = getTopGifters('me')[i];
+                  return g ? (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ borderColor: c, zIndex: 3 - i }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                  ) : (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] bg-black/80" style={{ borderColor: c, zIndex: 3 - i }}><img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover opacity-50" /></div>
+                  );
+                })}
               </div>
-            )}
+              {/* Right side - top gifters for P2 */}
+              <div className="flex items-center -space-x-1.5">
+                {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                  const g = getTopGifters('opponent')[i];
+                  return g ? (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ borderColor: c, zIndex: 3 - i }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                  ) : (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] bg-black/80" style={{ borderColor: c, zIndex: 3 - i }}><img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="" className="w-full h-full object-cover opacity-50" /></div>
+                  );
+                })}
+              </div>
+            </div>
 
-            {/* Chat Section for Spectators Only */}
-            {!isBroadcast && (
-              <div className="flex-1 bg-black overflow-hidden relative pt-6">
-                <ChatOverlay
-                  messages={messages}
-                  variant="panel"
-                  className="static w-full h-full bg-black border-0 p-4"
-                />
-              </div>
-            )}
+            {/* Chat handled by outer ChatOverlay at z-[100] */}
           </div>
         )}
       </div>
@@ -2197,14 +2478,14 @@ export default function LiveStream() {
             <div className="flex items-start justify-between gap-2">
               <div className="pointer-events-auto flex flex-col gap-2">
                 {/* BROADCASTER INFO - circle + capsule like LevelBadge */}
-                <div className="px-0 py-1 animate-luxury-fade-in -ml-2">
+                <div className="px-0 py-1 animate-luxury-fade-in -ml-2 relative">
                   <div className="flex items-center relative">
                     {/* Profile circle */}
                     <div className="relative z-10 w-14 h-14 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
                       <img src={myAvatar} alt={myCreatorName} className="w-full h-full object-cover" />
                     </div>
                     {/* Capsule with name + likes */}
-                    <div className="flex items-center -ml-4 pl-6 pr-2.5 h-8 rounded-full border border-white/60 bg-black/50" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}>
+                    <div className="flex items-center -ml-4 pl-6 pr-3 h-8 rounded-full border border-white/60 bg-black/50" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, minWidth: '160px' }}>
                       {/* Semicircle separator */}
                       <div className="flex flex-col items-start">
                         <span className="text-white text-[11px] font-bold truncate max-w-[90px] leading-tight">{myCreatorName}</span>
@@ -2220,33 +2501,57 @@ export default function LiveStream() {
                           <span className="text-white/70 text-[9px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
                         </button>
                       </div>
-                      {/* Member heart at the end */}
-                      <div className="ml-2 flex-shrink-0">
-                        <Heart className="w-4 h-4 text-[#E6B36A] drop-shadow-[0_0_4px_rgba(230,179,106,0.6)]" strokeWidth={2} fill="#E6B36A" />
-                      </div>
+                      {/* Membership heart - tap to toggle red & show membership bar */}
+                      {(() => {
+                        const activeIds = new Set(activeViewers.map(v => v.id));
+                        const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
+                        const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
+                        return (
+                          <button
+                            type="button"
+                            className="ml-2 flex-shrink-0 flex items-center gap-1 pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (showMembershipBar) closeMembershipBar(); else openMembershipBar();
+                            }}
+                          >
+                            <Heart
+                              className={`w-3.5 h-3.5 drop-shadow-[0_0_4px_rgba(255,45,85,0.6)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`}
+                              strokeWidth={2}
+                              fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'}
+                            />
+                            <div className="flex flex-col leading-none gap-px">
+                              <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
+                              <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
+                            </div>
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pointer-events-auto flex items-center gap-2 mt-1">
+              <div className="pointer-events-auto flex items-center gap-2 mt-5">
                 {/* Active viewer avatars + viewer count */}
                 <div className="flex items-center gap-1.5">
-                  <div className="flex items-center -space-x-1.5">
-                    {(activeViewers.length > 0 ? activeViewers.slice(0, 5) : VIEWER_POOL.slice(0, 3)).map((v, i) => (
-                      <img
-                        key={v.id}
-                        src={v.avatar}
-                        alt={v.username}
-                        className="w-6 h-6 rounded-full border-[1.5px] border-black object-cover"
-                        style={{ zIndex: 5 - i }}
-                      />
-                    ))}
-                    {activeViewers.length > 5 && (
-                      <div className="w-6 h-6 rounded-full bg-black/60 border-[1.5px] border-white/20 flex items-center justify-center" style={{ zIndex: 0 }}>
-                        <span className="text-white text-[7px] font-bold">+{activeViewers.length - 5}</span>
-                      </div>
-                    )}
+                  <div className="flex items-center -space-x-1">
+                    {(activeViewers.length > 0 ? activeViewers.slice(0, 3) : VIEWER_POOL.slice(0, 3)).map((v, i) => {
+                      const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
+                      const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+                      return (
+                        <div key={v.id} className="relative flex flex-col items-center" style={{ zIndex: 3 - i }}>
+                          <div className="relative w-7 h-7">
+                            <img
+                              src={v.avatar}
+                              alt={v.username}
+                              className="w-7 h-7 rounded-full border-[1.5px] border-black object-cover"
+                            />
+                            <span className="absolute bottom-0 inset-x-0 flex items-center justify-center text-white text-[5px] font-black leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{formatCoinsShort(donated)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                   <button
                     onClick={() => setShowViewerList(prev => !prev)}
@@ -2284,37 +2589,52 @@ export default function LiveStream() {
 
       {/* ═══ VIEWER LIST PANEL ═══ */}
       {showViewerList && (
-        <div className="absolute top-[120px] left-2 right-2 z-[150] pointer-events-auto max-h-[50vh] rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden animate-in slide-in-from-top duration-200">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-sm">Viewers</span>
-              <span className="bg-white/10 px-2 py-0.5 rounded-full text-white/70 text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+        <div
+          className="absolute top-[68px] right-1 z-[150] pointer-events-auto max-h-[50vh] rounded-xl bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden animate-in slide-in-from-top duration-200"
+          style={{ width: '200px' }}
+          onPointerLeave={() => setShowViewerList(false)}
+        >
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-bold text-[12px]">Viewers</span>
+              <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 text-[9px] font-bold">{viewerCount.toLocaleString()}</span>
             </div>
             <button onClick={() => setShowViewerList(false)} title="Close viewer list" className="p-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-          <div className="max-h-[40vh] overflow-y-auto">
-            {activeViewers.map(v => (
-              <div key={v.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5">
-                <img src={v.avatar} alt={v.displayName} className="w-9 h-9 rounded-full object-cover border border-white/10" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white text-xs font-semibold truncate">{v.displayName}</span>
-                    <span className="text-white/40 text-[10px]">{v.country}</span>
+          <div className="max-h-[40vh] overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {activeViewers.map((v, idx) => {
+              const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
+              const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+              return (
+                <div key={v.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/5">
+                  <div className="relative flex-shrink-0">
+                    <img src={v.avatar} alt={v.displayName} className="w-8 h-8 rounded-full object-cover border border-white/10" />
+                    {idx < 10 && (
+                      <span className="absolute -top-0.5 -left-0.5 bg-[#E6B36A] text-black text-[6px] font-black w-3 h-3 rounded-full flex items-center justify-center">{idx + 1}</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[9px] font-bold text-[#E6B36A] bg-[#E6B36A]/10 px-1.5 py-0.5 rounded-full">LVL {v.level}</span>
-                    <span className="text-white/30 text-[9px]">@{v.username}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-white text-[11px] font-semibold truncate">{v.displayName}</span>
+                      <span className="text-white/40 text-[9px]">{v.country}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[8px] font-bold text-[#E6B36A] bg-[#E6B36A]/10 px-1 py-px rounded-full">LVL {v.level}</span>
+                      {idx < 10 && donated > 0 && (
+                        <span className="text-[8px] font-bold text-[#FF2D55]">{formatCoinsShort(donated)}</span>
+                      )}
+                    </div>
                   </div>
+                  <button className="px-2 py-0.5 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 text-[#E6B36A] text-[9px] font-bold hover:bg-[#E6B36A]/25 transition-colors">
+                    Follow
+                  </button>
                 </div>
-                <button className="px-2.5 py-1 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 text-[#E6B36A] text-[10px] font-bold hover:bg-[#E6B36A]/25 transition-colors">
-                  Follow
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {activeViewers.length === 0 && (
-              <div className="py-8 text-center text-white/40 text-xs">
+              <div className="py-6 text-center text-white/40 text-xs">
                 Viewers are joining...
               </div>
             )}
@@ -2341,17 +2661,45 @@ export default function LiveStream() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-white font-black text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 mt-0.5 pointer-events-auto"
-                      onPointerDown={(e) => {
-                        spawnHeartFromClient(e.clientX, e.clientY);
-                        addLiveLikes(1);
-                      }}
-                    >
-                      <Heart className="w-3.5 h-3.5 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
-                      <span className="text-white/80 text-[10px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
-                    </button>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 pointer-events-auto"
+                        onPointerDown={(e) => {
+                          spawnHeartFromClient(e.clientX, e.clientY);
+                          addLiveLikes(1);
+                        }}
+                      >
+                        <Heart className="w-3.5 h-3.5 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
+                        <span className="text-white/80 text-[10px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
+                      </button>
+                      {/* Membership heart - tap to toggle & show bar */}
+                      {(() => {
+                        const activeIds = new Set(activeViewers.map(v => v.id));
+                        const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
+                        const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
+                        return (
+                          <button
+                            type="button"
+                            className="flex items-center gap-1 ml-1 pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (showMembershipBar) closeMembershipBar(); else openMembershipBar();
+                            }}
+                          >
+                            <Heart
+                              className={`w-3.5 h-3.5 drop-shadow-[0_0_3px_rgba(255,45,85,0.5)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`}
+                              strokeWidth={2}
+                              fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'}
+                            />
+                            <div className="flex flex-col leading-none gap-px">
+                              <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
+                              <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
+                            </div>
+                          </button>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
               </button>
@@ -2418,76 +2766,75 @@ export default function LiveStream() {
       )}
 
       {isFindCreatorsOpen && (
-        <div className="fixed inset-0 z-[500] bg-black  flex items-end justify-center">
-          <div className="w-full max-w-[500px] bg-black overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6B36A]">
-              <p className="text-[#E6B36A] font-extrabold">{isBattleMode ? 'Invite to Battle' : 'Find Creators'}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFindCreatorsOpen(false);
-                  setCreatorQuery('');
-                }}
-                className="p-2 text-[#E6B36A]"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-center gap-2 px-3 h-10 rounded-xl bg-black border border-[#E6B36A]/25">
-                <Search className="w-4 h-4 text-[#E6B36A]/80" strokeWidth={2} />
+        <>
+          <div
+            className="absolute inset-0 z-[499]"
+            onClick={() => { setIsFindCreatorsOpen(false); setCreatorQuery(''); }}
+            role="button"
+            tabIndex={-1}
+          />
+          <div
+            className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
+            style={{ width: 'auto', right: '8px' }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerLeave={() => { setIsFindCreatorsOpen(false); setCreatorQuery(''); }}
+            role="button"
+            tabIndex={-1}
+          >
+            {/* Search */}
+            <div className="px-3 py-2">
+              <div className="flex items-center gap-2 px-2 h-7 rounded-md bg-black/50 border border-white/10">
+                <Search className="w-3 h-3 text-[#E6B36A]/80" strokeWidth={2} />
                 <input
                   value={creatorQuery}
                   onChange={(e) => setCreatorQuery(e.target.value)}
-                  placeholder="Search creators"
-                  className="flex-1 bg-transparent outline-none text-white text-sm"
+                  placeholder="Search"
+                  className="flex-1 bg-transparent outline-none text-white text-[11px] w-[100px]"
                 />
               </div>
             </div>
+            <div className="h-px bg-white/10" />
 
             {/* Invited Players Status */}
             {anySlotFilled && (
-              <div className="px-4 py-3 border-b border-white/10">
-                <p className="text-white/50 text-[10px] font-bold uppercase tracking-wider mb-2">Players Joining</p>
-                <div className="flex gap-3">
-                  {battleSlots.map((slot, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                      {slot.status === 'empty' ? (
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-                          <span className="text-white/30 text-lg">+</span>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <img src={slot.avatar} alt={slot.name} className="w-10 h-10 rounded-full object-cover border-2" style={{ borderColor: slot.status === 'accepted' ? '#00C853' : '#E6B36A' }} />
-                          {slot.status === 'invited' && (
-                            <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
-                              <div className="w-4 h-4 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
-                            </div>
-                          )}
-                          {slot.status === 'accepted' && (
-                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
-                              <span className="text-white text-[8px] font-bold">✓</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <span className="text-white/60 text-[9px] truncate max-w-[50px]">
-                        {slot.status === 'empty' ? `P${i + 2}` : slot.name}
-                      </span>
-                      {slot.status === 'invited' && (
-                        <span className="text-[#E6B36A] text-[8px]">Waiting...</span>
-                      )}
-                      {slot.status === 'accepted' && (
-                        <span className="text-green-400 text-[8px]">Joined!</span>
-                      )}
-                    </div>
-                  ))}
+              <>
+                <div className="px-3 py-2">
+                  <p className="text-white/50 text-[9px] font-bold uppercase tracking-wider mb-1.5">Joining</p>
+                  <div className="flex gap-2">
+                    {battleSlots.map((slot, i) => (
+                      <div key={i} className="flex flex-col items-center gap-0.5">
+                        {slot.status === 'empty' ? (
+                          <div className="w-7 h-7 rounded-full border border-dashed border-white/20 flex items-center justify-center">
+                            <span className="text-white/30 text-[10px]">+</span>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <img src={slot.avatar} alt={slot.name} className="w-7 h-7 rounded-full object-cover border" style={{ borderColor: slot.status === 'accepted' ? '#00C853' : '#E6B36A' }} />
+                            {slot.status === 'invited' && (
+                              <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
+                                <div className="w-3 h-3 border border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            )}
+                            {slot.status === 'accepted' && (
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center border border-black">
+                                <span className="text-white text-[6px] font-bold">✓</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <span className="text-white/60 text-[7px] truncate max-w-[35px]">
+                          {slot.status === 'empty' ? `P${i + 2}` : slot.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                <div className="h-px bg-white/10" />
+              </>
             )}
 
-            <div className="max-h-[45vh] overflow-y-auto">
+            {/* Creator list */}
+            <div className="max-h-[200px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
               {filteredCreators.map((c) => {
                 const slotStatus = battleSlots.find(s => s.name === c.name)?.status;
                 const isInvited = slotStatus === 'invited';
@@ -2497,25 +2844,25 @@ export default function LiveStream() {
                 return (
                   <div
                     key={c.id}
-                    className="px-4 py-3 flex items-center justify-between border-b border-transparent"
+                    className="px-3 py-1.5 flex items-center justify-between hover:bg-white/5"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <img
                         src={`https://i.pravatar.cc/150?u=${encodeURIComponent(c.name)}`}
                         alt={c.name}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-6 h-6 rounded-full object-cover"
                       />
                       <div className="min-w-0">
-                        <p className="text-white font-semibold truncate">{c.name}</p>
-                        <p className="text-white/60 text-xs">{c.followers} followers</p>
+                        <p className="text-white text-[11px] font-semibold truncate max-w-[80px]">{c.name}</p>
+                        <p className="text-white/50 text-[8px]">{c.followers}</p>
                       </div>
                     </div>
 
                     {isAccepted ? (
-                      <span className="px-3 py-1.5 text-green-400 text-xs font-extrabold">Joined ✓</span>
+                      <span className="text-green-400 text-[9px] font-bold">Joined ✓</span>
                     ) : isInvited ? (
-                      <span className="px-3 py-1.5 text-[#E6B36A] text-xs font-extrabold flex items-center gap-1">
-                        <div className="w-3 h-3 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[#E6B36A] text-[9px] font-bold flex items-center gap-1">
+                        <div className="w-2.5 h-2.5 border border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
                         Sent
                       </span>
                     ) : (
@@ -2523,7 +2870,7 @@ export default function LiveStream() {
                         type="button"
                         onClick={() => inviteCreatorToSlot(c.name)}
                         disabled={allFull}
-                        className={`px-3 py-1.5 text-xs font-extrabold rounded ${allFull ? 'bg-white/10 text-white/30' : 'bg-[#E6B36A] text-black active:scale-95 transition-transform'}`}
+                        className={`px-2 py-0.5 text-[9px] font-bold rounded ${allFull ? 'bg-white/10 text-white/30' : 'bg-[#E6B36A] text-black active:scale-95 transition-transform'}`}
                       >
                         Invite
                       </button>
@@ -2533,22 +2880,23 @@ export default function LiveStream() {
               })}
 
               {filteredCreators.length === 0 && (
-                <div className="px-4 py-10 text-center text-white/70 text-sm">No creators found</div>
+                <div className="px-3 py-4 text-center text-white/50 text-[10px]">No creators found</div>
               )}
             </div>
 
-            {/* Status bar - shows invited/accepted count */}
+            {/* Status bar */}
             {battleSlots.some(s => s.status !== 'empty') && (
-              <div className="px-4 py-3 border-t border-white/10">
-                <div className="w-full py-2 rounded-xl bg-white/5 border border-white/10 text-center">
-                  <span className="text-white/60 text-sm font-bold">
+              <>
+                <div className="h-px bg-white/10" />
+                <div className="px-3 py-1.5 text-center">
+                  <span className="text-white/50 text-[9px] font-bold">
                     {battleSlots.filter(s => s.status === 'accepted').length} accepted · {battleSlots.filter(s => s.status === 'invited').length} waiting
                   </span>
                 </div>
-              </div>
+              </>
             )}
           </div>
-        </div>
+        </>
       )}
 
       {/* Gift Overlay Animation */}
@@ -2591,6 +2939,11 @@ export default function LiveStream() {
                       )}
                       {miniProfile.coins != null ? ` • 🪙 ${formatCoinsShort(miniProfile.coins)}` : ''}
                     </div>
+                    {miniProfile.donated != null && miniProfile.donated > 0 && (
+                      <div className="text-[#E6B36A] text-[11px] font-bold mt-0.5">
+                        Donated: {formatCoinsShort(miniProfile.donated)} coins
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button type="button" onClick={closeMiniProfile} className="w-9 h-9 flex items-center justify-center text-white">
@@ -2637,11 +2990,97 @@ export default function LiveStream() {
               ? "pb-[calc(84px+env(safe-area-inset-bottom))] z-[100]"
               : isBroadcast && isBattleMode
                 ? "pb-[calc(56px+env(safe-area-inset-bottom))] z-[100]"
-                : "z-[100]"
+                : !isBroadcast && isBattleMode
+                  ? "pb-[calc(60px+env(safe-area-inset-bottom))] z-[100]"
+                  : "pb-[calc(60px+env(safe-area-inset-bottom))] z-[100]"
           }
           onLike={() => addLiveLikes(1)}
           onHeartSpawn={(cx, cy) => spawnHeartFromClient(cx, cy)}
+          onProfileTap={(username) => openMiniProfile(username)}
         />
+      )}
+
+      {/* Membership Heart Level Bar - slides down from profile bar */}
+      {showMembershipBar && (
+        <div className={`absolute left-14 z-[300] ${membershipBarClosing ? 'animate-[slideUp_0.2s_ease-in_forwards]' : 'animate-[slideDown_0.25s_ease-out]'}`} style={{ top: '51px' }}>
+          <div className="bg-black/90 backdrop-blur-xl rounded-b-lg border border-t-0 border-white/30 px-2 py-2 shadow-2xl" style={{ width: '140px' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Heart className="w-4 h-4 text-[#FF2D55]" strokeWidth={2} fill="#FF2D55" />
+                <span className="text-white font-black text-[12px]">Membership</span>
+              </div>
+              <button type="button" title="Close" onClick={() => closeMembershipBar()} className="w-5 h-5 flex items-center justify-center opacity-60">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            {(() => {
+              const myDays = 47;
+              const tiers = [
+                { name: 'New Fan', minDays: 1, color: '#6B7280', icon: '🤍' },
+                { name: 'Supporter', minDays: 8, color: '#FF8800', icon: '🧡' },
+                { name: 'Loyal Fan', minDays: 31, color: '#FF2D55', icon: '❤️' },
+                { name: 'Super Fan', minDays: 91, color: '#A855F7', icon: '💜' },
+                { name: 'VIP Member', minDays: 181, color: '#E6B36A', icon: '💛' },
+                { name: 'Legend', minDays: 366, color: '#00D4FF', icon: '💎' },
+              ];
+              const currentTier = tiers.filter(t => myDays >= t.minDays).pop() || tiers[0];
+              const nextTier = tiers[tiers.indexOf(currentTier) + 1];
+              const progress = nextTier
+                ? ((myDays - currentTier.minDays) / (nextTier.minDays - currentTier.minDays)) * 100
+                : 100;
+              return (
+                <>
+                  {/* Current tier */}
+                  <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-white/5">
+                    <span className="text-lg">{currentTier.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-bold text-[11px]">{currentTier.name}</div>
+                      <div className="text-white/50 text-[9px]">{myDays} days supporting</div>
+                    </div>
+                    {sessionContribution > 0 && (
+                      <div className="text-right">
+                        <div className="text-[#E6B36A] font-black text-[11px] tabular-nums">{sessionContribution.toLocaleString()}</div>
+                        <div className="text-white/30 text-[8px]">coins</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  {nextTier && (
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-white/40 text-[9px] font-bold">Next: {nextTier.icon} {nextTier.name}</span>
+                        <span className="text-white/40 text-[9px] font-bold">{nextTier.minDays - myDays}d left</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(progress, 100)}%`, background: `linear-gradient(90deg, ${currentTier.color}, ${nextTier.color})` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* All tiers */}
+                  <div className="flex flex-col gap-0.5">
+                    {tiers.map((tier) => {
+                      const isActive = myDays >= tier.minDays;
+                      const isCurrent = tier === currentTier;
+                      return (
+                        <div key={tier.name} className={`flex items-center gap-1 px-1.5 py-1 rounded-md ${isCurrent ? 'bg-white/8 border border-white/15' : ''}`}>
+                          <span className={`text-[11px] ${isActive ? '' : 'grayscale opacity-30'}`}>{tier.icon}</span>
+                          <span className={`text-[10px] font-bold ${isActive ? 'text-white' : 'text-white/25'}`}>{tier.name}</span>
+                          <span className={`text-[9px] tabular-nums ${isActive ? 'text-white/50' : 'text-white/15'}`}>{tier.minDays}+d</span>
+                          <div className="flex-1" />
+                          {isCurrent && <div className="w-1 h-1 rounded-full bg-[#FF2D55] animate-pulse" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
       )}
 
 
@@ -2870,108 +3309,78 @@ export default function LiveStream() {
       )}
 
       {isMoreMenuOpen && (
-        <div
-          className="fixed inset-0 z-[700] bg-black"
-          onClick={() => setIsMoreMenuOpen(false)}
-          role="button"
-          tabIndex={-1}
-        >
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-            <div
-              className="mx-auto w-full max-w-[500px] bg-black overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-              role="button"
-              tabIndex={-1}
-            >
+        <>
+          <div
+            className="absolute inset-0 z-[699]"
+            onClick={() => setIsMoreMenuOpen(false)}
+            role="button"
+            tabIndex={-1}
+          />
+          <div
+            className="absolute bottom-[82px] z-[700] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
+            style={{ width: 'auto', right: '8px' }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerLeave={() => setIsMoreMenuOpen(false)}
+            role="button"
+            tabIndex={-1}
+          >
               <button
                 type="button"
                 disabled={!isBroadcast}
-                onClick={() => {
-                  flipCamera();
-                  setIsMoreMenuOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A] disabled:text-[#E6B36A]/40"
+                onClick={() => { flipCamera(); setIsMoreMenuOpen(false); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] disabled:text-[#E6B36A]/40 hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <RefreshCw className="w-5 h-5" strokeWidth={2} />
-                  <span className="font-semibold">Flip camera</span>
-                </div>
+                <RefreshCw className="w-4 h-4" strokeWidth={2} />
+                <span className="text-[11px] font-semibold">Flip camera</span>
               </button>
-              <div className="h-px bg-[#E6B36A]" />
+              <div className="h-px bg-white/10" />
               <button
                 type="button"
                 disabled={!isBroadcast}
-                onClick={() => {
-                  toggleMic();
-                  setIsMoreMenuOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A] disabled:text-[#E6B36A]/40"
+                onClick={() => { toggleMic(); setIsMoreMenuOpen(false); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] disabled:text-[#E6B36A]/40 hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  {isMicMuted ? <MicOff className="w-5 h-5" strokeWidth={2} /> : <Mic className="w-5 h-5" strokeWidth={2} />}
-                  <span className="font-semibold">{isMicMuted ? 'Unmute microphone' : 'Mute microphone'}</span>
-                </div>
+                {isMicMuted ? <MicOff className="w-4 h-4" strokeWidth={2} /> : <Mic className="w-4 h-4" strokeWidth={2} />}
+                <span className="text-[11px] font-semibold">{isMicMuted ? 'Unmute mic' : 'Mute mic'}</span>
               </button>
-              <div className="h-px bg-[#E6B36A]" />
+              <div className="h-px bg-white/10" />
               <button
                 type="button"
-                onClick={() => {
-                  setIsLiveSettingsOpen(true);
-                  setIsMoreMenuOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+                onClick={() => { setIsLiveSettingsOpen(true); setIsMoreMenuOpen(false); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <Settings2 className="w-5 h-5" strokeWidth={2} />
-                  <span className="font-semibold">Live settings</span>
-                </div>
+                <Settings2 className="w-4 h-4" strokeWidth={2} />
+                <span className="text-[11px] font-semibold">Live settings</span>
               </button>
-              <div className="h-px bg-[#E6B36A]" />
+              <div className="h-px bg-white/10" />
               <button
                 type="button"
-                onClick={() => {
-                  setIsChatVisible((v) => !v);
-                  setIsMoreMenuOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+                onClick={() => { setIsChatVisible((v) => !v); setIsMoreMenuOpen(false); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="w-5 h-5" strokeWidth={2} />
-                  <span className="font-semibold">{isChatVisible ? 'Hide comments' : 'Show comments'}</span>
-                </div>
+                <MessageCircle className="w-4 h-4" strokeWidth={2} />
+                <span className="text-[11px] font-semibold">{isChatVisible ? 'Hide chat' : 'Show chat'}</span>
               </button>
-              <div className="h-px bg-[#E6B36A]" />
+              <div className="h-px bg-white/10" />
               <button
                 type="button"
-                onClick={async () => {
-                  await handleShare();
-                  setIsMoreMenuOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+                onClick={async () => { await handleShare(); setIsMoreMenuOpen(false); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <Share2 className="w-5 h-5" strokeWidth={2} />
-                  <span className="font-semibold">Share</span>
-                </div>
+                <Share2 className="w-4 h-4" strokeWidth={2} />
+                <span className="text-[11px] font-semibold">Share</span>
               </button>
-              <div className="h-px bg-[#E6B36A]" />
+              <div className="h-px bg-white/10" />
               <button
                 type="button"
-                onClick={() => {
-                  setIsMoreMenuOpen(false);
-                  setCoinPassword('');
-                  setShowCoinModal(true);
-                }}
-                className="w-full px-4 py-3 flex items-center justify-between text-[#E6B36A]"
+                onClick={() => { setIsMoreMenuOpen(false); setCoinPassword(''); setShowCoinModal(true); }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] hover:bg-white/5"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">💰</span>
-                  <span className="font-semibold">Reload</span>
-                </div>
+                <span className="text-sm">💰</span>
+                <span className="text-[11px] font-semibold">Reload</span>
               </button>
-            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Coin Reload Password Modal */}
