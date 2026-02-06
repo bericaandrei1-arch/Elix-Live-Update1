@@ -61,8 +61,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] bg-black60 border border-white/10 rounded-2xl p-6">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-[420px] bg-white/5 border border-white/10 rounded-2xl p-6">
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -74,7 +74,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-sm outline-none focus:border-secondary/50"
+                className="w-full bg-white/10 border border-white/10 rounded-xl pl-10 pr-3 py-3 text-sm text-white outline-none focus:border-[#E6B36A]/50 placeholder:text-white/40"
                 placeholder="you@email.com"
                 autoComplete="email"
                 required
@@ -90,7 +90,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black40 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm outline-none focus:border-secondary/50"
+                className="w-full bg-white/10 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white outline-none focus:border-[#E6B36A]/50 placeholder:text-white/40"
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
@@ -105,7 +105,7 @@ export default function Login() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 px-3 py-2 bg-black40 border border-white/10 rounded-xl cursor-pointer">
+          <label className="flex items-center gap-2 px-3 py-2 bg-white/10 border border-white/10 rounded-xl cursor-pointer">
             <input
               type="checkbox"
               checked={saveDetails}
@@ -118,7 +118,7 @@ export default function Login() {
                   window.localStorage.removeItem('login_saved_password');
                 }
               }}
-              className="w-4 h-4 rounded border-white/20 bg-black40 text-secondary focus:ring-secondary"
+              className="w-4 h-4 rounded border-white/20 bg-white/10 text-[#E6B36A] focus:ring-[#E6B36A]"
             />
             <span className="text-sm text-white/70">Save email and password</span>
           </label>
@@ -132,7 +132,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-secondary text-black font-bold rounded-xl py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full bg-[#E6B36A] text-black font-bold rounded-xl py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>
@@ -143,14 +143,14 @@ export default function Login() {
               loginAsGuest();
               navigate(from, { replace: true });
             }}
-            className="w-full bg-transparent10 text-white font-bold rounded-xl py-3 text-sm hover:bg-transparent20"
+            className="w-full bg-white/10 text-white font-bold rounded-xl py-3 text-sm hover:bg-white/20"
           >
             Continue as Guest
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link to="/register" className="text-sm text-secondary hover:underline">
+          <Link to="/register" className="text-sm text-[#E6B36A] hover:underline">
             Don&apos;t have an account? Sign up
           </Link>
         </div>
