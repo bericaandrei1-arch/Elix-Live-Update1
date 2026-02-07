@@ -383,17 +383,9 @@ export default function LiveStream() {
   const updateUser = useAuthStore((s) => s.updateUser);
   const effectiveStreamId = streamId || 'broadcast';
   const PROMOTE_LIKES_THRESHOLD_LIVE = 10_000;
-  const _PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
-  const giftPanelOpenedAtRef = useRef(0);
-  const openGiftPanel = useCallback(() => {
-    giftPanelOpenedAtRef.current = Date.now();
-    setShowGiftPanel(true);
-  }, []);
-  const closeGiftPanel = useCallback(() => {
-    setShowGiftPanel(false);
-  }, []);
+   
   const [currentGift, setCurrentGift] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [coinBalance, setCoinBalance] = useState(0);
@@ -425,7 +417,7 @@ export default function LiveStream() {
   const myAvatar = isBroadcast
     ? user?.avatar || `https://i.pravatar.cc/150?u=young_creator_2026`
     : `https://i.pravatar.cc/150?u=young_creator_2026`;
-  const [opponentCreatorName, setOpponentCreatorName] = useState('Paul');
+  const [opponentCreatorName] = useState('Paul');
   const viewerName = user?.username || user?.name || 'viewer_123';
   const viewerAvatar =
     user?.avatar || `https://i.pravatar.cc/150?u=${encodeURIComponent(viewerName)}`;
@@ -433,13 +425,10 @@ export default function LiveStream() {
 
   // FaceAR State
   const faceARCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [_faceARVideoEl, setFaceARVideoEl] = useState<HTMLVideoElement | null>(null);
-  const [_faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
-  const [battleGiftIconFailed, setBattleGiftIconFailed] = useState(false);
 
   useEffect(() => {
-    if (videoRef.current) setFaceARVideoEl(videoRef.current);
-    if (faceARCanvasRef.current) setFaceARCanvasEl(faceARCanvasRef.current);
+    // if (videoRef.current) setFaceARVideoEl(videoRef.current);
+    // if (faceARCanvasRef.current) setFaceARCanvasEl(faceARCanvasRef.current);
   }, [isBroadcast]);
 
   useEffect(() => {
@@ -598,9 +587,7 @@ export default function LiveStream() {
   };
 
   const filledSlots = battleSlots.filter(s => s.status !== 'empty');
-  const allFilledAccepted = filledSlots.length > 0 && filledSlots.every(s => s.status === 'accepted');
   const anySlotFilled = filledSlots.length > 0;
-  const allSlotsAccepted = allFilledAccepted;
 
   // Battle Mode State
   const [isBattleMode, setIsBattleMode] = useState(false);
@@ -613,7 +600,7 @@ export default function LiveStream() {
   const [giftTarget, setGiftTarget] = useState<'me' | 'opponent' | 'player3' | 'player4'>('me');
   const lastScreenTapRef = useRef<number>(0);
   const battleTapScoreRemainingRef = useRef<number>(5);
-  const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
+  // const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
   const battleScoreTapWindowRef = useRef<{ windowStart: number; count: number }>({ windowStart: 0, count: 0 });
   const battleTripleTapRef = useRef<{ target: 'me' | 'opponent' | null; lastTapAt: number; count: number }>({
     target: null,
@@ -621,7 +608,7 @@ export default function LiveStream() {
     count: 0,
   });
   const [battleCountdown, setBattleCountdown] = useState<number | null>(null);
-  const _battleKeyboardLikeArmedRef = useRef(true);
+  // const _battleKeyboardLikeArmedRef = useRef(true);
   const [liveLikes, setLiveLikes] = useState(0);
 
   // Speed Challenge State
@@ -636,7 +623,7 @@ export default function LiveStream() {
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const speedChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSpeedChallengeRef = useRef<number>(0);
-  const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
+  // const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
   // Track top gifters per player: { 'me': { 'username': coins }, 'opponent': {...}, ... }
   const [playerGifters, setPlayerGifters] = useState<Record<string, Record<string, number>>>({});
   const [floatingHearts, setFloatingHearts] = useState<
@@ -743,8 +730,8 @@ export default function LiveStream() {
     setGiftTarget('me');
     setShowGiftPanel(false);
     battleTapScoreRemainingRef.current = 5;
-    setBattleTapScoreRemaining(5);
-    setBattleGifterCoins({});
+    // setBattleTapScoreRemaining(5);
+    // setBattleGifterCoins({});
     setPlayerGifters({});
     setBattleCountdown(null); // Don't start countdown until all accept
     battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
@@ -773,31 +760,6 @@ export default function LiveStream() {
 
     return () => window.clearInterval(tick);
   }, [isBattleMode, battleCountdown]);
-
-  const startBattleWithCreator = (creatorName: string) => {
-    setOpponentCreatorName(creatorName);
-    // If not in battle mode yet, enter it first
-    if (!isBattleMode) {
-      setIsBattleMode(true);
-      setBattleTime(0);
-      setMyScore(0);
-      setOpponentScore(0);
-      setPlayer3Score(0);
-      setPlayer4Score(0);
-      setBattleWinner(null);
-      setGiftTarget('me');
-      setShowGiftPanel(false);
-      battleTapScoreRemainingRef.current = 5;
-      setBattleTapScoreRemaining(5);
-      setBattleGifterCoins({});
-      setBattleCountdown(null);
-      const params = new URLSearchParams(location.search);
-      params.set('battle', '1');
-      navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
-    }
-    // Invite the creator to a slot
-    inviteCreatorToSlot(creatorName);
-  };
 
   useEffect(() => {
     if (currentUniverse || universeQueue.length === 0) return;
@@ -851,7 +813,7 @@ export default function LiveStream() {
     });
   };
 
-  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, isSpeedTap?: boolean) => {
+  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, _isSpeedTap?: boolean) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
     
     // Safety check: if this is a regular call but speed challenge is active,
@@ -888,7 +850,7 @@ export default function LiveStream() {
   const addBattleGifterCoins = (username: string, coins: number, target?: string) => {
     if (!isBattleMode) return;
     if (!username || coins <= 0) return;
-    setBattleGifterCoins((prev) => ({ ...prev, [username]: (prev[username] ?? 0) + coins }));
+    // setBattleGifterCoins((prev) => ({ ...prev, [username]: (prev[username] ?? 0) + coins }));
     // Track per-player gifters
     const playerTarget = target || giftTarget;
     setPlayerGifters(prev => {
@@ -980,7 +942,7 @@ export default function LiveStream() {
     if (battleTapScoreRemainingRef.current > 0 && !battleWinner && battleTime > 0) {
       awardBattlePoints(target, 5);
       battleTapScoreRemainingRef.current = 0;
-      setBattleTapScoreRemaining(0);
+      // setBattleTapScoreRemaining(0);
     }
   }, [battleWinner, battleTime, speedChallengeActive]);
 
@@ -1254,8 +1216,10 @@ export default function LiveStream() {
         // Set camera zoom to minimum for widest view
         try {
           const vTrack = stream.getVideoTracks()[0];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const caps = vTrack?.getCapabilities?.() as any;
           if (caps?.zoom) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await vTrack.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
           }
         } catch { /* zoom not supported */ }
@@ -1275,6 +1239,7 @@ export default function LiveStream() {
       cancelled = true;
       if (!keepStreamAliveOnCleanup) stop();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBattleMode, isBroadcast, cameraFacing]);
 
   useEffect(() => {
@@ -1446,11 +1411,14 @@ export default function LiveStream() {
     }, 240000);
     viewerTimersRef.current.push(churnStart as unknown as NodeJS.Timeout);
 
+    const currentViewerTimers = viewerTimersRef.current;
+    const currentChatTimers = chatTimersRef.current;
+
     return () => {
-      viewerTimersRef.current.forEach(t => clearTimeout(t));
+      currentViewerTimers.forEach(t => clearTimeout(t));
       allIntervals.forEach(t => clearInterval(t));
-      chatTimersRef.current.forEach(t => clearTimeout(t));
-      chatTimersRef.current.clear();
+      currentChatTimers.forEach(t => clearTimeout(t));
+      currentChatTimers.clear();
     };
   }, []);
 
@@ -1618,7 +1586,8 @@ export default function LiveStream() {
       giftReactionTimersRef.current.forEach(t => clearTimeout(t));
       giftReactionTimersRef.current = [];
     };
-  }, [activeViewers.length > 2, triggerGiftReactions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeViewers.length > 2, triggerGiftReactions]);
 
   // Organic viewer count fluctuation (slight random ±1-3)
   useEffect(() => {
@@ -1933,56 +1902,6 @@ export default function LiveStream() {
       resetComboTimer();
   };
 
-  const simulateIncomingGift = () => {
-      const randomGift = GIFTS[Math.floor(Math.random() * GIFTS.length)];
-      
-      // Use a real active viewer as the gifter (much more realistic)
-      let gifterName: string;
-      let gifterAvatar: string;
-      let gifterLevel: number | undefined;
-      if (activeViewers.length > 0) {
-        const gifter = activeViewers[Math.floor(Math.random() * activeViewers.length)];
-        gifterName = gifter.displayName;
-        gifterAvatar = gifter.avatar;
-        gifterLevel = gifter.level;
-      } else {
-        // Fallback for early stream before viewers join
-        const fallbackNames = ['Luna V.', 'Alex M.', 'Sofia B.'];
-        gifterName = fallbackNames[Math.floor(Math.random() * fallbackNames.length)];
-        gifterAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(gifterName)}`;
-      }
-      
-      const isFaceARGift = randomGift.id.startsWith('face_ar_');
-      if (!isFaceARGift && randomGift.video) {
-        setGiftQueue(prev => [...prev, randomGift.video]);
-      }
-
-      if (isBroadcast && !isBattleMode) {
-        maybeTriggerFaceARGift(randomGift);
-      }
-
-      maybeEnqueueUniverse(randomGift.name, gifterName);
-      addBattleGifterCoins(gifterName, randomGift.coins);
-
-      if (isBattleMode && battleTime > 0 && !battleWinner) {
-        const target = Math.random() > 0.5 ? 'me' : 'opponent';
-        awardBattlePoints(target, randomGift.coins);
-      }
-      
-      const giftMsg = {
-          id: Date.now().toString(),
-          username: gifterName,
-          text: `Sent a ${randomGift.name} ${randomGift.icon}`,
-          isGift: true,
-          level: gifterLevel,
-          avatar: gifterAvatar,
-      };
-      setMessages(prev => [...prev, giftMsg]);
-
-      // Other viewers react to the gift
-      setTimeout(() => triggerGiftReactions(randomGift.name, gifterName), 800 + Math.random() * 2000);
-  };
-
   const handleSendMessage = (e: React.FormEvent) => {
       e.preventDefault();
       if (!inputValue.trim()) return;
@@ -2040,24 +1959,24 @@ export default function LiveStream() {
 
   const closeMiniProfile = () => setMiniProfile(null);
 
-  const _startBattleMatch = () => {
-    if (!isBattleMode) return;
-    setMyScore(0);
-    setOpponentScore(0);
-    setBattleWinner(null);
-    setBattleGifterCoins({});
-    battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
-    setBattleTime(0);
-    setBattleCountdown(3);
-  };
+  // const _startBattleMatch = () => {
+  //   if (!isBattleMode) return;
+  //   setMyScore(0);
+  //   setOpponentScore(0);
+  //   setBattleWinner(null);
+  //   setBattleGifterCoins({});
+  //   battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
+  //   setBattleTime(0);
+  //   setBattleCountdown(3);
+  // };
 
-  const _closeBattleMatch = () => {
-    if (!isBattleMode) return;
-    setBattleCountdown(null);
-    setBattleTime(0);
-    const winner = determine4PlayerWinner();
-    setBattleWinner(winner);
-  };
+  // const _closeBattleMatch = () => {
+  //   if (!isBattleMode) return;
+  //   setBattleCountdown(null);
+  //   setBattleTime(0);
+  //   const winner = determine4PlayerWinner();
+  //   setBattleWinner(winner);
+  // };
 
   // 2v2 Team Scores: Red Team (P1 + P3) vs Blue Team (P2 + P4)
   const redTeamScore = myScore + player3Score;
@@ -2068,7 +1987,6 @@ export default function LiveStream() {
   const universeText = currentUniverse
     ? `${currentUniverse.sender} sent ${universeGiftLabel} to ${currentUniverse.receiver}`
     : '';
-  const universeDurationSeconds = Math.max(6, Math.min(16, universeText.length * 0.12));
   const isLiveNormal = isBroadcast && !isBattleMode;
   const activeLikes = liveLikes;
 
@@ -3310,8 +3228,8 @@ export default function LiveStream() {
                       setBattleWinner(null);
                       setBattleTime(0);
                       battleTapScoreRemainingRef.current = 5;
-                      setBattleTapScoreRemaining(5);
-                      setBattleGifterCoins({});
+                      // setBattleTapScoreRemaining(5);
+                      // setBattleGifterCoins({});
                       setPlayerGifters({});
                       setBattleCountdown(3);
                     }}

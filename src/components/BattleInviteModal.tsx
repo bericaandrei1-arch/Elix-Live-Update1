@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { websocket } from '../lib/websocket';
-import { Sword, X, Clock, Users } from 'lucide-react';
+import { Sword, Clock, Users } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 interface LiveStream {
@@ -35,6 +35,7 @@ export default function BattleInviteModal({
     if (isOpen) {
       loadLiveStreams();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadLiveStreams = async () => {

@@ -25,7 +25,6 @@ export default function ShareSheet({
   if (!isOpen) return null;
 
   const shareUrl = contentUrl || generateWebLink(contentType, contentId);
-  const deepLink = generateDeepLink(contentType, contentId);
   const title = contentTitle || `Check this out on Elix Star!`;
 
   const handleShare = async (platform: string) => {
@@ -49,7 +48,7 @@ export default function ShareSheet({
         try {
           await Clipboard.write({ string: shareUrl });
           alert('Link copied to clipboard!');
-        } catch (error) {
+        } catch {
           // Fallback for web
           navigator.clipboard.writeText(shareUrl);
           alert('Link copied to clipboard!');
@@ -79,7 +78,7 @@ export default function ShareSheet({
         try {
           await Clipboard.write({ string: shareUrl });
           alert('Link copied! Open Instagram and paste in your story or bio.');
-        } catch (error) {
+        } catch {
           navigator.clipboard.writeText(shareUrl);
           alert('Link copied! Open Instagram and paste in your story or bio.');
         }

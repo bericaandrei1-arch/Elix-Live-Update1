@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { websocket } from '../lib/websocket';
-import { Zap, Trophy, Clock, Gift, Sword, Shield, Target } from 'lucide-react';
+import { Zap, Trophy, Clock, Gift } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 interface Battle {
@@ -35,7 +35,7 @@ interface LiveBattleUIProps {
   userId: string;
 }
 
-export default function LiveBattleUI({ battleId, streamId, isHost, userId }: LiveBattleUIProps) {
+export default function LiveBattleUI({ battleId, streamId: _streamId, isHost: _isHost, userId }: LiveBattleUIProps) {
   const [battle, setBattle] = useState<Battle | null>(null);
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -80,7 +80,7 @@ export default function LiveBattleUI({ battleId, streamId, isHost, userId }: Liv
   };
 
   const loadBoosters = async () => {
-    const { data, error } = await supabase.from('booster_catalog').select('*').order('coin_cost');
+    const { data } = await supabase.from('booster_catalog').select('*').order('coin_cost');
 
     if (data) setBoosters(data);
   };

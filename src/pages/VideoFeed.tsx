@@ -3,7 +3,6 @@ import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import { useVideoStore } from '../store/useVideoStore';
 import { LivePromo, useLivePromoStore } from '../store/useLivePromoStore';
 import { useSafetyStore } from '../store/useSafetyStore';
-import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 type HomeTopTab = 'live' | 'stem' | 'explore' | 'following' | 'shop' | 'foryou';

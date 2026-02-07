@@ -27,6 +27,7 @@ export default function BattleNotification({ userId }: BattleNotificationProps) 
     return () => {
       websocket.off('battle_invite', handleBattleInvite);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

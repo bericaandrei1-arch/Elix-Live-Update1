@@ -15,7 +15,7 @@ interface GiftAnimationOverlayProps {
   streamId: string;
 }
 
-export default function GiftAnimationOverlay({ streamId }: GiftAnimationOverlayProps) {
+export default function GiftAnimationOverlay({ streamId: _streamId }: GiftAnimationOverlayProps) {
   const [activeGifts, setActiveGifts] = useState<GiftAnimation[]>([]);
 
   useEffect(() => {

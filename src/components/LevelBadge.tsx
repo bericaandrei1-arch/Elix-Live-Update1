@@ -9,7 +9,7 @@ interface LevelBadgeProps {
   avatar?: string;
 }
 
-export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", size = 40, layout = 'fit', variant = 'clean', avatar }) => {
+export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, className = "", size = 40, layout: _layout = 'fit', variant = 'clean', avatar }) => {
   const safeLevel = Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
 
   // Tier color for oval fill - based on level

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, FileText, Lock, Copyright, Music, Users, BadgeDollarSign, ShieldAlert, Mail } from 'lucide-react';
+import { FileText, Lock, Copyright, Music, Users, BadgeDollarSign, ShieldAlert, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Legal() {

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   ChevronRight,
@@ -19,16 +18,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    setUser(data.user);
-  };
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to log out?')) {

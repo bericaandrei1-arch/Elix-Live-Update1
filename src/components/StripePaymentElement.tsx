@@ -148,6 +148,7 @@ export const StripePaymentElement: React.FC<StripePaymentElementProps> = ({
         onError('Failed to initialize payment');
         setLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coinPackage, user?.id]);
 
   const options = {

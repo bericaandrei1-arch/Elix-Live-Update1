@@ -132,6 +132,7 @@ export default function Upload() {
       setIsPosting(false);
       setPostProgress(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordedVideoUrl]);
 
    // Start Camera
@@ -218,6 +219,7 @@ export default function Upload() {
         const url = URL.createObjectURL(blob);
         setRecordedVideoUrl(url);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, isPaused, chunks]);
 
   const toggleRecording = () => {

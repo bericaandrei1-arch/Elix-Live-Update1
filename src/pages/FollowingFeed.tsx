@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, UserPlus, Radio } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { UserPlus, Radio } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { trackEvent, trackScreenView } from '../lib/analytics';
+import { trackScreenView } from '../lib/analytics';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 
 interface Video {
@@ -19,7 +19,7 @@ export default function FollowingFeed() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [activeVideoIndex] = useState(0);
 
   useEffect(() => {
     loadCurrentUser();
@@ -30,6 +30,7 @@ export default function FollowingFeed() {
     if (currentUserId) {
       loadFollowingVideos();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]);
 
   const loadCurrentUser = async () => {

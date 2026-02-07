@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Camera, X, ChevronRight } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { trackEvent } from '../lib/analytics';
 
@@ -298,26 +298,4 @@ function Divider({ label }: { label: string }) {
   );
 }
 
-function SettingItem({
-  icon,
-  label,
-  value,
-  onClick,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value?: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-4 hover:brightness-125 transition text-left"
-    >
-      {icon && <div className="text-white/60">{icon}</div>}
-      <span className="flex-1">{label}</span>
-      {value && <span className="text-white/40 text-sm">{value}</span>}
-      <ChevronRight className="w-5 h-5 text-white/40" />
-    </button>
-  );
-}
+

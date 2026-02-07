@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Shield, Ban, Flag, Lock, Eye, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Shield, Lock, Eye, AlertTriangle, Ban, Flag, HelpCircle } from 'lucide-react';
 
 export default function SafetyCenter() {
   const navigate = useNavigate();

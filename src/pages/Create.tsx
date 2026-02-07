@@ -261,9 +261,11 @@ export default function Create() {
 
           // Set camera zoom to minimum for widest view
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const caps = track.getCapabilities?.() as any;
             if (caps?.zoom) {
               setHwZoomRange({ min: caps.zoom.min, max: caps.zoom.max });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
             } else {
               setHwZoomRange(null);
@@ -347,10 +349,12 @@ export default function Create() {
       return;
     }
     try {
-      const capabilities = track.getCapabilities?.() as any;
-      if (capabilities?.torch) {
-        const newTorch = !flashEnabled;
-        await track.applyConstraints({ advanced: [{ torch: newTorch } as any] });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const capabilities = track.getCapabilities?.() as any;
+        if (capabilities?.torch) {
+          const newTorch = !flashEnabled;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await track.applyConstraints({ advanced: [{ torch: newTorch } as any] });
         setFlashEnabled(newTorch);
         showToast(newTorch ? 'Flash ON' : 'Flash OFF');
       } else {
@@ -370,11 +374,13 @@ export default function Create() {
 
     // Try hardware zoom first (uses actual camera optics)
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const caps = track.getCapabilities?.() as any;
       if (caps?.zoom) {
         const clamped = Math.max(caps.zoom.min, Math.min(newZoom, caps.zoom.max));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await track.applyConstraints({ advanced: [{ zoom: clamped } as any] });
-        setZoomLevel(parseFloat(clamped.toFixed(1)));
+        setZoomLevel(clamped);
         return;
       }
     } catch { /* hardware zoom not supported */ }
@@ -602,7 +608,7 @@ export default function Create() {
           type="file"
           accept="video/*"
           className="hidden"
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (!file) return;
             const nextUrl = URL.createObjectURL(file);

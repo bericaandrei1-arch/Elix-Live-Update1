@@ -42,6 +42,7 @@ export default function WalletBalance({ userId, variant = 'full', onClick }: Wal
         supabase.removeChannel(channel);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const loadBalance = async () => {
@@ -75,6 +76,7 @@ export default function WalletBalance({ userId, variant = 'full', onClick }: Wal
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleWalletUpdate = (payload: any) => {
     if (payload.new) {
       setBalance({

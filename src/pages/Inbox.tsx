@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Heart, MessageCircle, UserPlus, Gift, Bell, Mail } from 'lucide-react';
 
@@ -29,28 +29,13 @@ export default function Inbox() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadCurrentUser();
-  }, []);
-
-  useEffect(() => {
-    if (currentUserId) {
-      if (activeTab === 'notifications') {
-        loadNotifications();
-      } else {
-        loadConversations();
-      }
-    }
-  }, [activeTab, currentUserId]);
 
   const loadCurrentUser = async () => {
     const { data } = await supabase.auth.getUser();
     setCurrentUserId(data.user?.id || null);
   };
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!currentUserId) return;
 
     try {
@@ -65,12 +50,10 @@ export default function Inbox() {
       setNotifications(data || []);
     } catch (error) {
       console.error('Failed to load notifications:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [currentUserId]);
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!currentUserId) return;
 
     try {
@@ -85,10 +68,22 @@ export default function Inbox() {
       setConversations(data || []);
     } catch (error) {
       console.error('Failed to load conversations:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      if (activeTab === 'notifications') {
+        loadNotifications();
+      } else {
+        loadConversations();
+      }
+    }
+  }, [activeTab, currentUserId, loadNotifications, loadConversations]);
 
   const markAsRead = async (notificationId: string) => {
     await supabase

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Flag, X, CheckCircle } from 'lucide-react';
+import { CheckCircle, Flag } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 const REPORT_REASONS = {

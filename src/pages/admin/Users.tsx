@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Ban, CheckCircle, DollarSign } from 'lucide-react';
+import { Ban, Search } from 'lucide-react';
 
 interface User {
   id: string;

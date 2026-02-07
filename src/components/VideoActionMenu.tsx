@@ -1,6 +1,6 @@
 import React from 'react';
 import { supabase } from '../lib/supabase';
-import { EyeOff, Flag, Link, UserX, Bookmark, Download } from 'lucide-react';
+import { EyeOff, Flag, Link, UserX, Download } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 interface VideoActionMenuProps {

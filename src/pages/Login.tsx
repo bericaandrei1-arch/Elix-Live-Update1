@@ -54,8 +54,9 @@ export default function Login() {
       }
 
       navigate(from, { replace: true });
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch {
+      setError('Failed to sign in');
+    } finally {
       setIsSubmitting(false);
     }
   };

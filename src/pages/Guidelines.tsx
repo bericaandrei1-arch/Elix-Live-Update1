@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Shield, Heart, Users, AlertTriangle, Ban, Eye } from 'lucide-react';
+import { Shield, Users, Heart, AlertTriangle, Eye, Ban } from 'lucide-react';
 
 export default function Guidelines() {
   const navigate = useNavigate();

@@ -55,8 +55,9 @@ export default function Register() {
 
       // Success - navigate to home
       navigate('/', { replace: true });
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch {
+      setError('Failed to create account');
+    } finally {
       setIsSubmitting(false);
     }
   };

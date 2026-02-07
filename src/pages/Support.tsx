@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, HelpCircle, Send, MessageCircle, Mail, FileText, Book, Shield } from 'lucide-react';
+import { Book, HelpCircle, Mail, MessageCircle, Send, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { trackEvent } from '../lib/analytics';
 

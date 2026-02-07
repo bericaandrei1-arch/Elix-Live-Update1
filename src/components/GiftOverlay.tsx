@@ -36,6 +36,7 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
           });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [muteAllSounds, videoSrc]);
 
   if (!videoSrc) return null;

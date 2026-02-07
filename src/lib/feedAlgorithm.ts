@@ -50,8 +50,8 @@ export async function generatePersonalizedFeed(
     // Shuffle and limit
     const shuffled = shuffleArray(filtered);
     return shuffled.slice(0, limit);
-  } catch (error) {
-    console.error('Failed to generate feed:', error);
+  } catch {
+    console.error('Failed to generate feed');
     // Fallback to trending
     return await getTrendingVideos(limit);
   }

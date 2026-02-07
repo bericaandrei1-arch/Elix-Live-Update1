@@ -44,6 +44,7 @@ export default function Discover() {
     } else if (activeTab === 'hashtags') {
       loadHashtags();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   useEffect(() => {

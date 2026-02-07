@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { X, Heart, Send, MoreVertical } from 'lucide-react';
+import { Send, Heart, X } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 interface Comment {
@@ -304,10 +304,4 @@ function formatTime(timestamp: string): string {
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
   return date.toLocaleDateString();
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return String(num);
 }

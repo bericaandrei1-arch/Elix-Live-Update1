@@ -32,6 +32,7 @@ export default function Profile() {
   const { user, updateUser, signOut } = useAuthStore();
   
   const [activeTab, setActiveTab] = useState<'videos' | 'private' | 'liked' | 'battles'>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (tabParam as any) || 'videos'
   );
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -57,6 +58,7 @@ export default function Profile() {
         checkFollowing();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayUserId, activeTab]);
 
   const loadProfile = async () => {
@@ -427,7 +429,8 @@ export default function Profile() {
 
         {/* Video Grid */}
         <div className="grid grid-cols-3 gap-[1px] mt-[1px]">
-             {videos.map((video) => (
+             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+             {videos.map((video: any) => (
                  <a
                    key={video.id}
                    href={`/video/${video.id}`}

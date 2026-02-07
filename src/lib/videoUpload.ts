@@ -21,8 +21,6 @@ export interface VideoMetadata {
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 const MAX_DURATION = 180; // 3 minutes (in seconds)
 const ALLOWED_FORMATS = ['video/mp4', 'video/quicktime', 'video/webm'];
-const TARGET_BITRATE = 2500000; // 2.5 Mbps
-const TARGET_RESOLUTION = { width: 1080, height: 1920 }; // 9:16 aspect ratio
 
 export class VideoUploadService {
   private onProgressCallback: ((progress: UploadProgress) => void) | null = null;

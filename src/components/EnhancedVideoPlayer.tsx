@@ -1,11 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { 
   Heart, 
-  Bookmark, 
   Music,
-  MessageCircle,
-  Share2,
-  Flag,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useVideoStore } from '../store/useVideoStore';
@@ -26,7 +22,7 @@ interface EnhancedVideoPlayerProps {
 }
 
 // Premium Sidebar Button Component with Metallic Rose Gold Design
-const PremiumSidebarButton = ({ 
+export const PremiumSidebarButton = ({ 
   onClick, 
   isActive = false, 
   iconSrc,
@@ -98,7 +94,7 @@ const PremiumSidebarButton = ({
 );
 
 // Legacy wrapper for compatibility
-const SidebarButton = PremiumSidebarButton;
+// const SidebarButton = PremiumSidebarButton;
 
 export default function EnhancedVideoPlayer({ 
   videoId, 

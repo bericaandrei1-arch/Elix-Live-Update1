@@ -22,6 +22,7 @@ export default function Hashtag() {
       loadHashtagData();
       trackEvent('hashtag_view', { hashtag: tag });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tag]);
 
   const loadHashtagData = async () => {
@@ -47,8 +48,8 @@ export default function Hashtag() {
 
       const videos = videoHashtags?.map(vh => (vh as any).videos).filter(Boolean) || [];
       setVideos(videos);
-    } catch (error) {
-      console.error('Failed to load hashtag:', error);
+    } catch {
+      console.error('Failed to load hashtag');
     } finally {
       setLoading(false);
     }

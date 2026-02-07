@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Bookmark } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SAVED_VIDEOS = [

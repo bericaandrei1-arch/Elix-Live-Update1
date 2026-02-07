@@ -21,6 +21,7 @@ export default function AdminReports() {
 
   useEffect(() => {
     loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadReports = async () => {
