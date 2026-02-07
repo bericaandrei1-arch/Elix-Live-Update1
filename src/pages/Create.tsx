@@ -4,7 +4,6 @@ import {
   Square,
   Play,
   Pause,
-  X,
   CameraOff,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -180,45 +179,17 @@ function SoundPickerModal({
   );
 }
 
-function ToolbarButton({
-  icon: Icon,
-  onClick,
-  active,
-  badge,
-}: {
-  icon: React.ElementType;
-  onClick: () => void;
-  active?: boolean;
-  badge?: 'check';
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95 ${
-        active ? 'bg-white' : ''
-      }`}
-    >
-      <Icon className="w-6 h-6 text-[#E6B36A]" strokeWidth={2} />
-      {badge === 'check' && (
-        <span className="absolute -right-0.5 -bottom-0.5 w-4 h-4 rounded-full bg-red-600 border border-black flex items-center justify-center">
-          <span className="w-2 h-2 rounded-full bg-white" />
-        </span>
-      )}
-    </button>
-  );
-}
+
 
 export default function Create() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<CreateMode>('create');
-  const [sound, setSound] = useState<Sound | null>(null);
   const [isSoundOpen, setIsSoundOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isFrontCamera, setIsFrontCamera] = useState(true);
-  const [isMicEnabled, setIsMicEnabled] = useState(false);
   const [recordingDelaySeconds, setRecordingDelaySeconds] = useState<0 | 3 | 10>(0);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -357,41 +328,6 @@ export default function Create() {
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1800);
-  };
-
-  const toggleMic = async () => {
-    const current = streamRef.current;
-    if (!current) {
-      showToast('Camera not ready yet.');
-      return;
-    }
-
-    const audioTracks = current.getAudioTracks();
-    if (audioTracks.length === 0) {
-      try {
-        const nextStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: isFrontCamera ? 'user' : 'environment',
-          },
-          audio: true,
-        });
-
-        current.getTracks().forEach((t) => t.stop());
-        streamRef.current = nextStream;
-        if (videoRef.current) videoRef.current.srcObject = nextStream;
-        nextStream.getAudioTracks().forEach((t) => (t.enabled = true));
-        setIsMicEnabled(true);
-        showToast('Microphone enabled.');
-      } catch {
-        showToast('Microphone permission denied.');
-      }
-      return;
-    }
-
-    const nextEnabled = !audioTracks.some((t) => t.enabled);
-    audioTracks.forEach((t) => (t.enabled = nextEnabled));
-    setIsMicEnabled(nextEnabled);
-    showToast(nextEnabled ? 'Microphone enabled.' : 'Microphone muted.');
   };
 
   const cycleTimer = () => {
@@ -792,7 +728,7 @@ export default function Create() {
         <SoundPickerModal
           isOpen={isSoundOpen}
           onClose={() => setIsSoundOpen(false)}
-          onPick={(s) => setSound(s)}
+          onPick={() => {}}
         />
       </div>
     </div>

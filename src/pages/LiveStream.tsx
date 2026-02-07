@@ -1,14 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  X,
   Send,
   UsersRound,
   Search,
   Heart,
   Flame,
-  Link2,
   MessageCircle,
   Share2,
   RefreshCw,
@@ -16,15 +13,8 @@ import {
   MicOff,
   Settings2,
   LogOut,
-  Power,
-  ShoppingBag,
-  Pencil,
-  MoreHorizontal,
-  Gift,
-  MoreVertical,
   Volume2,
   VolumeX,
-  Users,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GiftPanel, GIFTS } from '../components/EnhancedGiftPanel';
