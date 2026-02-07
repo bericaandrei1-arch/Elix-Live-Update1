@@ -46,7 +46,7 @@ export default function Upload() {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  const musicTracks: SoundTrack[] = [...customTracks, ...SOUND_TRACKS];
+  const musicTracks = React.useMemo(() => [...customTracks, ...SOUND_TRACKS], [customTracks]);
 
   const getSelectedLabel = () => {
     if (postWithoutAudio || selectedAudioId === 'none') return 'No audio';
@@ -132,7 +132,6 @@ export default function Upload() {
       setIsPosting(false);
       setPostProgress(0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordedVideoUrl]);
 
    // Start Camera
@@ -154,9 +153,10 @@ export default function Upload() {
         startCamera();
     }
 
+    const videoEl = videoRef.current;
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      if (videoEl && videoEl.srcObject) {
+        const stream = videoEl.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };
@@ -219,7 +219,6 @@ export default function Upload() {
         const url = URL.createObjectURL(blob);
         setRecordedVideoUrl(url);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, isPaused, chunks]);
 
   const toggleRecording = () => {

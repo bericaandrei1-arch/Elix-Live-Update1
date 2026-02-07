@@ -103,6 +103,7 @@ export function LiveModeProvider({
   return <LiveModeContext.Provider value={api}>{children}</LiveModeContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLiveMode() {
   const ctx = useContext(LiveModeContext);
   if (!ctx) {

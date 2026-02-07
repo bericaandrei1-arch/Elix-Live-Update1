@@ -46,6 +46,7 @@ export default function Hashtag() {
         .eq('hashtag', tag.toLowerCase())
         .limit(50);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const videos = videoHashtags?.map(vh => (vh as any).videos).filter(Boolean) || [];
       setVideos(videos);
     } catch {

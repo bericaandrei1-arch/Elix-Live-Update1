@@ -61,7 +61,7 @@ export async function generatePersonalizedFeed(
  * Get trending videos based on trending_scores
  */
 async function getTrendingVideos(limit: number): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('trending_scores')
     .select('video_id')
     .order('score', { ascending: false })
@@ -187,8 +187,8 @@ export async function trackVideoInteraction(
       video_id: videoId,
       interaction_type: interactionType,
     });
-  } catch (error) {
+  } catch {
     // Silent fail - this is analytics, not critical
-    console.error('Failed to track interaction:', error);
+    console.error('Failed to track interaction');
   }
 }

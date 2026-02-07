@@ -213,6 +213,7 @@ wss.on('connection', async (ws: WebSocket, req) => {
   });
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleMessage(client: Client, event: string, data: any) {
   switch (event) {
     case 'chat_message':
@@ -225,7 +226,7 @@ async function handleMessage(client: Client, event: string, data: any) {
       });
       break;
 
-    case 'gift_sent':
+    case 'gift_sent': {
       const { transactionId } = data;
       
       // Check for duplicate transaction
@@ -269,6 +270,7 @@ async function handleMessage(client: Client, event: string, data: any) {
         });
       }
       break;
+    }
 
     case 'battle_score_update':
       // Broadcast score update
@@ -283,24 +285,27 @@ async function handleMessage(client: Client, event: string, data: any) {
       });
       break;
 
-    case 'battle_invite':
+    case 'battle_invite': {
       // Send to specific user (challenger)
       const targetRoom = data.challenger_stream_id;
       broadcastToRoom(targetRoom, 'battle_invite', data);
       break;
+    }
 
     case 'battle_accepted':
-    case 'battle_declined':
+    case 'battle_declined': {
       // Notify host
       const hostRoom = data.host_stream_id;
       broadcastToRoom(hostRoom, event, data);
       break;
+    }
 
     default:
       console.log('Unknown event:', event);
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sendToClient(client: Client, event: string, data: any) {
   try {
     if (client.ws.readyState === WebSocket.OPEN) {
@@ -315,6 +320,7 @@ function sendToClient(client: Client, event: string, data: any) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function broadcastToRoom(roomId: string, event: string, data: any, exclude?: Client) {
   const room = rooms.get(roomId);
   if (!room) return;

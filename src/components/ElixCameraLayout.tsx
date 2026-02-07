@@ -165,12 +165,20 @@ export default function ElixCameraLayout({
 
     videoRef.current.style.filter = filters.length > 0 ? filters.join(' ') : 'none';
 
+    const videoEl = videoRef.current;
     return () => {
-      if (videoRef.current) {
-        videoRef.current.style.filter = 'none';
+      if (videoEl) {
+        videoEl.style.filter = 'none';
       }
     };
   }, [beautyEnabled, beautyLevel, activeFilter, enhanceEnabled, videoRef]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (videoRef.current as any).setZoom?.(zoomLevel);
+      }
+  }, [zoomLevel, videoRef]);
 
   // ── Toggle effects panel ──
   const toggleEffectsPanel = useCallback(() => {
@@ -369,6 +377,7 @@ export default function ElixCameraLayout({
               title="Beauty level"
               className="w-6 h-16 appearance-none cursor-pointer"
               style={{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 writingMode: 'vertical-lr' as any,
                 direction: 'rtl',
                 accentColor: '#D6A088',

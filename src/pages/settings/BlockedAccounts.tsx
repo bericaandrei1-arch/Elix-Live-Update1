@@ -25,6 +25,7 @@ export default function BlockedAccounts() {
     if (currentUserId) {
       loadBlockedUsers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]);
 
   const loadCurrentUser = async () => {

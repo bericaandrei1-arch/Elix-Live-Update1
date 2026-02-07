@@ -9,6 +9,7 @@ const supabase = createClient(
 
 interface AnalyticsEvent {
   event: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties: Record<string, any>;
   user_id?: string;
   session_id: string;
@@ -59,6 +60,7 @@ export default async function handler(req: Request) {
 }
 
 // Optional: Forward to PostHog
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function forwardToPostHog(event: AnalyticsEvent) {
   if (!process.env.POSTHOG_API_KEY) return;
 

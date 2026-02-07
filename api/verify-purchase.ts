@@ -37,6 +37,7 @@ export default async function handler(req: Request) {
 
     // Verify receipt with Apple/Google
     let isValid = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let verificationResponse: any = {};
 
     if (provider === 'apple') {
@@ -80,6 +81,7 @@ export default async function handler(req: Request) {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Purchase verification error:', error);
     return new Response(
@@ -115,6 +117,7 @@ async function verifyAppleReceipt(
     // Check if receipt is valid and matches transaction ID
     if (data.status === 0 && data.receipt) {
       const transactions = data.receipt.in_app || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return transactions.some((tx: any) => tx.transaction_id === transactionId);
     }
 

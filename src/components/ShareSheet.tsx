@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, MessageCircle, Facebook, Twitter, Instagram, Download } from 'lucide-react';
-import { generateDeepLink, generateWebLink } from '../lib/deepLinks';
+import { generateWebLink } from '../lib/deepLinks';
 import { trackEvent } from '../lib/analytics';
 import { Share } from '@capacitor/share';
 import { Clipboard } from '@capacitor/clipboard';

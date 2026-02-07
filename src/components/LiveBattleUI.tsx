@@ -51,6 +51,7 @@ export default function LiveBattleUI({ battleId, streamId: _streamId, isHost: _i
       websocket.off('battle_score_update', handleScoreUpdate);
       websocket.off('booster_activated', handleBoosterActivated);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battleId]);
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function LiveBattleUI({ battleId, streamId: _streamId, isHost: _i
   }, [battle]);
 
   const loadBattle = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('battles')
       .select('*')
       .eq('id', battleId)
@@ -109,13 +110,13 @@ export default function LiveBattleUI({ battleId, streamId: _streamId, isHost: _i
 
   const activateBooster = async (booster: Booster) => {
     try {
-      const { error } = await supabase.rpc('activate_booster', {
+      const { error: _error } = await supabase.rpc('activate_booster', {
         p_user_id: userId,
         p_battle_id: battleId,
         p_booster_id: booster.id,
       });
 
-      if (error) throw error;
+      if (_error) throw _error;
 
       // Set cooldown
       setCooldowns(prev => ({ ...prev, [booster.id]: booster.cooldown_seconds }));

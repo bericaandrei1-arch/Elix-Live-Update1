@@ -51,6 +51,7 @@ export default function LiveChat({ streamId, currentUserId, onSendGift }: LiveCh
       websocket.off('gift_sent', handleGiftSent);
       websocket.off('user_joined', handleUserJoined);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamId]);
 
   useEffect(() => {

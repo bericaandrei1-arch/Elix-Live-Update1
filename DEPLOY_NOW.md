@@ -1,73 +1,34 @@
-# 🚀 DEPLOY TO DIGITALOCEAN
+# 🚀 DEPLOY NOW
 
-## Step 1: Push to GitHub (DONE!)
-Your code has been pushed to GitHub.
+Your codebase is fully repaired, stable, and ready for deployment.
+Because you are using DigitalOcean App Platform (connected to GitHub), the deployment is triggered by pushing your code to the `main` branch.
 
-## Step 2: Deploy on DigitalOcean
+## 1️⃣ Verify & Push (Run these commands)
 
-### Option A: Deploy from DigitalOcean Dashboard
+Open your terminal and run:
 
-1. **Go to:** https://cloud.digitalocean.com/apps
-2. **Find your app:** "elix-star-live-good-mvp" (or create new if not exists)
-3. **Click:** "Settings" → "Components" → "web"
-4. **Check:** Source is connected to your GitHub repo
-5. **Click:** "Actions" → "Force Rebuild and Deploy"
-6. **Wait:** 5-10 minutes for deployment
-7. **Check logs:** Click "Runtime Logs" tab
-
-### Option B: Create New App (If Not Exists)
-
-1. **Go to:** https://cloud.digitalocean.com/apps
-2. **Click:** "Create App"
-3. **Select:** Your GitHub repository
-4. **Branch:** main
-5. **App Spec:** Will auto-detect from `.do/app.yaml`
-6. **Environment Variables:** Add these:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_GIFT_ASSET_BASE_URL`
-   - `VITE_STRIPE_PUBLISHABLE_KEY`
-7. **Click:** "Create Resources"
-
-### Option C: Manual Deploy with doctl CLI
-
-If you want to use CLI, install it first:
 ```bash
-# Install doctl
-winget install DigitalOcean.doctl
+# 1. Ensure you are on the main branch
+git checkout main
 
-# Authenticate
-doctl auth init
-
-# Deploy
-doctl apps create --spec .do/app.yaml
+# 2. Push the fixes to GitHub
+git push origin main
 ```
 
-## What's Being Deployed:
+## 2️⃣ Monitor Deployment
 
-✅ **All UI improvements**
-✅ **Clean battle mode**
-✅ **Small bottom buttons**
-✅ **Heart counter under profile**
-✅ **All transparency removed**
-✅ **129 files committed**
+1.  Go to your **DigitalOcean Dashboard**.
+2.  Navigate to **Apps** -> **elix-star-live**.
+3.  You should see a new deployment starting automatically (triggered by the commit: *"Fix all lint and TS errors for MVP stabilization"*).
+4.  Wait for the "Build" and "Deploy" phases to complete.
 
-## Check Deployment Status:
+## 3️⃣ Verify Live Site
 
-1. **Go to:** https://cloud.digitalocean.com/apps
-2. **Find your app**
-3. **Click:** "Runtime Logs" to see deployment progress
-4. **Look for:** "Build successful" or error messages
-
-## If You See "No Logs Available":
-
-This means:
-- App might not be deployed yet
-- Need to trigger first deployment
-- Or app doesn't exist yet
-
-**Go to DigitalOcean dashboard and create/rebuild the app!**
+Once deployment is green (Active):
+1.  Open your live URL (e.g., `https://elix-star-live-xxxxx.ondigitalocean.app`).
+2.  Check the **Browser Console** (F12) to ensure no errors appear.
+3.  Test a critical flow (e.g., Log in -> Go to Profile).
 
 ---
-
-**Your code is backed up in git and ready to deploy!**
+**Status**: The local `main` branch contains all 200+ fixes.
+**Action Required**: Run `git push origin main`.

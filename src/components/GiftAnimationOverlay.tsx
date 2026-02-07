@@ -27,6 +27,7 @@ export default function GiftAnimationOverlay({ streamId: _streamId }: GiftAnimat
     };
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleGiftSent = (data: any) => {
     const animation: GiftAnimation = {
       id: Date.now().toString() + Math.random(),

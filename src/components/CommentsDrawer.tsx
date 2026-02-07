@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Send, Heart, X } from 'lucide-react';
+import { Send, Heart } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 
 interface Comment {
@@ -35,6 +35,7 @@ export default function CommentsDrawer({ isOpen, onClose, videoId }: CommentsDra
       loadComments();
       loadCurrentUser();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, videoId]);
 
   useEffect(() => {

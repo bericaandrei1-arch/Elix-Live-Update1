@@ -15,6 +15,7 @@ interface NotificationRequest {
   userId: string;
   title: string;
   body: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
   imageUrl?: string;
 }
@@ -71,6 +72,7 @@ export default async function handler(req: Request) {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Send notification error:', error);
     return new Response(
@@ -87,6 +89,7 @@ async function sendAPNS(
   deviceToken: string,
   title: string,
   body: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>,
   imageUrl?: string
 ) {
@@ -118,6 +121,7 @@ async function sendFCM(
   deviceToken: string,
   title: string,
   body: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>,
   imageUrl?: string
 ) {
@@ -158,6 +162,7 @@ async function sendWebPush(
   subscription: string,
   title: string,
   body: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>,
   imageUrl?: string
 ) {

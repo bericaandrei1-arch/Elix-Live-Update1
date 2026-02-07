@@ -796,7 +796,7 @@ export default function LiveStream() {
     enqueueUniverse(sender);
   };
 
-  const addLiveLikes = (delta: number) => {
+  const addLiveLikes = useCallback((delta: number) => {
     if (delta <= 0) return;
 
     setLiveLikes((prev) => {
@@ -811,7 +811,7 @@ export default function LiveStream() {
       }
       return next;
     });
-  };
+  }, [isBattleMode, effectiveStreamId, setPromo]);
 
   const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, _isSpeedTap?: boolean) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
@@ -944,6 +944,7 @@ export default function LiveStream() {
       battleTapScoreRemainingRef.current = 0;
       // setBattleTapScoreRemaining(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battleWinner, battleTime, speedChallengeActive]);
 
   // ─── SPEED CHALLENGE LOGIC ───
@@ -1026,6 +1027,7 @@ export default function LiveStream() {
     }
     const t = setTimeout(() => setSpeedChallengeTime(prev => prev - 1), 1000);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speedChallengeActive, speedChallengeTime]);
 
   // Simulate opponent taps during speed challenge
@@ -1053,6 +1055,7 @@ export default function LiveStream() {
       }
     }, 1000);
     return () => { if (speedChallengeTimerRef.current) clearInterval(speedChallengeTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speedChallengeActive]);
 
   // Auto-cycle multiplier during speed challenge (changes every 2-3s)
@@ -1106,7 +1109,7 @@ export default function LiveStream() {
 
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isBattleMode, battleWinner, handleBattleTap, spawnHeartAtSide]);
+  }, [isBattleMode, battleWinner, handleBattleTap, spawnHeartAtSide, addLiveLikes]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

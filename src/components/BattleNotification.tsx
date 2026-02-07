@@ -28,7 +28,7 @@ export default function BattleNotification({ userId }: BattleNotificationProps) 
       websocket.off('battle_invite', handleBattleInvite);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (pendingInvite && countdown > 0) {
@@ -41,8 +41,10 @@ export default function BattleNotification({ userId }: BattleNotificationProps) 
       // Auto-decline after timeout
       declineBattle();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingInvite, countdown]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleBattleInvite = async (data: any) => {
     // Check if this user is the challenger
     const { data: stream } = await supabase
@@ -59,6 +61,7 @@ export default function BattleNotification({ userId }: BattleNotificationProps) 
         .eq('id', data.host_stream_id)
         .single();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const hostUsername = (hostStream as any)?.profiles?.username || 'Unknown';
 
       setPendingInvite({
