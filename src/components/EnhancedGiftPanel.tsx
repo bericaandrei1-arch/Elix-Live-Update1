@@ -167,7 +167,7 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
   }, [bigGifts, inView, universeGift, smallGifts, activeTab]);
 
   return (
-    <div ref={panelRef} className="bg-[#1a1a1a]/95 rounded-t-2xl p-3 pb-safe max-h-[45vh] overflow-y-auto no-scrollbar shadow-2xl w-full">
+    <div ref={panelRef} className="bg-[#1a1a1a]/95 rounded-t-2xl p-3 pb-safe max-h-[40dvh] overflow-y-auto no-scrollbar shadow-2xl w-full">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-white font-semibold text-sm flex items-center gap-2">
           <Gift className="text-yellow-400" size={16} /> 

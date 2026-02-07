@@ -43,6 +43,9 @@ export async function fetchGiftPriceMap(): Promise<Map<string, number>> {
 const normalizeBase = (base: string) => base.replace(/\/+$/, '');
 
 export function resolveGiftAssetUrl(path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
   const giftsBase = import.meta.env.VITE_GIFT_ASSET_BASE_URL as string | undefined;
   if (!giftsBase) return path;
   const base = normalizeBase(giftsBase);
@@ -89,6 +92,11 @@ export function buildGiftUiItemsFromCatalog(rows: GiftCatalogRow[]): GiftUiItem[
                const ext = parts.pop();
                const name = parts.join('.').replace(/^_/, '').replace(/_$/, '');
                newFilename = `${name}.${ext}`;
+           }
+
+           // Fix for broken elixlive.co.uk URLs: return relative path for Supabase storage
+           if (isUrl && url.includes('elixlive.co.uk')) {
+               return `gifts/${newFilename}`;
            }
 
            return url.replace(filename, newFilename).replace(/%20/g, '_').replace(/ /g, '_'); // Brute force replace in URL too just in case

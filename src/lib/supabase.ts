@@ -23,8 +23,8 @@ const storage = {
 };
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder',
+  supabaseUrl || 'https://drjllfprvymqoxappogt.supabase.co',
+  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyamxsZnBydnltcW94YXBwb2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NTk4ODQsImV4cCI6MjA4NDMzNTg4NH0.gASok4weujwSnfFkzc_BYSBl2YNKQ5hCCLHBcuS22v4',
   {
     auth: {
       storage,

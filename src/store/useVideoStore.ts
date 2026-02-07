@@ -103,7 +103,7 @@ export const useVideoStore = create<VideoStore>()(
       videos: [
         {
           id: 'cartoon1',
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=1',
           duration: '9:56',
           user: {
@@ -142,7 +142,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 'cartoon2',
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=2',
           duration: '10:54',
           user: {
@@ -181,7 +181,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 'cartoon3',
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=3',
           duration: '0:15',
           user: {
@@ -220,7 +220,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 'cartoon4',
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=4',
           duration: '0:15',
           user: {
@@ -259,7 +259,7 @@ export const useVideoStore = create<VideoStore>()(
         },
         {
           id: 'cartoon5',
-          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+          url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
           thumbnail: 'https://picsum.photos/400/600?random=5',
           duration: '0:15',
           user: {
