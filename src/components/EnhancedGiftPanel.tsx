@@ -86,11 +86,7 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
             setPosterFailed((prev) => new Set(prev).add(resolvedPoster));
           }}
         />
-      ) : (
-        <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center pointer-events-none absolute inset-0 z-10">
-          <span className="text-2xl">🎁</span>
-        </div>
-      )}
+      ) : null}
       
       {active && !failed && (
         <video
@@ -171,24 +167,24 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
   }, [bigGifts, inView, universeGift, smallGifts, activeTab]);
 
   return (
-    <div ref={panelRef} className="bg-[#1a1a1a]/95  rounded-t-3xl p-2 pb-3 max-h-[calc(28vh+42px)] overflow-y-auto no-scrollbar border-t-2 border-l-2 border-r-2 border-transparent shadow-2xl animate-slide-up w-full" style={{ borderImage: 'linear-gradient(to right, #8B0000, #00008B) 1' }}>
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-secondary font-bold text-base flex items-center gap-2">
-          <Gift className="text-secondary" size={18} /> 
-          Send a Gift
+    <div ref={panelRef} className="bg-[#1a1a1a]/95 rounded-t-2xl p-3 pb-safe max-h-[45vh] overflow-y-auto no-scrollbar shadow-2xl w-full">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+          <Gift className="text-yellow-400" size={16} /> 
+          Send Gift
         </h3>
         <div className="flex items-center gap-2 bg-black px-2.5 py-0.5 rounded-full border border-secondary/20">
-          <Coins size={13} className="text-secondary" />
-          <span className="text-secondary font-bold text-xs">{userCoins.toLocaleString()}</span>
-          {!IS_STORE_BUILD && (
-            <button 
-              onClick={() => setShowRecharge(true)}
-              className="bg-secondary text-black text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 hover:bg-white transition"
-            >
-              Top Up
-            </button>
-          )}
-        </div>
+            <Coins size={13} className="text-secondary" />
+            <span className="text-secondary font-bold text-xs">{userCoins.toLocaleString()}</span>
+            {!IS_STORE_BUILD && (
+                <button 
+                onClick={() => setShowRecharge(true)}
+                className="bg-secondary text-black text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 hover:bg-white transition"
+                >
+                Top Up
+                </button>
+            )}
+            </div>
       </div>
 
       <BuyCoinsModal
@@ -200,16 +196,16 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
       />
 
       {/* Tabs */}
-      <div className="flex items-center gap-6 mb-3 px-2 border-b border-transparent">
+      <div className="flex items-center gap-4 mb-2 px-1">
         <button 
-            className={`text-sm font-bold pb-2 transition-colors relative ${activeTab === 'small' ? 'text-secondary' : 'text-white/50 hover:text-white/80'}`}
+            className={`text-xs font-medium pb-1.5 transition-colors relative ${activeTab === 'small' ? 'text-yellow-400' : 'text-white/50 hover:text-white/80'}`}
             onClick={() => setActiveTab('small')}
         >
             Small Gift
-            {activeTab === 'small' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-secondary rounded-t-full" />}
+            {activeTab === 'small' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-yellow-400 rounded-t-full" />}
         </button>
         <button 
-            className={`text-sm font-bold pb-2 transition-colors relative ${activeTab === 'exclusive' ? 'text-secondary' : 'text-white/50 hover:text-white/80'}`}
+            className={`text-xs font-medium pb-1.5 transition-colors relative ${activeTab === 'exclusive' ? 'text-yellow-400' : 'text-white/50 hover:text-white/80'}`}
             onClick={() => setActiveTab('exclusive')}
         >
             Exclusive Gift
@@ -232,10 +228,13 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 <button
                   key={universeGift.id}
                   onClick={() => {
-                    setActiveGiftId(universeGift.id);
-                    setPoppedGiftId(universeGift.id);
-                    window.setTimeout(() => setPoppedGiftId((v) => (v === universeGift.id ? null : v)), 520);
-                    onSelectGift(universeGift);
+                    if (activeGiftId === universeGift.id) {
+                      setPoppedGiftId(universeGift.id);
+                      window.setTimeout(() => setPoppedGiftId((v) => (v === universeGift.id ? null : v)), 520);
+                      onSelectGift(universeGift);
+                    } else {
+                      setActiveGiftId(universeGift.id);
+                    }
                   }}
                   onMouseEnter={() => setActiveGiftId(universeGift.id)}
                   onMouseLeave={() => setActiveGiftId((v) => (v === universeGift.id ? null : v))}
@@ -278,10 +277,13 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 <button
                   key={gift.id}
                   onClick={() => {
-                    setActiveGiftId(gift.id);
-                    setPoppedGiftId(gift.id);
-                    window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
-                    onSelectGift(gift);
+                    if (activeGiftId === gift.id) {
+                      setPoppedGiftId(gift.id);
+                      window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
+                      onSelectGift(gift);
+                    } else {
+                      setActiveGiftId(gift.id);
+                    }
                   }}
                   onMouseEnter={() => setActiveGiftId(gift.id)}
                   onMouseLeave={() => setActiveGiftId((v) => (v === gift.id ? null : v))}
@@ -318,10 +320,13 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
               <button
                 key={gift.id}
                 onClick={() => {
-                  setActiveGiftId(gift.id);
-                  setPoppedGiftId(gift.id);
-                  window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
-                  onSelectGift(gift);
+                  if (activeGiftId === gift.id) {
+                    setPoppedGiftId(gift.id);
+                    window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
+                    onSelectGift(gift);
+                  } else {
+                    setActiveGiftId(gift.id);
+                  }
                 }}
                 onMouseEnter={() => setActiveGiftId(gift.id)}
                 onMouseLeave={() => setActiveGiftId((v) => (v === gift.id ? null : v))}

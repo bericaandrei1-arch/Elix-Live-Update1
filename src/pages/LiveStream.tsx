@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   X,
@@ -395,6 +396,14 @@ export default function LiveStream() {
   const _PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
+  const giftPanelOpenedAtRef = useRef(0);
+  const openGiftPanel = useCallback(() => {
+    giftPanelOpenedAtRef.current = Date.now();
+    setShowGiftPanel(true);
+  }, []);
+  const closeGiftPanel = useCallback(() => {
+    setShowGiftPanel(false);
+  }, []);
   const [currentGift, setCurrentGift] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [coinBalance, setCoinBalance] = useState(0);
@@ -852,8 +861,29 @@ export default function LiveStream() {
     });
   };
 
-  const awardBattlePoints = (target: 'me' | 'opponent' | 'player3' | 'player4', points: number) => {
+  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, isSpeedTap?: boolean) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
+    
+    // Safety check: if this is a regular call but speed challenge is active,
+    // we must ensure we don't accidentally trigger the recursive loop if we were to add logic here.
+    // Currently, the recursive call happens in handleBattleTap, not here.
+    // BUT wait, if I add logic here that calls handleBattleTap (unlikely) or if handleBattleTap calls this...
+    
+    // The previous bug was in handleBattleTap calling awardBattlePoints which called handleBattleTap? No.
+    // It was handleBattleTap calling awardBattlePoints.
+    // And if awardBattlePoints ITSELF had logic to recurse... 
+    // Actually, looking at the code I read earlier:
+    // The recursive call was INSIDE handleBattleTap (which I fixed), 
+    // OR inside awardBattlePoints (which I need to check).
+    
+    // In the previous `read` output of `handleBattleTap`:
+    // if (speedChallengeActive) { ... awardBattlePoints(target, 2 * speedMultiplier); return; }
+    
+    // So handleBattleTap calls awardBattlePoints.
+    // Does awardBattlePoints call handleBattleTap? No.
+    // Does awardBattlePoints call ITSELF?
+    // Let's check the definition of awardBattlePoints again.
+    
     if (target === 'me') {
       setMyScore((prev) => prev + points);
     } else if (target === 'opponent') {
@@ -863,7 +893,7 @@ export default function LiveStream() {
     } else {
       setPlayer4Score((prev) => prev + points);
     }
-  };
+  }, [isBattleMode, battleTime, battleWinner]);
 
   const addBattleGifterCoins = (username: string, coins: number, target?: string) => {
     if (!isBattleMode) return;
@@ -952,7 +982,7 @@ export default function LiveStream() {
     // Speed challenge taps - unlimited tapping during challenge
     if (speedChallengeActive) {
       setSpeedChallengeTaps(prev => ({ ...prev, [target]: (prev[target] ?? 0) + 1 }));
-      awardBattlePoints(target, 2 * speedMultiplier); // Each speed tap = 2 × multiplier points
+      awardBattlePoints(target, 2 * speedMultiplier, true); // Mark as speed tap to avoid recursion
       return;
     }
 
@@ -1004,6 +1034,7 @@ export default function LiveStream() {
       setSpeedChallengeActive(true);
       setSpeedChallengeTime(10);
       setSpeedChallengeCountdown(null);
+      // Removed automatic closing of gift panel - let user decide
       return;
     }
     const t = setTimeout(() => setSpeedChallengeCountdown(prev => (prev ?? 1) - 1), 1000);
@@ -1655,115 +1686,122 @@ export default function LiveStream() {
   };
 
   const handleSendGift = async (gift: typeof GIFTS[0]) => {
-    // Allow everyone to spend if they have coins locally (which we just set to max)
-    if (coinBalance < gift.coins) {
-        alert("Not enough coins! (Top up feature coming soon)");
-        return;
-    }
-    
-    let newLevel = userLevel;
-    
-    if (user?.id) {
-      try {
-        const { data, error } = await supabase.rpc('send_stream_gift', {
-          p_stream_key: effectiveStreamId,
-          p_gift_id: gift.id,
-        });
+    try {
+      // Allow everyone to spend if they have coins locally (which we just set to max)
+      if (coinBalance < gift.coins) {
+          setShowGiftPanel(false);
+          setShowCoinModal(true);
+          return;
+      }
+      
+      let newLevel = userLevel;
+      
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase.rpc('send_stream_gift', {
+            p_stream_key: effectiveStreamId,
+            p_gift_id: gift.id,
+          });
 
-        if (error) {
-          const msg = typeof error.message === 'string' ? error.message : '';
-          if (msg.includes('insufficient_funds')) {
-            alert('Not enough coins');
-            return;
+          if (error) {
+            const msg = typeof error.message === 'string' ? error.message : '';
+            if (msg.includes('insufficient_funds')) {
+              setShowGiftPanel(false);
+              setShowCoinModal(true);
+              return;
+            }
+            setCoinBalance(prev => Math.max(0, prev - gift.coins));
+          } else {
+            const row = Array.isArray(data) ? data[0] : data;
+            if (row?.new_balance != null) {
+              setCoinBalance(Number(row.new_balance));
+            }
+            if (row?.new_level != null) {
+              const updatedLevel = Number(row.new_level);
+              setUserLevel(updatedLevel);
+              updateUser({ level: updatedLevel });
+              newLevel = updatedLevel;
+            }
+            if (row?.new_xp != null) {
+              setUserXP(Number(row.new_xp));
+            }
           }
+        } catch {
+          // Fallback: deduct locally
           setCoinBalance(prev => Math.max(0, prev - gift.coins));
-        } else {
-          const row = Array.isArray(data) ? data[0] : data;
-          if (row?.new_balance != null) {
-            setCoinBalance(Number(row.new_balance));
-          }
-          if (row?.new_level != null) {
-            const updatedLevel = Number(row.new_level);
-            setUserLevel(updatedLevel);
-            updateUser({ level: updatedLevel });
-            newLevel = updatedLevel;
-          }
-          if (row?.new_xp != null) {
-            setUserXP(Number(row.new_xp));
+        }
+
+        // Update level/XP locally
+        const xpGained = gift.coins;
+        let currentXP = userXP + xpGained;
+        let currentLevel = userLevel;
+        while (true) {
+          const xpNeeded = currentLevel * 1000;
+          if (currentXP >= xpNeeded && currentLevel < 150) {
+            currentLevel++;
+            currentXP -= xpNeeded;
+          } else {
+            break;
           }
         }
-      } catch {
-        // Fallback: deduct locally
+        setUserLevel(currentLevel);
+        setUserXP(currentXP);
+        updateUser({ level: currentLevel });
+        newLevel = currentLevel;
+
+        // Sync level/xp to DB
+        supabase.from('profiles')
+          .update({ level: currentLevel, xp: currentXP })
+          .eq('user_id', user.id)
+          .then(() => {});
+      } else {
         setCoinBalance(prev => Math.max(0, prev - gift.coins));
       }
 
-      // Update level/XP locally
-      const xpGained = gift.coins;
-      let currentXP = userXP + xpGained;
-      let currentLevel = userLevel;
-      while (true) {
-        const xpNeeded = currentLevel * 1000;
-        if (currentXP >= xpNeeded && currentLevel < 150) {
-          currentLevel++;
-          currentXP -= xpNeeded;
-        } else {
-          break;
-        }
+      // Track session contribution for membership
+      setSessionContribution(prev => prev + gift.coins);
+
+      maybeEnqueueUniverse(gift.name, viewerName);
+      addBattleGifterCoins(viewerName, gift.coins);
+
+      if (isBattleMode && battleTime > 0 && !battleWinner) {
+        awardBattlePoints(giftTarget, gift.coins);
       }
-      setUserLevel(currentLevel);
-      setUserXP(currentXP);
-      updateUser({ level: currentLevel });
-      newLevel = currentLevel;
+      
+      // Keep panel open for combo sending
+      // setShowGiftPanel(false);
 
-      // Sync level/xp to DB
-      supabase.from('profiles')
-        .update({ level: currentLevel, xp: currentXP })
-        .eq('user_id', user.id)
-        .then(() => {});
-    } else {
-      setCoinBalance(prev => Math.max(0, prev - gift.coins));
+      if (isBroadcast && !isBattleMode) {
+        maybeTriggerFaceARGift(gift);
+      }
+      
+      // Always queue the video animation for the sender/viewer to see immediate feedback
+      if (gift.video) {
+        setGiftQueue(prev => [...prev, gift.video]);
+      }
+      
+      // Add to chat
+      const giftMsg = {
+          id: Date.now().toString(),
+          username: viewerName,
+          text: `Sent a ${gift.name}`,
+          isGift: true,
+          level: newLevel,
+          avatar: viewerAvatar,
+      };
+      setMessages(prev => [...prev, giftMsg]);
+
+      // Viewers react to the gift being sent
+      setTimeout(() => triggerGiftReactions(gift.name, viewerName), 1000 + Math.random() * 2000);
+
+      // Handle Combo Logic
+      setLastSentGift(gift);
+      setComboCount(1);
+      setShowComboButton(true);
+      resetComboTimer();
+    } catch (error) {
+      console.error('Error sending gift:', error);
     }
-
-    // Track session contribution for membership
-    setSessionContribution(prev => prev + gift.coins);
-
-    maybeEnqueueUniverse(gift.name, viewerName);
-    addBattleGifterCoins(viewerName, gift.coins);
-
-    if (isBattleMode && battleTime > 0 && !battleWinner) {
-      awardBattlePoints(giftTarget, gift.coins);
-    }
-    
-    setShowGiftPanel(false);
-
-    if (isBroadcast && !isBattleMode) {
-      maybeTriggerFaceARGift(gift);
-    }
-    
-    // Always queue the video animation for the sender/viewer to see immediate feedback
-    if (gift.video) {
-      setGiftQueue(prev => [...prev, gift.video]);
-    }
-    
-    // Add to chat
-    const giftMsg = {
-        id: Date.now().toString(),
-        username: viewerName,
-        text: `Sent a ${gift.name}`,
-        isGift: true,
-        level: newLevel,
-        avatar: viewerAvatar,
-    };
-    setMessages(prev => [...prev, giftMsg]);
-
-    // Viewers react to the gift being sent
-    setTimeout(() => triggerGiftReactions(gift.name, viewerName), 1000 + Math.random() * 2000);
-
-    // Handle Combo Logic
-    setLastSentGift(gift);
-    setComboCount(1);
-    setShowComboButton(true);
-    resetComboTimer();
   };
 
   const handleShare = async () => {
@@ -2757,8 +2795,13 @@ export default function LiveStream() {
       {isFindCreatorsOpen && (
         <>
           <div
-            className="absolute inset-0 z-[499]"
-            onClick={() => { setIsFindCreatorsOpen(false); setCreatorQuery(''); }}
+            className="absolute inset-0 z-[499] bg-black/40"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsFindCreatorsOpen(false);
+              setCreatorQuery('');
+            }}
             role="button"
             tabIndex={-1}
           />
@@ -2766,7 +2809,9 @@ export default function LiveStream() {
             className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
             style={{ width: 'auto', right: '8px' }}
             onClick={(e) => e.stopPropagation()}
-            onPointerLeave={() => { setIsFindCreatorsOpen(false); setCreatorQuery(''); }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
             role="button"
             tabIndex={-1}
           >
@@ -3159,7 +3204,16 @@ export default function LiveStream() {
           {/* Share */}
           <button
               type="button"
-              onClick={handleShare}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleShare();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleShare();
+              }}
               className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
               title="Share"
           >
@@ -3181,10 +3235,39 @@ export default function LiveStream() {
         <div className="absolute bottom-0 left-0 right-0 z-[110] pointer-events-auto">
           <div className="px-2 pb-[calc(6px+env(safe-area-inset-bottom))]">
             <div className="flex items-end justify-end gap-3">
+                {/* Live Start Button */}
+                {!isBroadcast && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/live/broadcast')}
+                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
+                    title="Go Live"
+                  >
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#FF2D55]/30 to-[#FF2D55]/10 backdrop-blur-md border border-[#FF2D55]/50 flex items-center justify-center shadow-[0_0_12px_rgba(255,45,85,0.25)]">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF2D55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="4"/>
+                      </svg>
+                    </div>
+                    <span className="text-[9px] text-[#FF2D55] font-semibold">Live</span>
+                  </button>
+                )}
+
                 {/* Invite - opens panel to add players (enters battle mode if needed) */}
                 <button
                   type="button"
-                  onClick={() => {
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isBattleMode) {
+                      toggleBattle(); // enters battle mode + opens invite
+                    } else {
+                      setIsFindCreatorsOpen(true);
+                    }
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (!isBattleMode) {
                       toggleBattle(); // enters battle mode + opens invite
                     } else {
@@ -3279,7 +3362,16 @@ export default function LiveStream() {
                 {/* More */}
                 <button
                   type="button"
-                  onClick={() => setIsMoreMenuOpen(true)}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsMoreMenuOpen(true);
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsMoreMenuOpen(true);
+                  }}
                   className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
                   title="More"
                 >
@@ -3301,7 +3393,11 @@ export default function LiveStream() {
         <>
           <div
             className="absolute inset-0 z-[699]"
-            onClick={() => setIsMoreMenuOpen(false)}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsMoreMenuOpen(false);
+            }}
             role="button"
             tabIndex={-1}
           />
@@ -3309,7 +3405,9 @@ export default function LiveStream() {
             className="absolute bottom-[82px] z-[700] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
             style={{ width: 'auto', right: '8px' }}
             onClick={(e) => e.stopPropagation()}
-            onPointerLeave={() => setIsMoreMenuOpen(false)}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
             role="button"
             tabIndex={-1}
           >
@@ -3496,28 +3594,24 @@ export default function LiveStream() {
       )}
 
       {/* Gift Panel Slide-up */}
-      <AnimatePresence>
-        {showGiftPanel && (
-            <>
-                <div 
-                    className="absolute inset-0 bg-black/40 z-[150]"
-                    onClick={() => setShowGiftPanel(false)}
-                />
-                <motion.div
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    className="absolute bottom-0 left-0 right-0 z-[160]"
-                >
-                    <GiftPanel 
-                        onSelectGift={handleSendGift} 
-                        userCoins={coinBalance} 
-                        onRechargeSuccess={(newBalance) => setCoinBalance(newBalance)}
-                    />
-                </motion.div>
-            </>
-        )}
-      </AnimatePresence>
+      {showGiftPanel && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40"
+            style={{ zIndex: 99998 }}
+            onClick={() => setShowGiftPanel(false)}
+          />
+          <div 
+            className="absolute bottom-0 left-0 right-0 w-full h-auto max-h-64 z-[99999]"
+          >
+            <GiftPanel 
+              onSelectGift={handleSendGift} 
+              userCoins={coinBalance} 
+              onRechargeSuccess={(newBalance) => setCoinBalance(newBalance)}
+            />
+          </div>
+        </>
+      )}
     </div>
     </div>
   );

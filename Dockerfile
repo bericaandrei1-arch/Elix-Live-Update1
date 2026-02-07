@@ -1,41 +1,26 @@
-# Stage 1: Build the application
-FROM node:20-alpine AS builder
+# Use Node.js 18 as base image
+FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
 # Build the application
-# Note: VITE_ env vars are build-time only. 
-# If you need runtime config, you'll need a different approach (e.g. entrypoint script to inject window.env).
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ARG VITE_STRIPE_PUBLISHABLE_KEY
-
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
-ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
-
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# Install a simple HTTP server to serve the built files
+RUN npm install -g serve
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Expose port
+EXPOSE 3000
 
-# Copy custom Nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3000"]

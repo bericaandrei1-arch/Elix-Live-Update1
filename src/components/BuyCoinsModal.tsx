@@ -42,7 +42,7 @@ export const BuyCoinsModal: React.FC<BuyCoinsModalProps> = ({ isOpen, onClose, o
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[430px] z-[950]" onPointerDown={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle className="text-center">
             {!showPaymentElement ? 'Buy Coins' : 'Complete Payment'}
