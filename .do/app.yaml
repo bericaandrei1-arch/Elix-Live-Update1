@@ -1,15 +1,13 @@
 name: elix-star-live
 region: fra
-static_sites:
+services:
 - name: elix-star-live
   source_dir: /
   github:
     repo: bericaandrei1-arch/Elix-Star-Live-Good-MVP-Updated
     branch: main
-  build_command: npm run build
-  output_dir: dist
-  routes:
-  - path: /
+  dockerfile_path: Dockerfile
+  http_port: 3000
   envs:
   - key: VITE_SUPABASE_URL
     value: ${VITE_SUPABASE_URL}
@@ -19,3 +17,9 @@ static_sites:
     value: ${VITE_AGORA_APP_ID}
   - key: VITE_STRIPE_PUBLISHABLE_KEY
     value: ${VITE_STRIPE_PUBLISHABLE_KEY}
+  - key: STRIPE_SECRET_KEY
+    value: ${STRIPE_SECRET_KEY}
+  - key: STRIPE_WEBHOOK_SECRET
+    value: ${STRIPE_WEBHOOK_SECRET}
+  - key: SUPABASE_SERVICE_ROLE_KEY
+    value: ${SUPABASE_SERVICE_ROLE_KEY}
