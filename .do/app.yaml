@@ -1,7 +1,7 @@
-name: elix-star-live
+name: stingray-app
 region: fra
 services:
-- name: elix-star-live
+- name: stingray-app
   source_dir: /
   github:
     repo: bericaandrei1-arch/Elix-Star-Live-Good-MVP-Updated
@@ -23,3 +23,4 @@ services:
     value: ${STRIPE_WEBHOOK_SECRET}
   - key: SUPABASE_SERVICE_ROLE_KEY
     value: ${SUPABASE_SERVICE_ROLE_KEY}
+
