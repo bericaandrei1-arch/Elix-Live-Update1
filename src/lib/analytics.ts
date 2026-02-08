@@ -175,6 +175,9 @@ class AnalyticsService {
   }
 
   private sendToBackend(event: AnalyticsEvent, properties: AnalyticsProperties) {
+    // Skip backend tracking in development to avoid errors
+    if (import.meta.env.DEV) return;
+
     // Send to backend for server-side storage
     fetch('/api/analytics/track', {
       method: 'POST',

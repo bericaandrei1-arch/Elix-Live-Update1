@@ -2825,7 +2825,7 @@ export default function LiveStream() {
       {isFindCreatorsOpen && (
         <>
           <div
-            className="absolute inset-0 z-[499] bg-black/40"
+            className="absolute inset-0 z-[499] bg-black/40 pointer-events-auto"
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -2836,7 +2836,7 @@ export default function LiveStream() {
             tabIndex={-1}
           />
           <div
-            className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
+            className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto"
             style={{ width: 'auto', right: '8px' }}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => {
@@ -3141,7 +3141,7 @@ export default function LiveStream() {
       {isMoreMenuOpen && (
         <>
           <div
-            className="absolute inset-0 z-[699]"
+            className="absolute inset-0 z-[699] pointer-events-auto"
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -3151,7 +3151,7 @@ export default function LiveStream() {
             tabIndex={-1}
           />
           <div
-            className="absolute bottom-[82px] z-[700] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden"
+            className="absolute bottom-[82px] z-[700] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto"
             style={{ width: 'auto', right: '8px' }}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => {
@@ -3258,11 +3258,11 @@ export default function LiveStream() {
       {/* Coin Reload Password Modal */}
       {showCoinModal && (
         <div
-          className="absolute inset-0 z-[800] bg-black/80 flex items-center justify-center"
+          className="absolute inset-0 z-[800] bg-black/80 flex items-center justify-center pointer-events-auto"
           onClick={() => setShowCoinModal(false)}
         >
           <div
-            className="bg-[#1a1a2e] rounded-2xl p-6 mx-4 w-full max-w-[320px] border border-[#E6B36A]/30"
+            className="bg-[#1a1a2e] rounded-2xl p-6 mx-4 w-full max-w-[320px] border border-[#E6B36A]/30 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[#E6B36A] text-lg font-bold text-center mb-4">Enter Password</h3>
@@ -3308,12 +3308,12 @@ export default function LiveStream() {
 
       {isLiveSettingsOpen && (
         <div
-          className="absolute inset-0 z-[710] bg-black"
+          className="absolute inset-0 z-[710] bg-black pointer-events-auto"
           onClick={() => setIsLiveSettingsOpen(false)}
           role="button"
           tabIndex={-1}
         >
-          <div className="absolute bottom-0 left-0 right-0 px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pointer-events-auto">
             <div
               className="mx-auto w-full max-w-[500px] bg-black overflow-hidden"
               onClick={(e) => e.stopPropagation()}
@@ -3382,12 +3382,12 @@ export default function LiveStream() {
       {showGiftPanel && (
         <>
           <div 
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 pointer-events-auto"
             style={{ zIndex: 99998 }}
             onClick={() => setShowGiftPanel(false)}
           />
           <div 
-            className="absolute bottom-0 left-0 right-0 h-[40dvh] z-[99999]"
+            className="absolute bottom-0 left-0 right-0 h-[40dvh] z-[99999] pointer-events-auto"
           >
             <GiftPanel 
               onSelectGift={handleSendGift} 

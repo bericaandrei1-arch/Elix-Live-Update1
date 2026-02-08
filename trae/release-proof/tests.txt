@@ -1,0 +1,27 @@
+﻿
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/Sanda/Desktop/Elix Star Live Good MVP[39m
+
+ [32mΓ£ô[39m src/contexts/LiveModeContext.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+[90mstdout[2m | src/App.smoke.test.tsx[2m > [22m[2mApp smoke[2m > [22m[2mrenders home route
+[22m[39m[Analytics] app_open {
+  session_id: [32m'1770578252114_j634aqk4d'[39m,
+  user_id: [1mnull[22m,
+  timestamp: [32m'2026-02-08T19:17:32.233Z'[39m,
+  platform: [32m'web'[39m,
+  app_version: [32m'1.5.0'[39m
+}
+Push notifications not available on web
+
+[90mstdout[2m | src/App.smoke.test.tsx[2m > [22m[2mApp smoke[2m > [22m[2mrenders search route with query
+[22m[39mPush notifications not available on web
+
+[90mstdout[2m | src/App.smoke.test.tsx[2m > [22m[2mApp smoke[2m > [22m[2mrenders legal route
+[22m[39mPush notifications not available on web
+
+ [32mΓ£ô[39m src/App.smoke.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 11:17:30
+[2m   Duration [22m 1.97s[2m (transform 234ms, setup 0ms, collect 907ms, tests 95ms, environment 1.63s, prepare 283ms)[22m
+

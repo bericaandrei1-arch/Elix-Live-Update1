@@ -154,16 +154,6 @@ const giftUrl = (path: string) => {
      preview: giftUrl('/gifts/elix_global_universe.png'), 
    }, 
    { 
-     id: 'horse_gallop', 
-     name: 'Galloping Horse', 
-     coins: 5000, 
-     giftType: 'big', 
-     isActive: true, 
-     icon: giftUrl('/gifts/horse.png'), 
-     video: giftUrl('/gifts/horse.mp4'), 
-     preview: giftUrl('/gifts/horse.png'), 
-   }, 
-   { 
      id: 'rex_dino', 
      name: 'T-Rex', 
      coins: 12000, 
@@ -394,16 +384,6 @@ const giftUrl = (path: string) => {
      preview: giftUrl('/gifts/lava_demon.png'), 
    }, 
    { 
-     id: 'dragon_wrath', 
-     name: 'Dragon Wrath', 
-     coins: 55000, 
-     giftType: 'big', 
-     isActive: true, 
-     icon: giftUrl('/gifts/dragon_s_wrath_ride.png'), 
-     video: giftUrl('/gifts/dragon_s_wrath_ride.mp4'), 
-     preview: giftUrl('/gifts/dragon_s_wrath_ride.png'), 
-   }, 
-   { 
      id: 'flames_royalty', 
      name: 'Flames Royalty', 
      coins: 55000, 
@@ -612,15 +592,5 @@ const giftUrl = (path: string) => {
      icon: giftUrl('/gifts/elix_gold_universe.png'), 
      video: giftUrl('/gifts/elix_gold_universe.webm'), 
      preview: giftUrl('/gifts/elix_gold_universe.png'), 
-   }, 
-   { 
-     id: 'lightning_hypercar', 
-     name: 'Lightning Car', 
-     coins: 150000, 
-     giftType: 'big', 
-     isActive: true, 
-     icon: giftUrl('/gifts/lightning_hypercar.mp4'), // Using mp4 as icon if no png, or need to generate png 
-     video: giftUrl('/gifts/lightning_hypercar.mp4'), 
-     preview: giftUrl('/gifts/lightning_hypercar.mp4'), 
    }, 
  ];

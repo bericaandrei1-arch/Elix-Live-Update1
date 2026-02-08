@@ -263,6 +263,9 @@ export default function LiveChat({ streamId, currentUserId, onSendGift }: LiveCh
           <button
             onClick={() => setShowGiftPanel(!showGiftPanel)}
             className="p-3 bg-white rounded-full hover:bg-black transition"
+            aria-label="Open gift panel"
+            title="Open gift panel"
+            type="button"
           >
             <GiftIcon className="w-5 h-5 text-[#E6B36A]" />
           </button>

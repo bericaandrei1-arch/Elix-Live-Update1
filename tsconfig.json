@@ -33,5 +33,9 @@
   "include": [
     "src",
     "api"
+  ],
+  "exclude": [
+    "node_modules",
+    "node_modules_trash"
   ]
 }

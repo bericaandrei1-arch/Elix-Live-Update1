@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS booster_uses (
 );
 
 CREATE INDEX idx_booster_uses_battle ON booster_uses(battle_id, status, activated_at DESC);
-CREATE INDEX idx_booster_uses_user ON booster_uses(user_id, created_at DESC);
+CREATE INDEX idx_booster_uses_user ON booster_uses(user_id, activated_at DESC);
 CREATE INDEX idx_booster_uses_active ON booster_uses(room_id, status, expires_at) WHERE status = 'active';
 
 -- Booster cooldowns (per user per battle)
