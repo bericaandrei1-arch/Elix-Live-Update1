@@ -36,7 +36,6 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
           });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [muteAllSounds, videoSrc]);
 
   if (!videoSrc) return null;
@@ -45,9 +44,9 @@ export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
   const poster = isVideo ? pickFirstPosterCandidate(videoSrc) : undefined;
 
   return (
-    <div className="absolute left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)-20px)] z-[100] pointer-events-none flex justify-center">
+    <div className="absolute left-0 right-0 bottom-[calc(env(safe-area-inset-bottom)-10px)] z-[100] pointer-events-none flex justify-center">
       <div
-        className="w-full h-[40dvh] flex items-end justify-center overflow-hidden relative"
+        className="w-full h-[52vh] flex items-end justify-center overflow-hidden relative"
         style={{
           WebkitMaskImage: 'linear-gradient(to top, black 0%, black 62%, transparent 100%)',
           maskImage: 'linear-gradient(to top, black 0%, black 62%, transparent 100%)',

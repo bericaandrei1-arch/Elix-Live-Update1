@@ -36,15 +36,17 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     bottom: variant === 'overlay' ? 0 : undefined,
     left: variant === 'overlay' ? 0 : undefined,
     width: '100%',
+    maxWidth: '100%',
     height: variant === 'overlay' ? (compact ? '30dvh' : '40dvh') : '100%',
-    paddingLeft: '0px',
-    paddingRight: '16px',
+    paddingLeft: '12px',
+    paddingRight: '12px',
     paddingTop: '8px',
     boxSizing: 'border-box',
     background: 'transparent',
     WebkitFontSmoothing: 'antialiased',
     MozOsxFontSmoothing: 'grayscale',
     pointerEvents: 'none',
+    alignItems: 'flex-start', // Align messages to the left
   };
 
   const scrollStyle: React.CSSProperties = {
@@ -52,12 +54,12 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
-    gap: '3px',
+    gap: '4px',
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
     paddingLeft: '0px',
     marginLeft: '0px',
-    alignItems: 'flex-start',
+    alignItems: 'flex-start', // Align children to the left
     width: '100%',
     pointerEvents: 'auto',
   };
@@ -66,17 +68,17 @@ export function ChatOverlay({ messages, variant = 'panel', compact = false, clas
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    padding: '3px 10px',
+    padding: '4px 10px',
     paddingLeft: '8px',
     marginLeft: '0px',
     marginTop: '0px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-start', // Align content to the left
     width: 'auto',
     maxWidth: '90%',
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start', // Push message bubble to the left edge
     pointerEvents: 'auto',
-    background: 'rgba(0, 0, 0, 0.22)',
+    background: 'transparent',
     borderRadius: '8px',
   };
 

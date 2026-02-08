@@ -76,7 +76,7 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
 
   return (
     <>
-      {stillImage && (!active || failed || !loaded) ? (
+      {stillImage && (
         <img
           src={stillImage}
           alt=""
@@ -84,26 +84,6 @@ const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = (
           onError={() => {
             if (!resolvedPoster) return;
             setPosterFailed((prev) => new Set(prev).add(resolvedPoster));
-          }}
-        />
-      ) : null}
-      
-      {active && !failed && (
-        <video
-          ref={videoRef}
-          src={src}
-          poster={resolvedPoster ?? poster}
-          className={`w-full h-full object-contain p-1 pointer-events-none absolute inset-0 ${loaded ? '' : 'opacity-0'}`}
-          muted
-          loop
-          playsInline
-          preload="auto"
-          // Removed crossOrigin="anonymous" to allow opaque response (playing without CORS headers)
-          onLoadedData={() => setLoaded(true)}
-          onCanPlay={() => setLoaded(true)}
-          onError={(e) => {
-            console.error('Video error:', e);
-            setFailed(true);
           }}
         />
       )}
@@ -153,11 +133,13 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
 
   const posterByGiftId = useMemo(() => {
     const map = new Map<string, string | undefined>();
-    for (const g of [universeGift, ...bigGifts, ...smallGifts].filter(Boolean) as typeof GIFTS) {
-      map.set(g.id, isImageUrl(g.preview) ? g.preview : isImageUrl(g.icon) ? g.icon : undefined);
+    for (const g of giftsWithPrices) {
+      // Use icon as the primary static image for the panel
+      // Video is only used for overlay playback
+      map.set(g.id, g.icon);
     }
     return map;
-  }, [bigGifts, smallGifts, universeGift]);
+  }, [giftsWithPrices]);
 
   useEffect(() => {
     if (!inView) return;
@@ -228,13 +210,9 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 <button
                   key={universeGift.id}
                   onClick={() => {
-                    if (activeGiftId === universeGift.id) {
-                      setPoppedGiftId(universeGift.id);
-                      window.setTimeout(() => setPoppedGiftId((v) => (v === universeGift.id ? null : v)), 520);
-                      onSelectGift(universeGift);
-                    } else {
-                      setActiveGiftId(universeGift.id);
-                    }
+                    setPoppedGiftId(universeGift.id);
+                    window.setTimeout(() => setPoppedGiftId((v) => (v === universeGift.id ? null : v)), 520);
+                    onSelectGift(universeGift);
                   }}
                   onMouseEnter={() => setActiveGiftId(universeGift.id)}
                   onMouseLeave={() => setActiveGiftId((v) => (v === universeGift.id ? null : v))}
@@ -242,16 +220,18 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 >
                   <div
                     className={[
-                      "w-full aspect-square flex items-center justify-center bg-black rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
+                      "w-full aspect-square flex items-center justify-center bg-transparent rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
                       poppedGiftId === universeGift.id ? "elix-gift-pop" : "",
                     ].join(" ")}
                   >
-                    <GiftVideo
-                      src={universeGift.video}
-                      poster={posterByGiftId.get(universeGift.id)}
-                      active={inView && activeGiftId === universeGift.id}
-                    />
                     <div className="elix-gift-sparkle" />
+                    {universeGift.video && (
+                      <img
+                        src={posterByGiftId.get(universeGift.id) || ""}
+                        alt=""
+                        className="w-full h-full object-contain p-1 pointer-events-none absolute inset-0 z-10"
+                      />
+                    )}
                   </div>
                   <div className="text-center z-10">
                     <p className="text-[10px] text-white/90 font-medium truncate w-full mb-0.5 group-hover:text-white">
@@ -277,13 +257,9 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 <button
                   key={gift.id}
                   onClick={() => {
-                    if (activeGiftId === gift.id) {
-                      setPoppedGiftId(gift.id);
-                      window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
-                      onSelectGift(gift);
-                    } else {
-                      setActiveGiftId(gift.id);
-                    }
+                    setPoppedGiftId(gift.id);
+                    window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
+                    onSelectGift(gift);
                   }}
                   onMouseEnter={() => setActiveGiftId(gift.id)}
                   onMouseLeave={() => setActiveGiftId((v) => (v === gift.id ? null : v))}
@@ -291,12 +267,18 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 >
                   <div
                     className={[
-                      "w-full aspect-square flex items-center justify-center bg-black rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
+                      "w-full aspect-square flex items-center justify-center bg-transparent rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
                       poppedGiftId === gift.id ? "elix-gift-pop" : "",
                     ].join(" ")}
                   >
-                    <GiftVideo src={gift.video} poster={posterByGiftId.get(gift.id)} active={inView && activeGiftId === gift.id} />
                     <div className="elix-gift-sparkle" />
+                    {gift.video && (
+                      <img
+                        src={posterByGiftId.get(gift.id) || ""}
+                        alt=""
+                        className="w-full h-full object-contain p-1 pointer-events-none absolute inset-0 z-10"
+                      />
+                    )}
                   </div>
                   <div className="text-center z-10">
                     <p className="text-[10px] text-white/90 font-medium truncate w-full mb-0.5 group-hover:text-white">{gift.name}</p>
@@ -320,13 +302,9 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
               <button
                 key={gift.id}
                 onClick={() => {
-                  if (activeGiftId === gift.id) {
-                    setPoppedGiftId(gift.id);
-                    window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
-                    onSelectGift(gift);
-                  } else {
-                    setActiveGiftId(gift.id);
-                  }
+                  setPoppedGiftId(gift.id);
+                  window.setTimeout(() => setPoppedGiftId((v) => (v === gift.id ? null : v)), 520);
+                  onSelectGift(gift);
                 }}
                 onMouseEnter={() => setActiveGiftId(gift.id)}
                 onMouseLeave={() => setActiveGiftId((v) => (v === gift.id ? null : v))}
@@ -334,7 +312,7 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
               >
                 <div
                   className={[
-                    "w-full aspect-square flex items-center justify-center bg-white rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
+                    "w-full aspect-square flex items-center justify-center bg-transparent rounded-2xl shadow-inner group-hover:shadow-secondary/20 transition-all overflow-hidden relative elix-gift-idle border border-transparent",
                     poppedGiftId === gift.id ? "elix-gift-pop" : "",
                   ].join(" ")}
                 >

@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
+  X,
   Send,
   UsersRound,
   Search,
   Heart,
   Flame,
+  Link2,
   MessageCircle,
   Share2,
   RefreshCw,
@@ -13,8 +16,17 @@ import {
   MicOff,
   Settings2,
   LogOut,
+  Power,
+  ShoppingBag,
+  Pencil,
+  MoreHorizontal,
+  Gift,
+  MoreVertical,
   Volume2,
   VolumeX,
+  Users,
+  Play,
+  Zap,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GiftPanel, GIFTS } from '../components/EnhancedGiftPanel';
@@ -383,9 +395,17 @@ export default function LiveStream() {
   const updateUser = useAuthStore((s) => s.updateUser);
   const effectiveStreamId = streamId || 'broadcast';
   const PROMOTE_LIKES_THRESHOLD_LIVE = 10_000;
+  const _PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
-   
+  const giftPanelOpenedAtRef = useRef(0);
+  const openGiftPanel = useCallback(() => {
+    giftPanelOpenedAtRef.current = Date.now();
+    setShowGiftPanel(true);
+  }, []);
+  const closeGiftPanel = useCallback(() => {
+    setShowGiftPanel(false);
+  }, []);
   const [currentGift, setCurrentGift] = useState<string | null>(null);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [coinBalance, setCoinBalance] = useState(0);
@@ -417,7 +437,7 @@ export default function LiveStream() {
   const myAvatar = isBroadcast
     ? user?.avatar || `https://i.pravatar.cc/150?u=young_creator_2026`
     : `https://i.pravatar.cc/150?u=young_creator_2026`;
-  const [opponentCreatorName] = useState('Paul');
+  const [opponentCreatorName, setOpponentCreatorName] = useState('Paul');
   const viewerName = user?.username || user?.name || 'viewer_123';
   const viewerAvatar =
     user?.avatar || `https://i.pravatar.cc/150?u=${encodeURIComponent(viewerName)}`;
@@ -425,10 +445,13 @@ export default function LiveStream() {
 
   // FaceAR State
   const faceARCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [_faceARVideoEl, setFaceARVideoEl] = useState<HTMLVideoElement | null>(null);
+  const [_faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
+  const [battleGiftIconFailed, setBattleGiftIconFailed] = useState(false);
 
   useEffect(() => {
-    // if (videoRef.current) setFaceARVideoEl(videoRef.current);
-    // if (faceARCanvasRef.current) setFaceARCanvasEl(faceARCanvasRef.current);
+    if (videoRef.current) setFaceARVideoEl(videoRef.current);
+    if (faceARCanvasRef.current) setFaceARCanvasEl(faceARCanvasRef.current);
   }, [isBroadcast]);
 
   useEffect(() => {
@@ -587,7 +610,9 @@ export default function LiveStream() {
   };
 
   const filledSlots = battleSlots.filter(s => s.status !== 'empty');
+  const allFilledAccepted = filledSlots.length > 0 && filledSlots.every(s => s.status === 'accepted');
   const anySlotFilled = filledSlots.length > 0;
+  const allSlotsAccepted = allFilledAccepted;
 
   // Battle Mode State
   const [isBattleMode, setIsBattleMode] = useState(false);
@@ -600,7 +625,7 @@ export default function LiveStream() {
   const [giftTarget, setGiftTarget] = useState<'me' | 'opponent' | 'player3' | 'player4'>('me');
   const lastScreenTapRef = useRef<number>(0);
   const battleTapScoreRemainingRef = useRef<number>(5);
-  // const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
+  const [_battleTapScoreRemaining, setBattleTapScoreRemaining] = useState(5);
   const battleScoreTapWindowRef = useRef<{ windowStart: number; count: number }>({ windowStart: 0, count: 0 });
   const battleTripleTapRef = useRef<{ target: 'me' | 'opponent' | null; lastTapAt: number; count: number }>({
     target: null,
@@ -608,7 +633,7 @@ export default function LiveStream() {
     count: 0,
   });
   const [battleCountdown, setBattleCountdown] = useState<number | null>(null);
-  // const _battleKeyboardLikeArmedRef = useRef(true);
+  const _battleKeyboardLikeArmedRef = useRef(true);
   const [liveLikes, setLiveLikes] = useState(0);
 
   // Speed Challenge State
@@ -621,9 +646,18 @@ export default function LiveStream() {
   const speedChallengeTapsRef = useRef<Record<string, number>>({ me: 0, opponent: 0, player3: 0, player4: 0 });
   const [speedChallengeResult, setSpeedChallengeResult] = useState<string | null>(null);
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const speedChallengeActiveRef = useRef(false);
+  const speedMultiplierRef = useRef(1);
+  const roseCountRef = useRef(0);
+  const [roseCount, setRoseCount] = useState(0);
+
+  useEffect(() => { speedChallengeActiveRef.current = speedChallengeActive; }, [speedChallengeActive]);
+  useEffect(() => { speedMultiplierRef.current = speedMultiplier; }, [speedMultiplier]);
+
   const speedChallengeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSpeedChallengeRef = useRef<number>(0);
-  // const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
+  const reachedThresholdsRef = useRef<Set<number>>(new Set());
+  const [_battleGifterCoins, setBattleGifterCoins] = useState<Record<string, number>>({});
   // Track top gifters per player: { 'me': { 'username': coins }, 'opponent': {...}, ... }
   const [playerGifters, setPlayerGifters] = useState<Record<string, Record<string, number>>>({});
   const [floatingHearts, setFloatingHearts] = useState<
@@ -699,6 +733,7 @@ export default function LiveStream() {
       setBattleTime(300);
       setBattleWinner(null);
       setBattleCountdown(null);
+      reachedThresholdsRef.current.clear();
       battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
       battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
       setMiniProfile(null);
@@ -730,8 +765,8 @@ export default function LiveStream() {
     setGiftTarget('me');
     setShowGiftPanel(false);
     battleTapScoreRemainingRef.current = 5;
-    // setBattleTapScoreRemaining(5);
-    // setBattleGifterCoins({});
+    setBattleTapScoreRemaining(5);
+    setBattleGifterCoins({});
     setPlayerGifters({});
     setBattleCountdown(null); // Don't start countdown until all accept
     battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
@@ -760,6 +795,31 @@ export default function LiveStream() {
 
     return () => window.clearInterval(tick);
   }, [isBattleMode, battleCountdown]);
+
+  const startBattleWithCreator = (creatorName: string) => {
+    setOpponentCreatorName(creatorName);
+    // If not in battle mode yet, enter it first
+    if (!isBattleMode) {
+      setIsBattleMode(true);
+      setBattleTime(0);
+      setMyScore(0);
+      setOpponentScore(0);
+      setPlayer3Score(0);
+      setPlayer4Score(0);
+      setBattleWinner(null);
+      setGiftTarget('me');
+      setShowGiftPanel(false);
+      battleTapScoreRemainingRef.current = 5;
+      setBattleTapScoreRemaining(5);
+      setBattleGifterCoins({});
+      setBattleCountdown(null);
+      const params = new URLSearchParams(location.search);
+      params.set('battle', '1');
+      navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    }
+    // Invite the creator to a slot
+    inviteCreatorToSlot(creatorName);
+  };
 
   useEffect(() => {
     if (currentUniverse || universeQueue.length === 0) return;
@@ -813,44 +873,27 @@ export default function LiveStream() {
     });
   }, [isBattleMode, effectiveStreamId, setPromo]);
 
-  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, _isSpeedTap?: boolean) => {
+  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, isSpeedTap?: boolean) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
     
-    // Safety check: if this is a regular call but speed challenge is active,
-    // we must ensure we don't accidentally trigger the recursive loop if we were to add logic here.
-    // Currently, the recursive call happens in handleBattleTap, not here.
-    // BUT wait, if I add logic here that calls handleBattleTap (unlikely) or if handleBattleTap calls this...
-    
-    // The previous bug was in handleBattleTap calling awardBattlePoints which called handleBattleTap? No.
-    // It was handleBattleTap calling awardBattlePoints.
-    // And if awardBattlePoints ITSELF had logic to recurse... 
-    // Actually, looking at the code I read earlier:
-    // The recursive call was INSIDE handleBattleTap (which I fixed), 
-    // OR inside awardBattlePoints (which I need to check).
-    
-    // In the previous `read` output of `handleBattleTap`:
-    // if (speedChallengeActive) { ... awardBattlePoints(target, 2 * speedMultiplier); return; }
-    
-    // So handleBattleTap calls awardBattlePoints.
-    // Does awardBattlePoints call handleBattleTap? No.
-    // Does awardBattlePoints call ITSELF?
-    // Let's check the definition of awardBattlePoints again.
+    // Apply speed multiplier if active - using Refs to avoid stale closures
+    const finalPoints = speedChallengeActiveRef.current ? points * speedMultiplierRef.current : points;
     
     if (target === 'me') {
-      setMyScore((prev) => prev + points);
+      setMyScore((prev) => prev + finalPoints);
     } else if (target === 'opponent') {
-      setOpponentScore((prev) => prev + points);
+      setOpponentScore((prev) => prev + finalPoints);
     } else if (target === 'player3') {
-      setPlayer3Score((prev) => prev + points);
+      setPlayer3Score((prev) => prev + finalPoints);
     } else {
-      setPlayer4Score((prev) => prev + points);
+      setPlayer4Score((prev) => prev + finalPoints);
     }
   }, [isBattleMode, battleTime, battleWinner]);
 
   const addBattleGifterCoins = (username: string, coins: number, target?: string) => {
     if (!isBattleMode) return;
     if (!username || coins <= 0) return;
-    // setBattleGifterCoins((prev) => ({ ...prev, [username]: (prev[username] ?? 0) + coins }));
+    setBattleGifterCoins((prev) => ({ ...prev, [username]: (prev[username] ?? 0) + coins }));
     // Track per-player gifters
     const playerTarget = target || giftTarget;
     setPlayerGifters(prev => {
@@ -934,7 +977,7 @@ export default function LiveStream() {
     // Speed challenge taps - unlimited tapping during challenge
     if (speedChallengeActive) {
       setSpeedChallengeTaps(prev => ({ ...prev, [target]: (prev[target] ?? 0) + 1 }));
-      awardBattlePoints(target, 2 * speedMultiplier, true); // Mark as speed tap to avoid recursion
+      awardBattlePoints(target, 2, true); // Base 2 points, awardBattlePoints applies speedMultiplier
       return;
     }
 
@@ -942,10 +985,9 @@ export default function LiveStream() {
     if (battleTapScoreRemainingRef.current > 0 && !battleWinner && battleTime > 0) {
       awardBattlePoints(target, 5);
       battleTapScoreRemainingRef.current = 0;
-      // setBattleTapScoreRemaining(0);
+      setBattleTapScoreRemaining(0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [battleWinner, battleTime, speedChallengeActive]);
+  }, [battleWinner, battleTime, speedChallengeActive, awardBattlePoints]);
 
   // ─── SPEED CHALLENGE LOGIC ───
   const startSpeedChallenge = useCallback(() => {
@@ -953,7 +995,8 @@ export default function LiveStream() {
     if (speedChallengeActive || speedChallengeCountdown !== null || !isBattleMode || battleWinner) return;
     setSpeedChallengeTaps({ me: 0, opponent: 0, player3: 0, player4: 0 });
     setSpeedChallengeResult(null);
-    setSpeedMultiplier(1);
+    // Only reset multiplier to 1 if it's not already set (e.g. by score threshold)
+    setSpeedMultiplier(prev => prev > 1 ? prev : 1);
     setSpeedChallengeCountdown(3); // 3, 2, 1 countdown
   }, [speedChallengeActive, speedChallengeCountdown, isBattleMode, battleWinner, SPEED_CHALLENGE_ENABLED]);
 
@@ -985,7 +1028,7 @@ export default function LiveStream() {
     if (speedChallengeCountdown <= 0) {
       // Start the challenge
       setSpeedChallengeActive(true);
-      setSpeedChallengeTime(10);
+      setSpeedChallengeTime(60);
       setSpeedChallengeCountdown(null);
       // Removed automatic closing of gift panel - let user decide
       return;
@@ -1023,6 +1066,7 @@ export default function LiveStream() {
         // Auto-clear result after 3s
         setTimeout(() => setSpeedChallengeResult(null), 3000);
       }
+      setSpeedMultiplier(1);
       return;
     }
     const t = setTimeout(() => setSpeedChallengeTime(prev => prev - 1), 1000);
@@ -1058,7 +1102,52 @@ export default function LiveStream() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speedChallengeActive]);
 
-  // Auto-cycle multiplier during speed challenge (changes every 2-3s)
+  // Auto-start speed challenge when score thresholds are reached
+  useEffect(() => {
+    if (!SPEED_CHALLENGE_ENABLED || !isBattleMode || battleWinner) return;
+    
+    const totalScore = myScore + opponentScore + player3Score + player4Score;
+    
+    // Check thresholds: 500 -> x2, 1000 -> x3, 2000 -> x5
+    let targetMultiplier = 1;
+    let threshold = 0;
+    if (totalScore >= 2000) { targetMultiplier = 5; threshold = 2000; }
+    else if (totalScore >= 1000) { targetMultiplier = 3; threshold = 1000; }
+    else if (totalScore >= 500) { targetMultiplier = 2; threshold = 500; }
+    
+    if (targetMultiplier > 1 && !speedChallengeActive && speedChallengeCountdown === null) {
+      // Only trigger if we haven't reached this specific threshold yet
+      if (!reachedThresholdsRef.current.has(threshold)) {
+        reachedThresholdsRef.current.add(threshold);
+        setSpeedMultiplier(targetMultiplier);
+        startSpeedChallenge();
+      }
+    }
+  }, [myScore, opponentScore, player3Score, player4Score, isBattleMode, battleWinner, speedChallengeActive, speedChallengeCountdown, speedMultiplier, startSpeedChallenge]);
+
+  // Rose trigger effect
+  useEffect(() => {
+    if (!SPEED_CHALLENGE_ENABLED || !isBattleMode || battleWinner) return;
+    if (speedChallengeActive || speedChallengeCountdown !== null) return;
+
+    // Trigger x2 challenge if 30 roses are reached, x3 if 60, x5 if 100
+    let targetMultiplier = 1;
+    let threshold = 0;
+    if (roseCount >= 100) { targetMultiplier = 5; threshold = 10000; } // Using high threshold values to avoid conflict with score thresholds
+    else if (roseCount >= 60) { targetMultiplier = 3; threshold = 6000; }
+    else if (roseCount >= 30) { targetMultiplier = 2; threshold = 3000; }
+
+    if (targetMultiplier > 1) {
+      if (!reachedThresholdsRef.current.has(threshold)) {
+        reachedThresholdsRef.current.add(threshold);
+        setSpeedMultiplier(targetMultiplier);
+        startSpeedChallenge();
+      }
+    }
+  }, [roseCount, isBattleMode, battleWinner, speedChallengeActive, speedChallengeCountdown, startSpeedChallenge]);
+
+  // Auto-cycle multiplier during speed challenge (changes every 2-3s) - DISABLED to follow user's score-based rule
+  /*
   useEffect(() => {
     if (!speedChallengeActive) {
       setSpeedMultiplier(1);
@@ -1073,6 +1162,7 @@ export default function LiveStream() {
     const interval = setInterval(cycle, 2000 + Math.random() * 1000);
     return () => clearInterval(interval);
   }, [speedChallengeActive]);
+  */
 
   useEffect(() => {
     if (!isBattleMode) return;
@@ -1219,10 +1309,8 @@ export default function LiveStream() {
         // Set camera zoom to minimum for widest view
         try {
           const vTrack = stream.getVideoTracks()[0];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const caps = vTrack?.getCapabilities?.() as any;
           if (caps?.zoom) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await vTrack.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
           }
         } catch { /* zoom not supported */ }
@@ -1242,7 +1330,6 @@ export default function LiveStream() {
       cancelled = true;
       if (!keepStreamAliveOnCleanup) stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBattleMode, isBroadcast, cameraFacing]);
 
   useEffect(() => {
@@ -1414,14 +1501,11 @@ export default function LiveStream() {
     }, 240000);
     viewerTimersRef.current.push(churnStart as unknown as NodeJS.Timeout);
 
-    const currentViewerTimers = viewerTimersRef.current;
-    const currentChatTimers = chatTimersRef.current;
-
     return () => {
-      currentViewerTimers.forEach(t => clearTimeout(t));
+      viewerTimersRef.current.forEach(t => clearTimeout(t));
       allIntervals.forEach(t => clearInterval(t));
-      currentChatTimers.forEach(t => clearTimeout(t));
-      currentChatTimers.clear();
+      chatTimersRef.current.forEach(t => clearTimeout(t));
+      chatTimersRef.current.clear();
     };
   }, []);
 
@@ -1589,8 +1673,7 @@ export default function LiveStream() {
       giftReactionTimersRef.current.forEach(t => clearTimeout(t));
       giftReactionTimersRef.current = [];
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeViewers.length > 2, triggerGiftReactions]);
+  }, [activeViewers.length > 2, triggerGiftReactions]);
 
   // Organic viewer count fluctuation (slight random ±1-3)
   useEffect(() => {
@@ -1726,12 +1809,17 @@ export default function LiveStream() {
       maybeEnqueueUniverse(gift.name, viewerName);
       addBattleGifterCoins(viewerName, gift.coins);
 
+      // Rose trigger for Speed Challenge
+      if (gift.name.toLowerCase().includes('rose')) {
+        roseCountRef.current += 1;
+        setRoseCount(roseCountRef.current);
+      }
+
       if (isBattleMode && battleTime > 0 && !battleWinner) {
         awardBattlePoints(giftTarget, gift.coins);
       }
       
-      // Keep panel open for combo sending
-      // setShowGiftPanel(false);
+      setShowGiftPanel(false);
 
       if (isBroadcast && !isBattleMode) {
         maybeTriggerFaceARGift(gift);
@@ -1824,6 +1912,7 @@ export default function LiveStream() {
         return;
       }
 
+      let newLevel = userLevel;
       if (user?.id) {
         try {
           const { data, error } = await supabase.rpc('send_stream_gift', {
@@ -1842,8 +1931,9 @@ export default function LiveStream() {
             const row = Array.isArray(data) ? data[0] : data;
             if (row?.new_balance != null) setCoinBalance(Number(row.new_balance));
             if (row?.new_level != null) {
-              setUserLevel(Number(row.new_level));
-              updateUser({ level: Number(row.new_level) });
+              newLevel = Number(row.new_level);
+              setUserLevel(newLevel);
+              updateUser({ level: newLevel });
             }
             if (row?.new_xp != null) setUserXP(Number(row.new_xp));
           }
@@ -1854,55 +1944,98 @@ export default function LiveStream() {
         setCoinBalance(prev => Math.max(0, prev - lastSentGift.coins));
       }
 
-      // Update level/XP locally
-      const xpGained = lastSentGift.coins;
-      let currentXP = userXP + xpGained;
-      let currentLevel = userLevel;
-      while (true) {
-        const xpNeeded = currentLevel * 1000;
-        if (currentXP >= xpNeeded && currentLevel < 150) {
-          currentLevel++;
-          currentXP -= xpNeeded;
-        } else break;
-      }
-      setUserLevel(currentLevel);
-      setUserXP(currentXP);
-      updateUser({ level: currentLevel });
-      if (user?.id) {
-        supabase.from('profiles')
-          .update({ level: currentLevel, xp: currentXP })
-          .eq('user_id', user.id)
-          .then(() => {});
-      }
+      // Track session contribution for membership
+      setSessionContribution(prev => prev + lastSentGift.coins);
 
       maybeEnqueueUniverse(lastSentGift.name, viewerName);
       addBattleGifterCoins(viewerName, lastSentGift.coins);
 
+      // Rose trigger for Speed Challenge
+      if (lastSentGift.name.toLowerCase().includes('rose')) {
+        roseCountRef.current += 1;
+        setRoseCount(roseCountRef.current);
+      }
+
       if (isBattleMode && battleTime > 0 && !battleWinner) {
         awardBattlePoints(giftTarget, lastSentGift.coins);
       }
-
-      const newLevel = currentLevel;
-
-      setGiftQueue(prev => [...prev, lastSentGift.video]);
-      setComboCount(prev => prev + 1);
       
-      // Update chat (optional, or just show combo)
+      if (isBroadcast && !isBattleMode) {
+        maybeTriggerFaceARGift(lastSentGift);
+      }
+      
+      // Always queue the video animation for the sender/viewer to see immediate feedback
+      if (lastSentGift.video) {
+        setGiftQueue(prev => [...prev, lastSentGift.video]);
+      }
+      
+      // Add to chat
       const giftMsg = {
-        id: Date.now().toString(),
-        username: viewerName,
-        text: `Sent ${lastSentGift.name} x${comboCount + 1}`,
-        isGift: true,
-        level: newLevel
+          id: Date.now().toString(),
+          username: viewerName,
+          text: `Sent a ${lastSentGift.name}`,
+          isGift: true,
+          level: newLevel,
+          avatar: viewerAvatar,
       };
       setMessages(prev => [...prev, giftMsg]);
 
-      // Viewers react to combo gifts (50% chance to avoid spam)
-      if (Math.random() < 0.5) {
-        setTimeout(() => triggerGiftReactions(lastSentGift.name, viewerName), 800 + Math.random() * 1500);
+      // Viewers react to the gift being sent
+      setTimeout(() => triggerGiftReactions(lastSentGift.name, viewerName), 1000 + Math.random() * 2000);
+
+      // Handle Combo Logic
+      setComboCount(prev => prev + 1);
+      resetComboTimer();
+  };
+
+  const simulateIncomingGift = () => {
+      const randomGift = GIFTS[Math.floor(Math.random() * GIFTS.length)];
+      
+      // Use a real active viewer as the gifter (much more realistic)
+      let gifterName: string;
+      let gifterAvatar: string;
+      let gifterLevel: number | undefined;
+      if (activeViewers.length > 0) {
+        const gifter = activeViewers[Math.floor(Math.random() * activeViewers.length)];
+        gifterName = gifter.displayName;
+        gifterAvatar = gifter.avatar;
+        gifterLevel = gifter.level;
+      } else {
+        // Fallback for early stream before viewers join
+        const fallbackNames = ['Luna V.', 'Alex M.', 'Sofia B.'];
+        gifterName = fallbackNames[Math.floor(Math.random() * fallbackNames.length)];
+        gifterAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(gifterName)}`;
+      }
+      
+      const isFaceARGift = randomGift.id.startsWith('face_ar_');
+      if (!isFaceARGift && randomGift.video) {
+        setGiftQueue(prev => [...prev, randomGift.video]);
       }
 
-      resetComboTimer();
+      if (isBroadcast && !isBattleMode) {
+        maybeTriggerFaceARGift(randomGift);
+      }
+
+      maybeEnqueueUniverse(randomGift.name, gifterName);
+      addBattleGifterCoins(gifterName, randomGift.coins);
+
+      if (isBattleMode && battleTime > 0 && !battleWinner) {
+        const target = Math.random() > 0.5 ? 'me' : 'opponent';
+        awardBattlePoints(target, randomGift.coins);
+      }
+      
+      const giftMsg = {
+          id: Date.now().toString(),
+          username: gifterName,
+          text: `Sent a ${randomGift.name} ${randomGift.icon}`,
+          isGift: true,
+          level: gifterLevel,
+          avatar: gifterAvatar,
+      };
+      setMessages(prev => [...prev, giftMsg]);
+
+      // Other viewers react to the gift
+      setTimeout(() => triggerGiftReactions(randomGift.name, gifterName), 800 + Math.random() * 2000);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -1962,24 +2095,24 @@ export default function LiveStream() {
 
   const closeMiniProfile = () => setMiniProfile(null);
 
-  // const _startBattleMatch = () => {
-  //   if (!isBattleMode) return;
-  //   setMyScore(0);
-  //   setOpponentScore(0);
-  //   setBattleWinner(null);
-  //   setBattleGifterCoins({});
-  //   battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
-  //   setBattleTime(0);
-  //   setBattleCountdown(3);
-  // };
+  const _startBattleMatch = () => {
+    if (!isBattleMode) return;
+    setMyScore(0);
+    setOpponentScore(0);
+    setBattleWinner(null);
+    setBattleGifterCoins({});
+    battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
+    setBattleTime(0);
+    setBattleCountdown(3);
+  };
 
-  // const _closeBattleMatch = () => {
-  //   if (!isBattleMode) return;
-  //   setBattleCountdown(null);
-  //   setBattleTime(0);
-  //   const winner = determine4PlayerWinner();
-  //   setBattleWinner(winner);
-  // };
+  const _closeBattleMatch = () => {
+    if (!isBattleMode) return;
+    setBattleCountdown(null);
+    setBattleTime(0);
+    const winner = determine4PlayerWinner();
+    setBattleWinner(winner);
+  };
 
   // 2v2 Team Scores: Red Team (P1 + P3) vs Blue Team (P2 + P4)
   const redTeamScore = myScore + player3Score;
@@ -1990,46 +2123,47 @@ export default function LiveStream() {
   const universeText = currentUniverse
     ? `${currentUniverse.sender} sent ${universeGiftLabel} to ${currentUniverse.receiver}`
     : '';
+  const universeDurationSeconds = Math.max(6, Math.min(16, universeText.length * 0.12));
   const isLiveNormal = isBroadcast && !isBattleMode;
   const activeLikes = liveLikes;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="relative w-full h-[100dvh] md:w-[450px] md:h-[90vh] md:max-h-[850px] md:rounded-3xl bg-black overflow-hidden  border-none">
-      {/* Solid Black Background for the whole container */}
-      <div className="absolute inset-0 bg-black pointer-events-none z-0" />
-
-      {/* Live Video Placeholder or Camera Feed */}
-      <div ref={stageRef} className="relative w-full h-full">
-        {/* Floating red hearts on tap - straight line up with name */}
-        {floatingHearts.map((h) => (
-          <div
-            key={h.id}
-            className="absolute elix-heart-float z-[200] flex items-center gap-1.5"
-            style={{
-              left: h.x,
-              top: h.y,
-              '--elix-heart-dx': '0px',
-              '--elix-heart-rot': '0deg',
-            } as React.CSSProperties}
-          >
-            <svg width={h.size} height={h.size} viewBox="0 0 24 24" fill={h.color} stroke="none" className="flex-shrink-0">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-            {h.username && (
-              <span className="text-[#C8CCD4] text-[11px] font-bold whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                {h.username}
-              </span>
-            )}
-          </div>
-        ))}
-        
-        {/* Base Video Layer - Always Show for Broadcaster */}
-        {(!isBattleMode || isBroadcast) && (
+      <div className="relative w-full h-screen md:w-[450px] md:h-[90vh] md:max-h-[850px] md:rounded-3xl bg-black overflow-hidden border-none">
+        <div className="h-full w-full relative">
+        {/* BACKGROUND: VIDEO AREA (Unified frame) */}
+        <div className="absolute inset-0 z-0 bg-black overflow-hidden">
+          <div className="video-zone relative w-full h-full">
+            <div ref={stageRef} className="relative w-full h-full">
+            {/* FLOATING HEARTS */}
+            {floatingHearts.map((h) => (
+              <div
+                key={h.id}
+                className="absolute elix-heart-float z-[200] flex items-center gap-1.5"
+                style={{
+                  left: h.x,
+                  top: h.y,
+                  '--elix-heart-dx': '0px',
+                  '--elix-heart-rot': '0deg',
+                } as React.CSSProperties}
+              >
+                <svg width={h.size} height={h.size} viewBox="0 0 24 24" fill={h.color} stroke="none" className="flex-shrink-0">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                {h.username && (
+                  <span className="text-[#C8CCD4] text-[11px] font-bold whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                    {h.username}
+                  </span>
+                )}
+              </div>
+            ))}
+            
+            {/* Base Video Layer */}
+        {!isBattleMode && (
           <div
             className="relative w-full h-full"
             onPointerDown={(e) => {
-              if (isBattleMode && isBroadcast) return; // Battle overlay handles taps for broadcaster
+              if (isBattleMode && isBroadcast) return;
               if (e.target instanceof Element) {
                 const interactive = e.target.closest('button, a, input, textarea, select, [role="button"]');
                 if (interactive) return;
@@ -2047,7 +2181,7 @@ export default function LiveStream() {
             {isBroadcast ? (
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover transform scale-x-[-1]"
+                className="w-full h-full object-cover"
                 autoPlay
                 playsInline
                 muted
@@ -2072,7 +2206,7 @@ export default function LiveStream() {
               <>
                 <canvas
                   ref={faceARCanvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none transform scale-x-[-1]"
+                  className="absolute inset-0 w-full h-full pointer-events-none"
                 />
                 <FaceARGift
                   giftType={activeFaceARGift.type}
@@ -2105,11 +2239,66 @@ export default function LiveStream() {
               </div>
             )}
 
-            {/* ═══ SPEED CHALLENGE OVERLAY ═══ */}
-            {SPEED_CHALLENGE_ENABLED && speedChallengeCountdown !== null && (
-              <div className="absolute inset-0 z-[270] pointer-events-none flex items-center justify-center bg-black/40">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-[#E6B36A] text-[11px] font-bold uppercase tracking-widest">Speed Challenge</span>
+            {/* ═══ VIEWER LIST PANEL ═══ */}
+            {showViewerList && (
+              <div
+                className="absolute top-[68px] right-1 z-[150] pointer-events-auto max-h-[50vh] rounded-xl bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden animate-in slide-in-from-top duration-200"
+                style={{ width: '200px' }}
+                onPointerLeave={() => setShowViewerList(false)}
+              >
+                <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white font-bold text-[12px]">Viewers</span>
+                    <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 text-[9px] font-bold">{viewerCount.toLocaleString()}</span>
+                  </div>
+                  <button onClick={() => setShowViewerList(false)} title="Close viewer list" className="p-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+                <div className="max-h-[40vh] overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {activeViewers.map((v, idx) => {
+                    const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
+                    const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+                    return (
+                      <div key={v.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/5">
+                        <div className="relative flex-shrink-0">
+                          <img src={v.avatar} alt={v.displayName} className="w-8 h-8 rounded-full object-cover border border-white/10" />
+                          {idx < 10 && (
+                            <span className="absolute -top-0.5 -left-0.5 bg-[#E6B36A] text-black text-[6px] font-black w-3 h-3 rounded-full flex items-center justify-center">{idx + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-white text-[11px] font-semibold truncate">{v.displayName}</span>
+                            <span className="text-white/40 text-[9px]">{v.country}</span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[8px] font-bold text-[#E6B36A] bg-[#E6B36A]/10 px-1 py-px rounded-full">LVL {v.level}</span>
+                            {idx < 10 && donated > 0 && (
+                              <span className="text-[8px] font-bold text-[#FF2D55]">{formatCoinsShort(donated)}</span>
+                            )}
+                          </div>
+                        </div>
+                        <button className="px-2 py-0.5 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 text-[#E6B36A] text-[9px] font-bold hover:bg-[#E6B36A]/25 transition-colors">
+                          Follow
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {activeViewers.length === 0 && (
+                    <div className="py-6 text-center text-white/40 text-xs">
+                      Viewers are joining...
+                    </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SPEED CHALLENGE OVERLAY ═══ */}
+      {SPEED_CHALLENGE_ENABLED && speedChallengeCountdown !== null && (
+              <div className="absolute inset-x-0 bottom-32 z-[270] pointer-events-none flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl bg-black/60 backdrop-blur-xl border border-[#E6B36A]/30 shadow-[0_0_30px_rgba(230,179,106,0.2)]">
+                  <span className="text-[#E6B36A] text-[12px] font-bold uppercase tracking-widest">Speed Challenge</span>
                   <div className="text-white text-7xl font-black tabular-nums drop-shadow-[0_0_30px_rgba(230,179,106,1)] animate-pulse">
                     {speedChallengeCountdown}
                   </div>
@@ -2118,68 +2307,13 @@ export default function LiveStream() {
               </div>
             )}
 
-            {SPEED_CHALLENGE_ENABLED && speedChallengeActive && (
-              <>
-                {/* Top: Timer + Tap counters */}
-                <div className="absolute inset-x-0 top-0 z-[270] pointer-events-none flex flex-col items-center pt-2 gap-1">
-                  {/* Timer bar */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-[#E6B36A]/30">
-                    <span className="text-[#E6B36A] text-[9px] font-bold uppercase tracking-wider">⚡ Speed</span>
-                    <span className="text-white text-[14px] font-black tabular-nums">{speedChallengeTime}s</span>
-                    {speedMultiplier > 1 && (
-                      <span className="text-[#FF6B00] text-[11px] font-black">x{speedMultiplier}</span>
-                    )}
-                  </div>
-                  {/* Tap counters */}
-                  <div className="flex gap-3 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-md">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[8px] text-red-400 font-bold">{myCreatorName}</span>
-                      <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.me}</span>
-                    </div>
-                    {battleSlots[0].status === 'accepted' && (
-                      <div className="flex flex-col items-center">
-                        <span className="text-[8px] text-blue-400 font-bold">{opponentCreatorName || 'P2'}</span>
-                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.opponent}</span>
-                      </div>
-                    )}
-                    {battleSlots[1].status === 'accepted' && (
-                      <div className="flex flex-col items-center">
-                        <span className="text-[8px] text-green-400 font-bold">{battleSlots[1].name || 'P3'}</span>
-                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.player3}</span>
-                      </div>
-                    )}
-                    {battleSlots[2].status === 'accepted' && (
-                      <div className="flex flex-col items-center">
-                        <span className="text-[8px] text-purple-400 font-bold">{battleSlots[2].name || 'P4'}</span>
-                        <span className="text-white text-[13px] font-black tabular-nums">{speedChallengeTaps.player4}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Bottom center: Multiplier circles - auto-cycling */}
-                <div className="absolute inset-x-0 bottom-4 z-[270] pointer-events-none flex items-center justify-center gap-4">
-                  {[2, 3, 5].map((mult) => (
-                    <div
-                      key={mult}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-base transition-all duration-300 ${
-                        speedMultiplier === mult
-                          ? 'bg-[#FF6B00] text-white scale-125 shadow-[0_0_24px_rgba(255,107,0,0.7)] border-2 border-white/50 animate-pulse'
-                          : 'bg-black/50 text-white/30 border border-white/10 scale-90'
-                      }`}
-                    >
-                      x{mult}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
 
             {SPEED_CHALLENGE_ENABLED && speedChallengeResult && !speedChallengeActive && (
-              <div className="absolute inset-0 z-[270] pointer-events-none flex items-center justify-center">
-                <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-xl bg-black/70 backdrop-blur-md border border-[#E6B36A]/30">
-                  <span className="text-[#E6B36A] text-[10px] font-bold uppercase tracking-widest">⚡ Speed Challenge</span>
-                  <span className="text-white text-lg font-black drop-shadow-[0_0_15px_rgba(230,179,106,0.8)]">{speedChallengeResult}</span>
+              <div className="absolute inset-x-0 bottom-24 z-[270] pointer-events-none flex items-center justify-center">
+                <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-xl bg-black/70 backdrop-blur-md border border-[#E6B36A]/30 shadow-[0_0_20px_rgba(230,179,106,0.3)]">
+                  <span className="text-[#E6B36A] text-[10px] font-bold uppercase tracking-widest">⚡ Speed Challenge Result</span>
+                  <span className="text-white text-lg font-black drop-shadow-[0_0_15px_rgba(230,179,106,0.8)] animate-bounce">{speedChallengeResult}</span>
                 </div>
               </div>
             )}
@@ -2389,6 +2523,18 @@ export default function LiveStream() {
                   );
                 })}
               </div>
+
+              {/* Speed Challenge Timer - MOVED HERE between circles */}
+              {SPEED_CHALLENGE_ENABLED && speedChallengeActive && (
+                <div className="flex items-center gap-3 px-5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-[#E6B36A]/30 shadow-[0_0_15px_rgba(230,179,106,0.3)] animate-luxury-fade-in">
+                  <span className="text-[#E6B36A] text-[9px] font-bold uppercase tracking-[0.1em]">⚡ Speed</span>
+                  <span className="text-white text-[14px] font-black tabular-nums">{speedChallengeTime}s</span>
+                  {speedMultiplier > 1 && (
+                    <span className="text-[#FF6B00] text-[11px] font-black animate-pulse">x{speedMultiplier}</span>
+                  )}
+                </div>
+              )}
+
               {/* Right side - top gifters for P2 */}
               <div className="flex items-center -space-x-1.5">
                 {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
@@ -2401,308 +2547,288 @@ export default function LiveStream() {
                 })}
               </div>
             </div>
-
-            {/* Chat handled by outer ChatOverlay at z-[100] */}
           </div>
         )}
       </div>
+    </div>
+  </div>
 
-      {/* Rematch button moved to broadcaster bottom bar */}
+        <div className="relative z-10 h-full pointer-events-none">
+          {/* Full-screen Gift Overlay Animation */}
+          <GiftOverlay 
+            videoSrc={currentGift} 
+            onEnded={handleGiftEnded} 
+            isBattleMode={isBattleMode}
+          />
 
-      {/* Top Bar - Always show for broadcaster (both normal and battle mode) */}
-      {isBroadcast && (
-        <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
-          <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2px)' }}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="pointer-events-auto flex flex-col gap-2">
-                {/* BROADCASTER INFO - circle + capsule like LevelBadge */}
-                <div className="px-0 py-1 animate-luxury-fade-in -ml-2 relative">
-                  <div className="flex items-center relative">
-                    {/* Profile circle */}
-                    <div className="relative z-10 w-14 h-14 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
-                      <img src={myAvatar} alt={myCreatorName} className="w-full h-full object-cover" />
-                    </div>
-                    {/* Capsule with name + likes */}
-                    <div className="flex items-center -ml-4 pl-6 pr-3 h-8 rounded-full border border-white/60 bg-black/50" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, minWidth: '160px' }}>
-                      {/* Semicircle separator */}
-                      <div className="flex flex-col items-start">
-                        <span className="text-white text-[11px] font-bold truncate max-w-[90px] leading-tight">{myCreatorName}</span>
-                        <button
-                          type="button"
-                          className="flex items-center gap-0.5 pointer-events-auto"
-                          onPointerDown={(e) => {
-                            spawnHeartFromClient(e.clientX, e.clientY);
-                            addLiveLikes(1);
-                          }}
-                        >
-                          <Heart className="w-3 h-3 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
-                          <span className="text-white/70 text-[9px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
-                        </button>
-                      </div>
-                      {/* Membership heart - tap to toggle red & show membership bar */}
-                      {(() => {
-                        const activeIds = new Set(activeViewers.map(v => v.id));
-                        const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
-                        const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
-                        return (
-                          <button
-                            type="button"
-                            className="ml-2 flex-shrink-0 flex items-center gap-1 pointer-events-auto"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (showMembershipBar) closeMembershipBar(); else openMembershipBar();
-                            }}
-                          >
-                            <Heart
-                              className={`w-3.5 h-3.5 drop-shadow-[0_0_4px_rgba(255,45,85,0.6)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`}
-                              strokeWidth={2}
-                              fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'}
-                            />
-                            <div className="flex flex-col leading-none gap-px">
-                              <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
-                              <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
+          <div className="relative z-10 flex flex-col h-full pointer-events-none">
+            {/* TOP AREA: Overlays (Top Bar & Floating Buttons) */}
+            <div className="flex-[0_0_50vh] relative pointer-events-none">
+              {/* Top Bar */}
+              {isBroadcast ? (
+                <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
+                  <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2px)' }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="pointer-events-auto flex flex-col gap-2">
+                        {/* BROADCASTER INFO */}
+                        <div className="px-0 py-1 animate-luxury-fade-in -ml-2 relative">
+                          <div className="flex items-center relative">
+                            <div className="relative z-10 w-14 h-14 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
+                              <img src={myAvatar} alt={myCreatorName} className="w-full h-full object-cover" />
                             </div>
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pointer-events-auto flex items-center gap-2 mt-5">
-                {/* Active viewer avatars + viewer count */}
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center -space-x-1">
-                    {(activeViewers.length > 0 ? activeViewers.slice(0, 3) : VIEWER_POOL.slice(0, 3)).map((v, i) => {
-                      const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
-                      const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
-                      return (
-                        <div key={v.id} className="relative flex flex-col items-center" style={{ zIndex: 3 - i }}>
-                          <div className="relative w-7 h-7">
-                            <img
-                              src={v.avatar}
-                              alt={v.username}
-                              className="w-7 h-7 rounded-full border-[1.5px] border-black object-cover"
-                            />
-                            <span className="absolute bottom-0 inset-x-0 flex items-center justify-center text-white text-[5px] font-black leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{formatCoinsShort(donated)}</span>
+                            <div className="flex items-center -ml-4 pl-6 pr-3 h-8 rounded-full border border-white/60 bg-black/50" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, minWidth: '160px' }}>
+                              <div className="flex flex-col items-start">
+                                <span className="text-white text-[11px] font-bold truncate max-w-[90px] leading-tight">{myCreatorName}</span>
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-0.5 pointer-events-auto"
+                                    onPointerDown={(e) => {
+                                      spawnHeartFromClient(e.clientX, e.clientY);
+                                      addLiveLikes(1);
+                                    }}
+                                  >
+                                    <>
+                                      <Heart className="w-3 h-3 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
+                                      <span className="text-white/70 text-[9px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
+                                    </>
+                                  </button>
+                              </div>
+                              {(() => {
+                                const activeIds = new Set(activeViewers.map(v => v.id));
+                                const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
+                                const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
+                                return (
+                                  <button
+                                    type="button"
+                                    className="ml-2 flex-shrink-0 flex items-center gap-1 pointer-events-auto"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (showMembershipBar) closeMembershipBar(); else openMembershipBar();
+                                    }}
+                                  >
+                                    <Heart
+                                      className={`w-3.5 h-3.5 drop-shadow-[0_0_4px_rgba(255,45,85,0.6)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`}
+                                      strokeWidth={2}
+                                      fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'}
+                                    />
+                                    <div className="flex flex-col leading-none gap-px">
+                                      <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
+                                      <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
+                                    </div>
+                                  </button>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <button
-                    onClick={() => setShowViewerList(prev => !prev)}
-                    className="flex items-center gap-0.5"
-                    title="View all viewers"
-                  >
-                    <span className="text-white text-[11px] font-bold tabular-nums">{viewerCount.toLocaleString()}</span>
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={stopBroadcast}
-                  className="w-8 h-8 rounded-full bg-[#FF4D6A]/20 border border-[#FF4D6A]/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-                  title="End Live"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-                </button>
-              </div>
-            </div>
-            {currentUniverse && (
-              <div className="mt-0 pointer-events-auto">
-                <div
-                  key={currentUniverse.id} 
-                  className="h-5 rounded-md bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-2 gap-1 shadow-[0_0_20px_rgba(220,20,60,0.3)]"
-                >
-                  <span className="text-black text-[12px] font-extrabold tracking-wide truncate">✨ {universeText} ✨</span>
-                </div>
-              </div>
-            )}
+                      </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* ═══ VIEWER LIST PANEL ═══ */}
-      {showViewerList && (
-        <div
-          className="absolute top-[68px] right-1 z-[150] pointer-events-auto max-h-[50vh] rounded-xl bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden animate-in slide-in-from-top duration-200"
-          style={{ width: '200px' }}
-          onPointerLeave={() => setShowViewerList(false)}
-        >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-            <div className="flex items-center gap-1.5">
-              <span className="text-white font-bold text-[12px]">Viewers</span>
-              <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 text-[9px] font-bold">{viewerCount.toLocaleString()}</span>
-            </div>
-            <button onClick={() => setShowViewerList(false)} title="Close viewer list" className="p-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div className="max-h-[40vh] overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {activeViewers.map((v, idx) => {
-              const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
-              const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
-              return (
-                <div key={v.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/5">
-                  <div className="relative flex-shrink-0">
-                    <img src={v.avatar} alt={v.displayName} className="w-8 h-8 rounded-full object-cover border border-white/10" />
-                    {idx < 10 && (
-                      <span className="absolute -top-0.5 -left-0.5 bg-[#E6B36A] text-black text-[6px] font-black w-3 h-3 rounded-full flex items-center justify-center">{idx + 1}</span>
+                      <div className="pointer-events-auto flex items-center gap-2 mt-5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center -space-x-1">
+                            {(activeViewers.length > 0 ? activeViewers.slice(0, 3) : VIEWER_POOL.slice(0, 3)).map((v, i) => {
+                              const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
+                              const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+                              return (
+                                <div key={v.id} className="relative flex flex-col items-center" style={{ zIndex: 3 - i }}>
+                                  <div className="relative w-7 h-7">
+                                    <img src={v.avatar} alt={v.username} className="w-7 h-7 rounded-full border-[1.5px] border-black object-cover" />
+                                    <span className="absolute bottom-0 inset-x-0 flex items-center justify-center text-white text-[5px] font-black leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{formatCoinsShort(donated)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <button onClick={() => setShowViewerList(prev => !prev)} className="flex items-center gap-0.5">
+                            <span className="text-white text-[11px] font-bold tabular-nums">{viewerCount.toLocaleString()}</span>
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                        </div>
+                        <button type="button" onClick={stopBroadcast} className="w-8 h-8 rounded-full bg-[#FF4D6A]/20 border border-[#FF4D6A]/40 flex items-center justify-center">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                    {currentUniverse && (
+                      <div className="mt-0 pointer-events-auto px-2">
+                        <div className="h-5 rounded-md bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-2 gap-1">
+                          <span className="text-black text-[12px] font-extrabold tracking-wide truncate">✨ {universeText} ✨</span>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-white text-[11px] font-semibold truncate">{v.displayName}</span>
-                      <span className="text-white/40 text-[9px]">{v.country}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-[8px] font-bold text-[#E6B36A] bg-[#E6B36A]/10 px-1 py-px rounded-full">LVL {v.level}</span>
-                      {idx < 10 && donated > 0 && (
-                        <span className="text-[8px] font-bold text-[#FF2D55]">{formatCoinsShort(donated)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <button className="px-2 py-0.5 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 text-[#E6B36A] text-[9px] font-bold hover:bg-[#E6B36A]/25 transition-colors">
-                    Follow
-                  </button>
                 </div>
-              );
-            })}
-            {activeViewers.length === 0 && (
-              <div className="py-6 text-center text-white/40 text-xs">
-                Viewers are joining...
+              ) : (
+                <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
+                  <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="pointer-events-auto flex flex-col gap-1">
+                        {/* LUXURY CREATOR PROFILE BUTTON */}
+                        <button type="button" onClick={() => openMiniProfile(myCreatorName)} className="pr-3 pl-2 py-2 hover:scale-105 transition-all animate-luxury-fade-in">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <img src={myAvatar} alt={myCreatorName} className="w-11 h-11 rounded-full object-cover border-2 border-[#E6B36A] shadow-lg" />
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-2 border-black animate-premium-glow" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-white font-black text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <button type="button" className="flex items-center gap-1 pointer-events-auto" onPointerDown={(e) => { spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }}>
+                                  <Heart className="w-3.5 h-3.5 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
+                                  <span className="text-white/80 text-[10px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
+                                </button>
+                                {(() => {
+                                  const activeIds = new Set(activeViewers.map(v => v.id));
+                                  const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
+                                  const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
+                                  return (
+                                    <button type="button" className="flex items-center gap-1 ml-1 pointer-events-auto" onClick={(e) => { e.stopPropagation(); if (showMembershipBar) closeMembershipBar(); else openMembershipBar(); }}>
+                                      <Heart className={`w-3.5 h-3.5 drop-shadow-[0_0_3px_rgba(255,45,85,0.5)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`} strokeWidth={2} fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'} />
+                                      <div className="flex flex-col leading-none gap-px">
+                                        <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
+                                        <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
+                                      </div>
+                                    </button>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+
+                      <div className="pointer-events-auto flex flex-col items-center gap-2">
+                        <div className="h-9 px-3 flex items-center gap-2 animate-luxury-fade-in">
+                          <Flame className="w-4 h-4 text-[#E6B36A] animate-float" strokeWidth={2.5} />
+                          <span className="text-white text-xs font-black">Popular</span>
+                        </div>
+                      </div>
+
+                      <div className="pointer-events-auto flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setShowViewerList(prev => !prev)} className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+                            <div className="flex -space-x-1">
+                              {activeViewers.slice(0, 3).map(v => (
+                                <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
+                              ))}
+                            </div>
+                            <span className="text-white text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+                          </button>
+                          <button type="button" onClick={() => navigate('/')} className="w-10 h-10 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+                            <LogOut size={20} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    {currentUniverse && (
+                      <div className="mt-1 pointer-events-auto px-2">
+                        <div className="h-9 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-4 gap-2">
+                          <span className="text-white text-[14px] font-extrabold tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">✨ {universeText} ✨</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Floating Action Buttons */}
+              <div className="absolute right-3 bottom-4 z-[150] flex flex-col items-center gap-3 pointer-events-none">
+                <div className="flex flex-col items-center gap-3 pointer-events-auto">
+                  {/* Broadcaster buttons moved to bottom-right zone */}
+                </div>
               </div>
+            </div>
+
+            {/* MIDDLE ZONE: CHAT (Scrollable) */}
+            <div 
+              className={`chat-zone flex-1 overflow-y-auto pointer-events-auto relative ${isBattleMode ? 'mt-[4.0cm] mb-[1.4cm]' : 'bg-transparent'}`}
+            >
+            {isChatVisible && (
+              <ChatOverlay
+                messages={messages}
+                variant="panel"
+                onLike={() => addLiveLikes(1)}
+                onHeartSpawn={(cx, cy) => spawnHeartFromClient(cx, cy)}
+                onProfileTap={(username) => openMiniProfile(username)}
+              />
             )}
           </div>
-        </div>
-      )}
 
-      {!isBroadcast && (
-        <>
-        <div className="absolute top-0 left-0 right-0 z-[110] pointer-events-none">
-        <div className="px-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="pointer-events-auto flex flex-col gap-1">
-              {/* LUXURY CREATOR PROFILE BUTTON */}
-              <button type="button" onClick={() => openMiniProfile(myCreatorName)} className="pr-3 pl-2 py-2 hover:scale-105 transition-all animate-luxury-fade-in">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <img
-                      src={myAvatar}
-                      alt={myCreatorName}
-                      className="w-11 h-11 rounded-full object-cover border-2 border-[#E6B36A] shadow-lg"
-                    />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-2 border-black animate-premium-glow" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-white font-black text-[14px] truncate max-w-[160px]">{myCreatorName}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 pointer-events-auto"
-                        onPointerDown={(e) => {
-                          spawnHeartFromClient(e.clientX, e.clientY);
-                          addLiveLikes(1);
-                        }}
-                      >
-                        <Heart className="w-3.5 h-3.5 text-[#FF2D55]" strokeWidth={2.5} fill="#FF2D55" />
-                        <span className="text-white/80 text-[10px] font-bold tabular-nums">{activeLikes.toLocaleString()}</span>
-                      </button>
-                      {/* Membership heart - tap to toggle & show bar */}
-                      {(() => {
-                        const activeIds = new Set(activeViewers.map(v => v.id));
-                        const redCount = VIEWER_POOL.filter(v => activeIds.has(v.id) || (v.lastVisitDaysAgo ?? 0) < 2).length;
-                        const greyCount = VIEWER_POOL.filter(v => !activeIds.has(v.id) && (v.lastVisitDaysAgo ?? 0) >= 2).length;
-                        return (
-                          <button
-                            type="button"
-                            className="flex items-center gap-1 ml-1 pointer-events-auto"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (showMembershipBar) closeMembershipBar(); else openMembershipBar();
-                            }}
-                          >
-                            <Heart
-                              className={`w-3.5 h-3.5 drop-shadow-[0_0_3px_rgba(255,45,85,0.5)] transition-colors duration-300 ${membershipHeartActive ? 'text-[#FF2D55]' : 'text-[#E6B36A]'}`}
-                              strokeWidth={2}
-                              fill={membershipHeartActive ? '#FF2D55' : '#E6B36A'}
-                            />
-                            <div className="flex flex-col leading-none gap-px">
-                              <span className="text-[#FF2D55] text-[7px] font-bold tabular-nums">{redCount}</span>
-                              <span className="text-[#6B7280] text-[7px] font-bold tabular-nums">{greyCount}</span>
-                            </div>
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <div className="pointer-events-auto flex flex-col items-center gap-2">
-              {/* LUXURY POPULAR BADGE */}
-              <div className="h-9 px-3 flex items-center gap-2 animate-luxury-fade-in">
-                <Flame className="w-4 h-4 text-[#E6B36A] animate-float" strokeWidth={2.5} />
-                <span className="text-white text-xs font-black">Popular</span>
-              </div>
-              {!isBattleMode && isBroadcast && (
-                <button
-                  type="button"
-                  onClick={() => setIsFindCreatorsOpen(true)}
-                  className="pointer-events-auto  h-8 px-3 text-[#E6B36A] text-xs font-black flex items-center gap-2 hover:scale-105 transition-all"
-                >
-                  <UsersRound className="w-4 h-4" strokeWidth={2.5} />
-                  Find creators
+          {/* BOTTOM ZONE: INPUT (Fixed) */}
+          <div className="bottom-zone flex-none pointer-events-auto bg-transparent px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-2 min-h-[70px] flex items-center absolute bottom-0 left-0 right-0 z-[200]">
+        <div className="w-full max-w-[500px] mx-auto">
+          {/* Spectator Input & Actions */}
+          {!isBroadcast && (
+            <div className="flex items-center gap-3 w-full">
+              <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2 border border-white/10 h-10">
+                <input 
+                    type="text" 
+                    inputMode="text"
+                    enterKeyHint="send"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    placeholder="Say something..." 
+                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder:text-white/40 min-w-0"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                />
+                <button type="submit" className="text-[#E6B36A] hover:text-[#E6B36A]/80 transition flex-shrink-0" title="Send">
+                    <Send size={18} />
                 </button>
-              )}
-            </div>
-
-            <div className="pointer-events-auto flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                {/* Viewer count + avatars */}
-                <button
-                  onClick={() => setShowViewerList(prev => !prev)}
-                  className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1"
-                  title="Viewers"
-                >
-                  <div className="flex -space-x-1">
-                    {activeViewers.slice(0, 3).map(v => (
-                      <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
-                    ))}
-                  </div>
-                  <span className="text-white text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+              </form>
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button type="button" onClick={handleShare} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                  <Share2 size={18} className="text-white" />
                 </button>
-                <button
-                  type="button"
-                  onClick={isBroadcast ? stopBroadcast : () => navigate('/')}
-                  className="w-10 h-10 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-                >
-                  <LogOut size={20} strokeWidth={2.5} />
+                <button type="button" onClick={() => setShowGiftPanel(true)} className="w-10 h-10 rounded-full bg-[#E6B36A]/20 backdrop-blur-md border border-[#E6B36A]/40 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                  <Gift size={18} className="text-[#E6B36A]" />
                 </button>
-              </div>
-            </div>
-            </div>
-          </div>
-
-          {currentUniverse && (
-            <div className="mt-1 pointer-events-auto">
-              <div
-                key={currentUniverse.id}
-                className="h-9 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-red-700 border border-red-400/50 flex items-center justify-center px-4 gap-2 shadow-[0_0_20px_rgba(220,20,60,0.3)]"
-              >
-                <span className="text-white text-[14px] font-extrabold tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">✨ {universeText} ✨</span>
+                <button type="button" onPointerDown={(e) => { spawnHeartFromClient(e.clientX, e.clientY); addLiveLikes(1); }} className="w-10 h-10 rounded-full bg-[#FF2D55]/20 backdrop-blur-md border border-[#FF2D55]/40 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                  <Heart size={18} fill="#FF2D55" className="text-[#FF2D55]" />
+                </button>
               </div>
             </div>
           )}
 
+          {/* Broadcaster Spacer (allows keyboard to lift without UI clutter) */}
+          {isBroadcast && (
+            <div className="h-10 flex items-center justify-end gap-3 pointer-events-auto translate-y-[12px]">
+              {/* Added buttons bottom right for broadcaster - REORDERED: Invite, Gift, More */}
+              {isBattleMode && battleWinner && (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setBattleTime(180);
+                    setMyScore(0);
+                    setOpponentScore(0);
+                    setPlayer3Score(0);
+                    setPlayer4Score(0);
+                    setBattleWinner(null);
+                    setBattleCountdown(3);
+                    reachedThresholdsRef.current.clear();
+                  }} 
+                  className="px-4 h-10 rounded-full bg-green-600/20 backdrop-blur-md border border-green-500/40 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                >
+                  <RefreshCw size={20} className="text-green-500 mr-2" />
+                  <span className="text-green-500 text-xs font-bold">Rematch</span>
+                </button>
+              )}
+              <button type="button" onClick={() => { if (!isBattleMode) toggleBattle(); else setIsFindCreatorsOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
+                <Users size={20} className="text-[#4DA6FF]" />
+              </button>
+              <button type="button" onClick={() => { setGiftTarget('me'); setShowGiftPanel(true); }} className="w-10 h-10 rounded-full bg-[#E6B36A]/20 backdrop-blur-md border border-[#E6B36A]/40 flex items-center justify-center shadow-lg">
+                <Gift size={20} className="text-[#E6B36A]" />
+              </button>
+              <button type="button" onClick={() => setIsMoreMenuOpen(true)} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
+                <MoreVertical size={20} className="text-white" />
+              </button>
+            </div>
+          )}
         </div>
-        </>
-      )}
+      </div>
 
+      {/* MODALS & OVERLAYS */}
       {isFindCreatorsOpen && (
         <>
           <div
@@ -2829,26 +2955,35 @@ export default function LiveStream() {
               )}
             </div>
 
-            {/* Status bar */}
+            {/* Status bar & Start Button */}
             {battleSlots.some(s => s.status !== 'empty') && (
               <>
                 <div className="h-px bg-white/10" />
-                <div className="px-3 py-1.5 text-center">
-                  <span className="text-white/50 text-[9px] font-bold">
-                    {battleSlots.filter(s => s.status === 'accepted').length} accepted · {battleSlots.filter(s => s.status === 'invited').length} waiting
-                  </span>
+                <div className="px-3 py-2 flex flex-col gap-2">
+                  <div className="text-center">
+                    <span className="text-white/50 text-[9px] font-bold">
+                      {battleSlots.filter(s => s.status === 'accepted').length} accepted · {battleSlots.filter(s => s.status === 'invited').length} waiting
+                    </span>
+                  </div>
+                  
+                  {battleSlots.some(s => s.status === 'accepted') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBattleCountdown(3);
+                        setIsFindCreatorsOpen(false);
+                      }}
+                      className="w-full py-2 bg-green-600 hover:bg-green-500 text-white text-[11px] font-black rounded-lg shadow-lg active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                      Start Match
+                    </button>
+                  )}
                 </div>
               </>
             )}
           </div>
         </>
       )}
-
-      {/* Gift Overlay Animation */}
-      <GiftOverlay 
-        videoSrc={currentGift} 
-        onEnded={handleGiftEnded} 
-      />
 
       <AnimatePresence>
         {miniProfile && (
@@ -2924,26 +3059,6 @@ export default function LiveStream() {
       
       
 
-      {/* Chat Area */}
-      {isChatVisible && (
-        <ChatOverlay
-          messages={messages}
-          variant="overlay"
-          compact={isBroadcast && isBattleMode}
-          className={
-            isLiveNormal
-              ? "pb-[calc(84px+env(safe-area-inset-bottom))] z-[100]"
-              : isBroadcast && isBattleMode
-                ? "pb-[calc(56px+env(safe-area-inset-bottom))] z-[100]"
-                : !isBroadcast && isBattleMode
-                  ? "pb-[calc(60px+env(safe-area-inset-bottom))] z-[100]"
-                  : "pb-[calc(60px+env(safe-area-inset-bottom))] z-[100]"
-          }
-          onLike={() => addLiveLikes(1)}
-          onHeartSpawn={(cx, cy) => spawnHeartFromClient(cx, cy)}
-          onProfileTap={(username) => openMiniProfile(username)}
-        />
-      )}
 
       {/* Membership Heart Level Bar - slides down from profile bar */}
       {showMembershipBar && (
@@ -3029,276 +3144,6 @@ export default function LiveStream() {
       )}
 
 
-      {/* Combo Button Overlay */}
-      <AnimatePresence>
-        {showComboButton && lastSentGift && (
-            <motion.div 
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="absolute right-4 bottom-24 z-[170] flex flex-col items-center"
-            >
-                <button 
-                    onClick={handleComboClick}
-                    className="w-14 h-14 rounded-full bg-gradient-to-r from-secondary to-orange-500 flex flex-col items-center justify-center animate-pulse active:scale-90 transition-transform"
-                >
-                    <span className="text-lg font-black italic text-white drop-shadow-md">x{comboCount}</span>
-                    <span className="text-[8px] font-bold text-white uppercase tracking-widest">Combo</span>
-                </button>
-                <div className="mt-1 px-2 py-0.5 text-[10px] text-secondary font-bold">
-                    Send {lastSentGift.name}
-                </div>
-            </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Bottom Controls - Spectator bar */}
-      {!isBroadcast && (
-      <div className="absolute bottom-0 left-0 right-0 z-[110] px-2 pb-[calc(6px+env(safe-area-inset-bottom))]">
-        <div className="flex items-end gap-1.5">
-          {/* Chat Input */}
-          {!isPlayingGift && (
-            <form onSubmit={handleSendMessage} className="flex-1 bg-white/10 backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-2 border border-white/10">
-                <input 
-                    type="text" 
-                    inputMode="text"
-                    enterKeyHint="send"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    placeholder="Say something..." 
-                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder:text-white/40"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                />
-                <button type="submit" className="text-white/80 hover:text-white transition" title="Send">
-                    <Send size={18} />
-                </button>
-            </form>
-          )}
-
-          {/* Heart */}
-          <button
-              type="button"
-              onPointerDown={(e) => {
-                spawnHeartFromClient(e.clientX, e.clientY);
-                addLiveLikes(1);
-              }}
-              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-              title="Heart"
-          >
-              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#FF4D6A]/20 to-[#FF4D6A]/5 backdrop-blur-md border border-[#FF4D6A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(255,77,106,0.15)]">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="#FF4D6A" stroke="none">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              <span className="text-[9px] text-[#FF4D6A] font-semibold">Heart</span>
-          </button>
-
-          {/* Gift */}
-          <button
-              type="button"
-              onClick={() => setShowGiftPanel(true)}
-              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-              title="Gift"
-          >
-              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/20 to-[#E6B36A]/5 backdrop-blur-md border border-[#E6B36A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.15)]">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="8" width="18" height="13" rx="2"/>
-                  <path d="M12 8v13"/>
-                  <path d="M3 12h18"/>
-                  <path d="M12 8c-1.5-2-4-3-4-3s1.5-2 4 0c2.5-2 4 0 4 0s-2.5 1-4 3z"/>
-                </svg>
-              </div>
-              <span className="text-[9px] text-[#E6B36A] font-semibold">Gift</span>
-          </button>
-
-          {/* Share */}
-          <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void handleShare();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void handleShare();
-              }}
-              className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-              title="Share"
-          >
-              <div className="w-11 h-11 rounded-full bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-[0_0_12px_rgba(255,255,255,0.08)]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                  <polyline points="16 6 12 2 8 6"/>
-                  <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <span className="text-[9px] text-white/70 font-semibold">Share</span>
-          </button>
-        </div>
-      </div>
-      )}
-
-      {/* Bottom Controls - Always show for broadcaster */}
-      {isBroadcast && (
-        <div className="absolute bottom-0 left-0 right-0 z-[110] pointer-events-auto">
-          <div className="px-2 pb-[calc(6px+env(safe-area-inset-bottom))]">
-            <div className="flex items-end justify-end gap-3">
-                {/* Live Start Button */}
-                {!isBroadcast && (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/live/broadcast')}
-                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                    title="Go Live"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#FF2D55]/30 to-[#FF2D55]/10 backdrop-blur-md border border-[#FF2D55]/50 flex items-center justify-center shadow-[0_0_12px_rgba(255,45,85,0.25)]">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF2D55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="12" r="4"/>
-                      </svg>
-                    </div>
-                    <span className="text-[9px] text-[#FF2D55] font-semibold">Live</span>
-                  </button>
-                )}
-
-                {/* Invite - opens panel to add players (enters battle mode if needed) */}
-                <button
-                  type="button"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isBattleMode) {
-                      toggleBattle(); // enters battle mode + opens invite
-                    } else {
-                      setIsFindCreatorsOpen(true);
-                    }
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isBattleMode) {
-                      toggleBattle(); // enters battle mode + opens invite
-                    } else {
-                      setIsFindCreatorsOpen(true);
-                    }
-                  }}
-                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                  title="Invite"
-                >
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#4DA6FF]/20 to-[#4DA6FF]/5 backdrop-blur-md border border-[#4DA6FF]/30 flex items-center justify-center shadow-[0_0_12px_rgba(77,166,255,0.15)]">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4DA6FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="8.5" cy="7" r="4"/>
-                      <line x1="20" y1="8" x2="20" y2="14"/>
-                      <line x1="23" y1="11" x2="17" y2="11"/>
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-[#4DA6FF] font-semibold">Invite</span>
-                </button>
-
-                {/* Match - start the game (only when players ready, game not started) */}
-                {isBattleMode && !battleWinner && battleTime === 0 && battleCountdown === null && battleSlots.some(s => s.status === 'accepted') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsFindCreatorsOpen(false);
-                      setBattleCountdown(3);
-                    }}
-                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                    title="Match"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/30 to-[#E6B36A]/10 backdrop-blur-md border border-[#E6B36A]/50 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.25)]">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"/>
-                      </svg>
-                    </div>
-                    <span className="text-[9px] text-[#E6B36A] font-semibold">Match</span>
-                  </button>
-                )}
-
-                {/* Rematch - only when battle finished */}
-                {isBattleMode && battleWinner && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMyScore(0);
-                      setOpponentScore(0);
-                      setPlayer3Score(0);
-                      setPlayer4Score(0);
-                      setBattleWinner(null);
-                      setBattleTime(0);
-                      battleTapScoreRemainingRef.current = 5;
-                      // setBattleTapScoreRemaining(5);
-                      // setBattleGifterCoins({});
-                      setPlayerGifters({});
-                      setBattleCountdown(3);
-                    }}
-                    className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                    title="Rematch"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#00C851]/20 to-[#00C851]/5 backdrop-blur-md border border-[#00C851]/30 flex items-center justify-center shadow-[0_0_12px_rgba(0,200,81,0.15)]">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00C851" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 4v6h6"/>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                      </svg>
-                    </div>
-                    <span className="text-[9px] text-[#00C851] font-semibold">Rematch</span>
-                  </button>
-                )}
-
-                {/* Gift */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGiftTarget('me');
-                    setShowGiftPanel(true);
-                  }}
-                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                  title="Gift"
-                >
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-[#E6B36A]/20 to-[#E6B36A]/5 backdrop-blur-md border border-[#E6B36A]/30 flex items-center justify-center shadow-[0_0_12px_rgba(230,179,106,0.15)]">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="8" width="18" height="13" rx="2"/>
-                      <path d="M12 8v13"/>
-                      <path d="M3 12h18"/>
-                      <path d="M12 8c-1.5-2-4-3-4-3s1.5-2 4 0c2.5-2 4 0 4 0s-2.5 1-4 3z"/>
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-[#E6B36A] font-semibold">Gift</span>
-                </button>
-
-                {/* More */}
-                <button
-                  type="button"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsMoreMenuOpen(true);
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsMoreMenuOpen(true);
-                  }}
-                  className="flex flex-col items-center gap-0.5 hover:scale-105 active:scale-95 transition-all"
-                  title="More"
-                >
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-b from-white/15 to-white/5 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-[0_0_12px_rgba(255,255,255,0.08)]">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff">
-                      <circle cx="12" cy="5" r="2"/>
-                      <circle cx="12" cy="12" r="2"/>
-                      <circle cx="12" cy="19" r="2"/>
-                    </svg>
-                  </div>
-                  <span className="text-[9px] text-white/70 font-semibold">More</span>
-                </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isMoreMenuOpen && (
         <>
@@ -3322,6 +3167,42 @@ export default function LiveStream() {
             role="button"
             tabIndex={-1}
           >
+              {isBattleMode && battleWinner && isBroadcast && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBattleTime(180);
+                      setMyScore(0);
+                      setOpponentScore(0);
+                      setPlayer3Score(0);
+                      setPlayer4Score(0);
+                      setBattleWinner(null);
+                      setBattleCountdown(3);
+                      reachedThresholdsRef.current.clear();
+                      setIsMoreMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 flex items-center gap-2 text-green-500 hover:bg-white/5"
+                  >
+                    <RefreshCw className="w-4 h-4" strokeWidth={2} />
+                    <span className="text-[11px] font-semibold">Rematch</span>
+                  </button>
+                  <div className="h-px bg-white/10" />
+                </>
+              )}
+              {isBattleMode && isBroadcast && !battleWinner && battleTime > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { startSpeedChallenge(); setIsMoreMenuOpen(false); }}
+                    className="w-full px-3 py-2 flex items-center gap-2 text-[#E6B36A] hover:bg-white/5"
+                  >
+                    <Zap className="w-4 h-4" strokeWidth={2} />
+                    <span className="text-[11px] font-semibold text-yellow-400">Start Speed Challenge</span>
+                  </button>
+                  <div className="h-px bg-white/10" />
+                </>
+              )}
               <button
                 type="button"
                 disabled={!isBroadcast}
@@ -3384,7 +3265,7 @@ export default function LiveStream() {
       {/* Coin Reload Password Modal */}
       {showCoinModal && (
         <div
-          className="fixed inset-0 z-[800] bg-black/80 flex items-center justify-center"
+          className="absolute inset-0 z-[800] bg-black/80 flex items-center justify-center"
           onClick={() => setShowCoinModal(false)}
         >
           <div
@@ -3434,7 +3315,7 @@ export default function LiveStream() {
 
       {isLiveSettingsOpen && (
         <div
-          className="fixed inset-0 z-[710] bg-black"
+          className="absolute inset-0 z-[710] bg-black"
           onClick={() => setIsLiveSettingsOpen(false)}
           role="button"
           tabIndex={-1}
@@ -3508,12 +3389,12 @@ export default function LiveStream() {
       {showGiftPanel && (
         <>
           <div 
-            className="fixed inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40"
             style={{ zIndex: 99998 }}
             onClick={() => setShowGiftPanel(false)}
           />
           <div 
-            className="absolute bottom-0 left-0 right-0 w-full h-auto max-h-64 z-[99999]"
+            className="absolute bottom-0 left-0 right-0 h-[40dvh] z-[99999]"
           >
             <GiftPanel 
               onSelectGift={handleSendGift} 
@@ -3523,7 +3404,37 @@ export default function LiveStream() {
           </div>
         </>
       )}
-    </div>
+
+      {/* Combo Button Overlay - Moved to top-most layer */}
+      <AnimatePresence>
+        {showComboButton && lastSentGift && (
+            <motion.div 
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute right-4 bottom-[120px] z-[100000] flex flex-col items-center pointer-events-auto"
+            >
+                <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleComboClick();
+                    }}
+                    className="w-16 h-14 rounded-full bg-gradient-to-r from-secondary to-orange-500 flex flex-col items-center justify-center animate-pulse active:scale-90 transition-transform shadow-[0_0_20px_rgba(230,179,106,0.5)] border-2 border-white/30"
+                >
+                    <span className="text-xl font-black italic text-white drop-shadow-md">x{comboCount}</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-widest">Combo</span>
+                </button>
+                <div className="mt-1 px-3 py-1 text-[10px] text-secondary font-bold bg-black/60 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
+                    Send {lastSentGift.name}
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
