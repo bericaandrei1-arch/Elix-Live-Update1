@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
     "test": "vitest run",
-    "ws:server": "tsx server/websocket-server.ts",
+    "start": "tsx server/index.ts",
+    "ws:server": "tsx server/index.ts",
     "cap:sync": "npm run build && npx cap sync",
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
@@ -46,7 +47,9 @@
     "agora-rtc-sdk-ng": "^4.24.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "dotenv": "^17.2.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
     "framer-motion": "^12.29.0",
     "lucide-react": "^0.511.0",
     "opentok": "^2.23.1",
@@ -59,7 +62,6 @@
     "stripe": "^20.3.0",
     "tailwind-merge": "^3.4.0",
     "tsx": "^4.21.0",
-    "ws": "^8.19.0",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
@@ -67,9 +69,12 @@
     "@eslint/js": "^9.25.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.15.30",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-dev-locator": "^1.0.0",
@@ -87,6 +92,7 @@
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-trae-solo-badge": "^1.0.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.6"
+    "vitest": "^3.0.6",
+    "ws": "^8.19.0"
   }
 }

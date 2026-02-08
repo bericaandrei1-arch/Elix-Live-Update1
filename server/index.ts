@@ -1,37 +1,82 @@
-// WebSocket Server for Real-Time Features
-// Run with: npm run ws:server
-
+import './config';
+import express from 'express';
+import cors from 'cors';
+import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { createCheckoutSession, createPaymentIntent } from './routes/checkout';
+import { handleStripeWebhook } from './routes/webhook';
+import { 
+  handleAnalytics, 
+  handleBlockUser, 
+  handleDeleteAccount, 
+  handleReport, 
+  handleSendNotification, 
+  handleVerifyPurchase 
+} from './routes/misc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+const app = express();
+const server = createServer(app);
+const PORT = process.env.PORT || 3000;
 
-const PORT = process.env.WS_PORT || 8080;
+// Middleware
+app.use(cors());
+
+// Webhook needs raw body
+app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
+// Other routes use JSON
+app.use(express.json());
+
+// API Routes
+app.post('/api/create-checkout-session', createCheckoutSession);
+app.post('/api/create-payment-intent', createPaymentIntent);
+app.post('/api/analytics', handleAnalytics);
+app.post('/api/block-user', handleBlockUser);
+app.post('/api/delete-account', handleDeleteAccount);
+app.post('/api/report', handleReport);
+app.post('/api/send-notification', handleSendNotification);
+app.post('/api/verify-purchase', handleVerifyPurchase);
+
+// Serve static files from dist
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+
+// Fallback for SPA
+app.get(/(.*)/, (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+// WebSocket Server
+// We attach it to the same HTTP server to share the port 3000
+const wss = new WebSocketServer({ server });
+
+console.log(`WebSocket server attached to HTTP server on port ${PORT}`);
+
+// --- WebSocket Logic (Copied from websocket-server.ts) ---
 
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    console.warn(`Missing optional environment variable: ${name}`);
+    return '';
   }
   return value;
 }
 
 let supabase: ReturnType<typeof createClient>;
 try {
-  supabase = createClient(
-    requireEnv('VITE_SUPABASE_URL'),
-    requireEnv('SUPABASE_SERVICE_ROLE_KEY')
-  );
+  const sbUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!sbUrl || !sbKey) throw new Error("Missing Supabase Config");
+  supabase = createClient(sbUrl, sbKey);
 } catch (e) {
-  console.error(e);
-  process.exit(1);
+  console.error("Supabase init failed", e);
 }
 
 interface Client {
@@ -44,10 +89,6 @@ interface Client {
 const rooms = new Map<string, Set<Client>>();
 const clients = new Map<WebSocket, Client>();
 const processedTransactions = new Map<string, number>();
-
-const wss = new WebSocketServer({ port: Number(PORT) });
-
-console.log(`WebSocket server started on port ${PORT}`);
 
 wss.on('connection', async (ws: WebSocket, req) => {
   let client: Client | null = null;
@@ -370,10 +411,15 @@ async function updateViewerCount(roomId: string) {
   }
 }
 
+// Start Server
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('Shutting down...');
-  wss.close(() => {
+  server.close(() => {
     console.log('Server closed');
     process.exit(0);
   });

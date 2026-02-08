@@ -8,6 +8,7 @@ import { analytics } from './lib/analytics';
 import { notificationService } from './lib/notifications';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
+import { TouchBlockerDebug } from './components/TouchBlockerDebug';
 
 // Lazy-loaded page components for code splitting
 const VideoFeed = lazy(() => import('./pages/VideoFeed'));
@@ -138,6 +139,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-text font-sans">
+      {isDev && <TouchBlockerDebug />}
       <OfflineBanner />
       <main className={cn("min-h-screen", !isFullScreen && "pb-32")}>
         <ErrorBoundary>
