@@ -27,15 +27,15 @@ const hasApiKeys = () => {
 // Determine which API to use
 export const useRealApi = hasApiKeys();
 
-// if (isProd && !useRealApi) {
-//   throw new Error('Missing API configuration.');
-// }
+if (isProd && !useRealApi) {
+  console.error('[API] ❌ Missing API configuration in PRODUCTION. Mock data will NOT be served.');
+}
 
-const handleRealApiError = async <T,>(_error: unknown, fallback: () => Promise<T>): Promise<T> => {
-  // In production, try to use fallback if real API fails, or log error
+const handleRealApiError = async <T,>(error: unknown, fallback: () => Promise<T>): Promise<T> => {
   if (isProd) {
-    console.warn('API request failed in production, attempting fallback...');
-    return fallback();
+    console.error('[API] Production API request failed:', error);
+    // In production, propagate the error instead of serving mock data
+    throw error;
   }
   return fallback();
 };

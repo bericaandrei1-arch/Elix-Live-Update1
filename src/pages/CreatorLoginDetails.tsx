@@ -8,10 +8,8 @@ export default function CreatorLoginDetails() {
   const { user, signInWithPassword, signUpWithPassword, signOut, resendSignupConfirmation, authMode } = useAuthStore();
   const [rememberMe, setRememberMe] = useState(true);
   const [saveDetails, setSaveDetails] = useState(false);
-  const [savePassword, setSavePassword] = useState(false);
   const [savedIdentifier, setSavedIdentifier] = useState('');
   const [savedUsername, setSavedUsername] = useState('');
-  const [savedPassword, setSavedPassword] = useState('');
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -31,19 +29,15 @@ export default function CreatorLoginDetails() {
     setRememberMe(storedRemember === null ? true : storedRemember === 'true');
     const storedSave = window.localStorage.getItem('creator_save_login_details') === 'true';
     setSaveDetails(storedSave);
-    const storedSavePassword = window.localStorage.getItem('creator_save_password') === 'true';
-    setSavePassword(storedSavePassword);
     const identifier = window.localStorage.getItem('creator_saved_identifier') ?? '';
     const savedName = window.localStorage.getItem('creator_saved_username') ?? '';
-    const storedPassword = window.localStorage.getItem('creator_saved_password') ?? '';
     setSavedIdentifier(identifier);
     setSavedUsername(savedName);
-    setSavedPassword(storedPassword);
     setEmail(identifier);
     setUsername(savedName);
-    if (storedSavePassword && storedPassword) {
-      setPassword(storedPassword);
-    }
+    // Always clean up any previously stored password (legacy)
+    window.localStorage.removeItem('creator_saved_password');
+    window.localStorage.removeItem('creator_save_password');
   }, []);
 
   const persistSavedDetails = (nextEmail: string, nextUsername: string) => {
@@ -55,11 +49,11 @@ export default function CreatorLoginDetails() {
     setSavedUsername(nextUsername);
   };
 
-  const persistSavedPassword = (nextPassword: string) => {
-    const shouldSave = window.localStorage.getItem('creator_save_password') === 'true';
-    if (!shouldSave) return;
-    window.localStorage.setItem('creator_saved_password', nextPassword);
-    setSavedPassword(nextPassword);
+  const persistSavedPassword = (_nextPassword: string) => {
+    // SECURITY: Never persist passwords to localStorage
+    // Clean up any legacy stored password
+    window.localStorage.removeItem('creator_saved_password');
+    window.localStorage.removeItem('creator_save_password');
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -337,30 +331,13 @@ export default function CreatorLoginDetails() {
             />
           </label>
 
-          <label className="flex items-center justify-between p-4 bg-transparent5 border border-white/10 rounded-xl">
-            <span className="text-sm">Save password</span>
-            <input
-              type="checkbox"
-              checked={savePassword}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setSavePassword(next);
-                window.localStorage.setItem('creator_save_password', next ? 'true' : 'false');
-                if (!next) {
-                  window.localStorage.removeItem('creator_saved_password');
-                  setSavedPassword('');
-                }
-              }}
-            />
-          </label>
+          {/* Password saving disabled for security — rely on browser autofill */}
 
           <div className="p-4 bg-transparent5 border border-white/10 rounded-xl">
             <div className="text-xs text-white/60">Saved email</div>
             <div className="text-sm break-all">{savedIdentifier || '-'}</div>
             <div className="mt-3 text-xs text-white/60">Saved username</div>
             <div className="text-sm break-all">{savedUsername || '-'}</div>
-            <div className="mt-3 text-xs text-white/60">Saved password</div>
-            <div className="text-sm break-all">{savedPassword ? '••••••••' : '-'}</div>
 
             <button
               className="mt-4 w-full bg-transparent10 border border-white/10 rounded-xl py-2 text-sm"
@@ -370,7 +347,6 @@ export default function CreatorLoginDetails() {
                 window.localStorage.removeItem('creator_saved_password');
                 setSavedIdentifier('');
                 setSavedUsername('');
-                setSavedPassword('');
               }}
             >
               Clear saved details

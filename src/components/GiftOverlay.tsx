@@ -5,9 +5,10 @@ import { pickFirstPosterCandidate } from '../lib/giftPoster';
 interface GiftOverlayProps {
   videoSrc: string | null;
   onEnded: () => void;
+  isBattleMode?: boolean;
 }
 
-export function GiftOverlay({ videoSrc, onEnded }: GiftOverlayProps) {
+export function GiftOverlay({ videoSrc, onEnded, isBattleMode: _isBattleMode }: GiftOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { muteAllSounds } = useSettingsStore();
   const [videoPlaying, setVideoPlaying] = useState(false);

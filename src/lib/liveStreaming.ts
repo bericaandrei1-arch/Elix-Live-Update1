@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
 
+// Streaming server URLs — must be configured via env vars for production
+const STREAMING_RTMP_BASE = import.meta.env.VITE_STREAMING_RTMP_URL || '';
+const STREAMING_HLS_BASE = import.meta.env.VITE_STREAMING_HLS_URL || '';
+const STREAMING_WS_BASE = import.meta.env.VITE_STREAMING_WS_URL || '';
+
 export interface LiveStream {
   id: string;
   userId: string;
@@ -165,15 +170,15 @@ export class LiveStreamingManager {
   private async createStreamRecord(config: any): Promise<LiveStream> {
     const streamKey = this.generateStreamKey();
     const streamData = {
-      userId: 'current-user', // This should come from auth
+      userId: (await supabase.auth.getUser()).data.user?.id ?? 'anonymous',
       title: config.title,
       description: config.description,
       isLive: true,
       viewerCount: 0,
       startedAt: new Date(),
       streamKey,
-      rtmpUrl: `rtmp://streaming.example.com/live/${streamKey}`,
-      playbackUrl: `https://streaming.example.com/live/${streamKey}.m3u8`,
+      rtmpUrl: STREAMING_RTMP_BASE ? `${STREAMING_RTMP_BASE}/live/${streamKey}` : '',
+      playbackUrl: STREAMING_HLS_BASE ? `${STREAMING_HLS_BASE}/live/${streamKey}.m3u8` : '',
       tags: config.tags || [],
       category: config.category || 'General',
       isPrivate: config.isPrivate || false,
@@ -234,7 +239,11 @@ export class LiveStreamingManager {
 
   private async connectToChat(streamId: string): Promise<void> {
     // Connect to WebSocket for real-time chat
-    this.websocket = new WebSocket(`wss://chat.example.com/stream/${streamId}`);
+    if (!STREAMING_WS_BASE) {
+      console.warn('[LiveStreaming] VITE_STREAMING_WS_URL not configured — chat disabled');
+      return;
+    }
+    this.websocket = new WebSocket(`${STREAMING_WS_BASE}/stream/${streamId}`);
     
     this.websocket.onmessage = (event) => {
       const message = JSON.parse(event.data);

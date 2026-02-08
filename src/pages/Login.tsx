@@ -18,15 +18,13 @@ export default function Login() {
   const state = location.state as { from?: string } | null;
   const from = state?.from ?? '/';
 
-  // Load saved details on mount
+  // Load saved email on mount (NEVER save passwords to localStorage)
   useEffect(() => {
     const savedSaveDetails = window.localStorage.getItem('login_save_details') === 'true';
     const savedEmail = window.localStorage.getItem('login_saved_email') || '';
-    const savedPassword = window.localStorage.getItem('login_saved_password') || '';
     
     setSaveDetails(savedSaveDetails);
     if (savedEmail) setEmail(savedEmail);
-    if (savedSaveDetails && savedPassword) setPassword(savedPassword);
   }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -42,16 +40,16 @@ export default function Login() {
         return;
       }
 
-      // Save details if checkbox is checked
+      // Save email only if checkbox is checked (NEVER save password)
       if (saveDetails) {
         window.localStorage.setItem('login_saved_email', email.trim());
-        window.localStorage.setItem('login_saved_password', password);
         window.localStorage.setItem('login_save_details', 'true');
       } else {
         window.localStorage.removeItem('login_saved_email');
-        window.localStorage.removeItem('login_saved_password');
         window.localStorage.setItem('login_save_details', 'false');
       }
+      // Always clean up any previously stored password
+      window.localStorage.removeItem('login_saved_password');
 
       navigate(from, { replace: true });
     } catch {
@@ -116,12 +114,13 @@ export default function Login() {
                 window.localStorage.setItem('login_save_details', checked ? 'true' : 'false');
                 if (!checked) {
                   window.localStorage.removeItem('login_saved_email');
-                  window.localStorage.removeItem('login_saved_password');
                 }
+                // Always clean up any legacy password storage
+                window.localStorage.removeItem('login_saved_password');
               }}
               className="w-4 h-4 rounded border-white/20 bg-white/10 text-[#E6B36A] focus:ring-[#E6B36A]"
             />
-            <span className="text-sm text-white/70">Save email and password</span>
+            <span className="text-sm text-white/70">Remember my email</span>
           </label>
 
           {error && (
@@ -150,8 +149,11 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link to="/register" className="text-sm text-[#E6B36A] hover:underline">
+        <div className="mt-6 text-center space-y-2">
+          <Link to="/forgot-password" className="block text-sm text-white/60 hover:text-white hover:underline">
+            Forgot your password?
+          </Link>
+          <Link to="/register" className="block text-sm text-[#E6B36A] hover:underline">
             Don&apos;t have an account? Sign up
           </Link>
         </div>

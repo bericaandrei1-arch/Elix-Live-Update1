@@ -1,56 +1,70 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import VideoFeed from './pages/VideoFeed';
-import LiveStream from './pages/LiveStream';
-import LiveDiscover from './pages/LiveDiscover';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Upload from './pages/Upload';
-import Create from './pages/Create';
-// import Empty from './components/Empty';
 import { BottomNav } from './components/BottomNav';
 import { useAuthStore } from './store/useAuthStore';
 import { cn } from './lib/utils';
 import { useDeepLinks } from './lib/deepLinks';
 import { analytics } from './lib/analytics';
 import { notificationService } from './lib/notifications';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineBanner } from './components/OfflineBanner';
 
-import SavedVideos from './pages/SavedVideos';
-import MusicFeed from './pages/MusicFeed';
-import FollowingFeed from './pages/FollowingFeed';
-import SearchPage from './pages/SearchPage';
-import VideoView from './pages/VideoView';
-import Inbox from './pages/Inbox';
-import ChatThread from './pages/ChatThread';
-import FriendsFeed from './pages/FriendsFeed';
-import EditProfile from './pages/EditProfile';
-import Settings from './pages/Settings';
-import CreatorLoginDetails from './pages/CreatorLoginDetails';
-import AuthCallback from './pages/AuthCallback';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
-import Copyright from './pages/Copyright';
-import Legal from './pages/Legal';
-import LegalAudio from './pages/LegalAudio';
-import LegalUGC from './pages/LegalUGC';
-import LegalAffiliate from './pages/LegalAffiliate';
-import LegalDMCA from './pages/LegalDMCA';
-import LegalSafety from './pages/LegalSafety';
-import RequireAuth from './components/RequireAuth';
-import DesignSystem from './pages/DesignSystem';
-import Discover from './pages/Discover';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminUsers from './pages/admin/Users';
-import AdminReports from './pages/admin/Reports';
-import AdminEconomy from './pages/admin/Economy';
-import Hashtag from './pages/Hashtag';
-import BlockedAccounts from './pages/settings/BlockedAccounts';
-import SafetyCenter from './pages/settings/SafetyCenter';
-import PurchaseCoins from './pages/PurchaseCoins';
-import Report from './pages/Report';
-import Support from './pages/Support';
-import Guidelines from './pages/Guidelines';
+// Lazy-loaded page components for code splitting
+const VideoFeed = lazy(() => import('./pages/VideoFeed'));
+const LiveStream = lazy(() => import('./pages/LiveStream'));
+const LiveDiscover = lazy(() => import('./pages/LiveDiscover'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Upload = lazy(() => import('./pages/Upload'));
+const Create = lazy(() => import('./pages/Create'));
+const SavedVideos = lazy(() => import('./pages/SavedVideos'));
+const MusicFeed = lazy(() => import('./pages/MusicFeed'));
+const FollowingFeed = lazy(() => import('./pages/FollowingFeed'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const VideoView = lazy(() => import('./pages/VideoView'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const ChatThread = lazy(() => import('./pages/ChatThread'));
+const FriendsFeed = lazy(() => import('./pages/FriendsFeed'));
+const EditProfile = lazy(() => import('./pages/EditProfile'));
+const Settings = lazy(() => import('./pages/Settings'));
+const CreatorLoginDetails = lazy(() => import('./pages/CreatorLoginDetails'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Copyright = lazy(() => import('./pages/Copyright'));
+const Legal = lazy(() => import('./pages/Legal'));
+const LegalAudio = lazy(() => import('./pages/LegalAudio'));
+const LegalUGC = lazy(() => import('./pages/LegalUGC'));
+const LegalAffiliate = lazy(() => import('./pages/LegalAffiliate'));
+const LegalDMCA = lazy(() => import('./pages/LegalDMCA'));
+const LegalSafety = lazy(() => import('./pages/LegalSafety'));
+const RequireAuth = lazy(() => import('./components/RequireAuth'));
+const RequireAdmin = lazy(() => import('./components/RequireAdmin'));
+const DesignSystem = lazy(() => import('./pages/DesignSystem'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Discover = lazy(() => import('./pages/Discover'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminUsers = lazy(() => import('./pages/admin/Users'));
+const AdminReports = lazy(() => import('./pages/admin/Reports'));
+const AdminEconomy = lazy(() => import('./pages/admin/Economy'));
+const Hashtag = lazy(() => import('./pages/Hashtag'));
+const BlockedAccounts = lazy(() => import('./pages/settings/BlockedAccounts'));
+const SafetyCenter = lazy(() => import('./pages/settings/SafetyCenter'));
+const PurchaseCoins = lazy(() => import('./pages/PurchaseCoins'));
+const Report = lazy(() => import('./pages/Report'));
+const Support = lazy(() => import('./pages/Support'));
+const Guidelines = lazy(() => import('./pages/Guidelines'));
+
+// Loading fallback for lazy-loaded routes
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#D6A088] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function App() {
   const { checkUser, user, isAuthenticated, isLoading } = useAuthStore();
@@ -99,7 +113,9 @@ function App() {
     location.pathname === '/legal' ||
     location.pathname.startsWith('/legal/') ||
     location.pathname === '/guidelines' ||
-    location.pathname === '/support';
+    location.pathname === '/support' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password';
 
   // Show loading while checking auth
   if (isLoading) {
@@ -122,7 +138,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-text font-sans">
+      <OfflineBanner />
       <main className={cn("min-h-screen", !isFullScreen && "pb-32")}>
+        <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
           
@@ -141,6 +160,8 @@ function App() {
           <Route path="/legal/safety" element={<LegalSafety />} />
           <Route path="/guidelines" element={<Guidelines />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ═══ PROTECTED ROUTES (require auth) ═══ */}
           <Route element={<RequireAuth />}>
@@ -171,12 +192,16 @@ function App() {
             <Route path="/settings/blocked" element={<BlockedAccounts />} />
             <Route path="/settings/safety" element={<SafetyCenter />} />
             <Route path="/purchase-coins" element={<PurchaseCoins />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/economy" element={<AdminEconomy />} />
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/reports" element={<AdminReports />} />
+              <Route path="/admin/economy" element={<AdminEconomy />} />
+            </Route>
           </Route>
         </Routes>
+        </Suspense>
+        </ErrorBoundary>
       </main>
       {isAuthenticated && <BottomNav />}
     </div>

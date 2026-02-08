@@ -38,8 +38,10 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners = new Map<WebSocketEvent, Set<(data: any) => void>>();
   private roomId: string | null = null;
+  private token: string | null = null;
 
   connect(roomId: string, token: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -47,8 +49,9 @@ class WebSocketService {
     }
 
     this.roomId = roomId;
+    this.token = token;
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
-    this.ws = new WebSocket(`${wsUrl}/live/${roomId}?token=${token}`);
+    this.ws = new WebSocket(`${wsUrl}/live/${roomId}?token=${encodeURIComponent(token)}`);
 
     this.ws.onopen = () => {
       console.log('[WebSocket] Connected to room:', roomId);
@@ -75,11 +78,18 @@ class WebSocketService {
   }
 
   disconnect() {
+    // Clear any pending reconnect timer
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
+      this.ws.onclose = null; // Prevent reconnect on intentional close
       this.ws.close();
       this.ws = null;
     }
     this.roomId = null;
+    this.token = null;
     this.reconnectAttempts = 0;
   }
 
@@ -120,9 +130,15 @@ class WebSocketService {
 
     console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
 
-    setTimeout(() => {
-      if (this.roomId) {
-        this.connect(this.roomId, ''); // Token should be refreshed
+    // Clear any existing timer before setting a new one
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (this.roomId && this.token) {
+        this.connect(this.roomId, this.token);
       }
     }, delay);
   }

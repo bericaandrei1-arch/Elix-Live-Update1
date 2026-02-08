@@ -6,7 +6,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
@@ -23,6 +23,23 @@ export default async function handler(req: Request) {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  // Auth check: verify user identity via Supabase JWT
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: missing auth token' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  const token = authHeader.slice(7);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: invalid token' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const body: PurchaseRequest = await req.json();
     const { userId, packageId, provider, receipt, transactionId } = body;
@@ -32,6 +49,14 @@ export default async function handler(req: Request) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Ensure the userId matches the authenticated user
+    if (userId !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: userId does not match authenticated user' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
       );
     }
 

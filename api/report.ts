@@ -1,9 +1,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit } from './rate-limit';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceRole =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
 
@@ -32,6 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !data.user) {
     return res.status(401).json({ error: 'Invalid auth token' });
+  }
+
+  // Rate limit: max 10 reports per hour
+  const rateCheck = checkRateLimit(data.user.id, 'report:create');
+  if (!rateCheck.allowed) {
+    return res.status(429).json({ error: 'Too many reports', retryAfter: rateCheck.retryAfter });
   }
 
   const body = (req.body ?? {}) as ReportBody;

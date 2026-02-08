@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { Check, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { trackEvent } from '../lib/analytics';
+import { getPaymentMethod, isStripeAllowed } from '../lib/platform';
+import { purchaseProduct, type IAPProductId } from '../lib/iap';
 
 interface CoinPackage {
   id: string;
@@ -64,10 +66,38 @@ export default function PurchaseCoins() {
         price: pkg.price_usd,
       });
 
-      // In a real app, this would trigger Apple/Google IAP
-      // For now, we'll simulate with Stripe or direct purchase
+      const paymentMethod = getPaymentMethod();
 
-      // Call Stripe checkout or IAP
+      if (paymentMethod === 'apple-iap' && pkg.apple_product_id) {
+        // iOS — use Apple In-App Purchase
+        const result = await purchaseProduct(pkg.apple_product_id as IAPProductId);
+        if (!result.success) {
+          throw new Error(result.error || 'IAP purchase failed');
+        }
+        // Coins are credited server-side via receipt validation
+        alert('Purchase successful! Coins have been added to your account.');
+        setLoading(false);
+        setSelectedPackage(null);
+        return;
+      }
+
+      if (paymentMethod === 'google-play' && pkg.google_product_id) {
+        // Android — use Google Play Billing
+        const result = await purchaseProduct(pkg.google_product_id as IAPProductId);
+        if (!result.success) {
+          throw new Error(result.error || 'Play Store purchase failed');
+        }
+        alert('Purchase successful! Coins have been added to your account.');
+        setLoading(false);
+        setSelectedPackage(null);
+        return;
+      }
+
+      // Web — use Stripe checkout
+      if (!isStripeAllowed()) {
+        throw new Error('Purchases are not available on this platform. Please use the app.');
+      }
+
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
@@ -93,7 +123,7 @@ export default function PurchaseCoins() {
       window.location.href = url;
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Purchase failed. Please try again.');
+      alert(error instanceof Error ? error.message : 'Purchase failed. Please try again.');
       setLoading(false);
       setSelectedPackage(null);
     }

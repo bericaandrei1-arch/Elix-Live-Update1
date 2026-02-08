@@ -5,7 +5,6 @@ import { BuyCoinsModal } from './BuyCoinsModal';
 
 import { GIFTS as BASE_GIFTS } from './GiftPanel';
 import { fetchGiftPriceMap } from '../lib/giftsCatalog';
-import { getPosterCandidatesFromVideoSrc, pickFirstPosterCandidate } from '../lib/giftPoster';
 
 export const GIFTS = BASE_GIFTS;
 
@@ -38,62 +37,9 @@ function useInView<T extends Element>(options?: IntersectionObserverInit) {
   return { ref, inView };
 }
 
-function isImageUrl(url: string) {
-  return /^data:image\//i.test(url) || /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(url);
-}
-
-const GiftVideo: React.FC<{ src: string; poster?: string; active: boolean }> = ({ src, poster, active }) => {
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [posterFailed, setPosterFailed] = useState<Set<string>>(() => new Set());
-  const posterCandidates = useMemo(() => getPosterCandidatesFromVideoSrc(src), [src]);
-  // Use 'poster' prop as the first fallback if provided, to avoid black screen
-  const resolvedPoster = poster ?? posterCandidates.find((p) => !posterFailed.has(p)) ?? pickFirstPosterCandidate(src);
-
-  useEffect(() => {
-    setLoaded(false);
-  }, [src]);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-
-    if (failed) {
-      el.pause();
-      return;
-    }
-
-    if (!active) {
-      el.pause();
-      return;
-    }
-
-    el.play().catch(() => {});
-  }, [active, failed]);
-
-  const stillImage = poster ?? resolvedPoster;
-
-  return (
-    <>
-      {stillImage && (
-        <img
-          src={stillImage}
-          alt=""
-          className="w-full h-full object-contain p-1 pointer-events-none absolute inset-0 z-10"
-          onError={() => {
-            if (!resolvedPoster) return;
-            setPosterFailed((prev) => new Set(prev).add(resolvedPoster));
-          }}
-        />
-      )}
-    </>
-  );
-};
-
 export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }: GiftPanelProps) {
   const [activeTab, setActiveTab] = useState<'exclusive' | 'small' | 'big'>('big');
-  const [activeGiftId, setActiveGiftId] = useState<string | null>(null);
+  const [_activeGiftId, setActiveGiftId] = useState<string | null>(null);
   const [poppedGiftId, setPoppedGiftId] = useState<string | null>(null);
   const [showRecharge, setShowRecharge] = useState(false);
   const { ref: panelRef, inView } = useInView<HTMLDivElement>({ root: null, threshold: 0.05 });

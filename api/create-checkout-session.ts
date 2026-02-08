@@ -1,10 +1,14 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
+import { checkRateLimit } from './rate-limit';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2026-01-28.clover',
-});
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  console.error('[create-checkout-session] STRIPE_SECRET_KEY is not set in server environment');
+}
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, { apiVersion: '2026-01-28.clover' })
+  : (null as unknown as Stripe);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -12,6 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    if (!stripe) {
+      return res.status(500).json({ error: 'Stripe is not configured' });
+    }
+
     const { coinPackage, userId } = req.body ?? {};
     const headerUserId = req.headers['x-user-id'] as string | undefined;
     const effectiveUserId = (typeof userId === 'string' && userId.trim()) || headerUserId;
@@ -23,7 +31,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing user id' });
     }
 
-    // Create Checkout Session
+    // Rate limit: prevent checkout spam
+    const rateCheck = checkRateLimit(effectiveUserId, 'gift:send');
+    if (!rateCheck.allowed) {
+      return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter });
+    }
+
+    // Server-side price lookup — NEVER trust client-supplied prices
+    const SERVER_COIN_PACKAGES: Record<string, { coins: number; price: number; label: string }> = {
+      coins_100:  { coins: 100,  price: 0.99,  label: '100 Coins' },
+      coins_500:  { coins: 500,  price: 4.99,  label: '500 Coins' },
+      coins_1000: { coins: 1000, price: 9.99,  label: '1,000 Coins' },
+      coins_5000: { coins: 5000, price: 49.99, label: '5,000 Coins' },
+    };
+
+    const verifiedPackage = SERVER_COIN_PACKAGES[coinPackage.id];
+    if (!verifiedPackage) {
+      return res.status(400).json({ error: 'Invalid coin package id' });
+    }
+
+    // Create Checkout Session with server-verified price
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -31,10 +58,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: coinPackage.label,
-              description: `${coinPackage.coins} coins for ElixStarLive`,
+              name: verifiedPackage.label,
+              description: `${verifiedPackage.coins} coins for ElixStarLive`,
             },
-            unit_amount: Math.round(coinPackage.price * 100), // Convert to cents
+            unit_amount: Math.round(verifiedPackage.price * 100),
           },
           quantity: 1,
         },
@@ -45,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       client_reference_id: effectiveUserId,
       metadata: {
         coinPackageId: coinPackage.id,
-        coins: coinPackage.coins.toString(),
+        coins: verifiedPackage.coins.toString(),
         userId: effectiveUserId,
       },
     });

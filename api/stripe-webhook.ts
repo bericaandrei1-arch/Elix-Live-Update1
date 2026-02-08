@@ -2,14 +2,19 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2026-01-28.clover',
-});
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  console.error('[stripe-webhook] STRIPE_SECRET_KEY is not set in server environment');
+}
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, { apiVersion: '2026-01-28.clover' })
+  : (null as unknown as Stripe);
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceRole =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseServiceRole) {
+  console.error('[stripe-webhook] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set');
+}
 
 const supabase = createClient(
   supabaseUrl,
@@ -23,11 +28,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const isProd = process.env.NODE_ENV === 'production';
   const sig = req.headers['stripe-signature'] as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.VITE_STRIPE_WEBHOOK_SECRET || '';
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
   let event: Stripe.Event;
 
   try {
+    if (!stripe) {
+      return res.status(500).json({ error: 'Stripe is not configured' });
+    }
+
     const rawBody =
       typeof req.body === 'string'
         ? Buffer.from(req.body)
@@ -40,18 +49,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } else {
-      if (sig && webhookSecret) {
-        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-      } else {
-        event = req.body as Stripe.Event;
+      // In non-production, still require signature verification if available
+      if (!sig || !webhookSecret) {
+        console.error('[stripe-webhook] Non-production: Missing signature or webhook secret. Rejecting request.');
+        return res.status(400).json({ error: 'Webhook signature verification required' });
       }
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     }
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
-    if (isProd) {
-      return res.status(400).json({ error: 'Invalid signature' });
-    }
-    event = req.body as Stripe.Event;
+    return res.status(400).json({ error: 'Invalid signature' });
   }
 
   try {
@@ -80,11 +87,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function creditCoinsFallbackUsers(userId: string, coins: number) {
-  const { data: user } = await supabase.from('users').select('coin_balance').eq('id', userId).single();
-  const currentBalance = Number((user as { coin_balance?: number } | null)?.coin_balance || 0);
-  const newBalance = currentBalance + coins;
-  await supabase.from('users').update({ coin_balance: newBalance }).eq('id', userId);
-  return newBalance;
+  // Use atomic increment to avoid race conditions with concurrent webhooks
+  const { data, error } = await supabase.rpc('increment_coin_balance', {
+    p_user_id: userId,
+    p_amount: coins,
+  });
+  if (error) {
+    console.warn('[Webhook] RPC increment_coin_balance failed, falling back:', error.message);
+    const { data: user } = await supabase.from('users').select('coin_balance').eq('id', userId).single();
+    const currentBalance = Number((user as { coin_balance?: number } | null)?.coin_balance || 0);
+    const newBalance = currentBalance + coins;
+    await supabase.from('users').update({ coin_balance: newBalance }).eq('id', userId);
+    return newBalance;
+  }
+  return data;
 }
 
 async function insertPurchaseTransaction(row: Record<string, unknown>) {

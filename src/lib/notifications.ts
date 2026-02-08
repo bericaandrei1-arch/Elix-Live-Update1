@@ -8,6 +8,24 @@ import { trackEvent } from './analytics';
 class NotificationService {
   private isInitialized = false;
   private deviceToken: string | null = null;
+  private autoRemoveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Escape HTML to prevent XSS in banner innerHTML */
+  private escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  /** Only allow same-origin or relative URLs to prevent open redirects */
+  private isSafeUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      return parsed.origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }
 
   /**
    * Initialize push notifications
@@ -107,8 +125,8 @@ class NotificationService {
       action_url: data?.action_url,
     });
 
-    // Navigate based on notification data
-    if (data?.action_url) {
+    // Navigate based on notification data (only same-origin)
+    if (data?.action_url && this.isSafeUrl(data.action_url)) {
       window.location.href = data.action_url;
     }
   }
@@ -120,6 +138,8 @@ class NotificationService {
     // Create temporary notification element
     const banner = document.createElement('div');
     banner.className = 'fixed top-4 left-4 right-4 bg-black/90 backdrop-blur-sm rounded-2xl p-4 shadow-2xl z-50 animate-slide-down';
+    const safeTitle = this.escapeHtml(notification.title || '');
+    const safeBody = this.escapeHtml(notification.body || '');
     banner.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-[#E6B36A] rounded-full flex items-center justify-center flex-shrink-0">
@@ -128,24 +148,28 @@ class NotificationService {
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-white mb-1">${notification.title || ''}</p>
-          <p class="text-sm text-white/80">${notification.body || ''}</p>
+          <p class="font-bold text-white mb-1">${safeTitle}</p>
+          <p class="text-sm text-white/80">${safeBody}</p>
         </div>
       </div>
     `;
 
     document.body.appendChild(banner);
 
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
+    // Auto-remove after 5 seconds, track timer for cleanup
+    if (this.autoRemoveTimer) clearTimeout(this.autoRemoveTimer);
+    this.autoRemoveTimer = setTimeout(() => {
       banner.remove();
+      this.autoRemoveTimer = null;
     }, 5000);
 
     // Remove on click
     banner.addEventListener('click', () => {
       banner.remove();
-      if (notification.data?.action_url) {
-        window.location.href = notification.data.action_url;
+      if (this.autoRemoveTimer) { clearTimeout(this.autoRemoveTimer); this.autoRemoveTimer = null; }
+      const actionUrl = notification.data?.action_url;
+      if (actionUrl && this.isSafeUrl(actionUrl)) {
+        window.location.href = actionUrl;
       }
     });
   }

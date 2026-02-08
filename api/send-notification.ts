@@ -7,7 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
@@ -23,6 +23,16 @@ interface NotificationRequest {
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
+  }
+
+  // Auth check: require a valid server-side API key
+  const authHeader = req.headers.get('authorization');
+  const serverApiKey = process.env.INTERNAL_API_KEY;
+  if (!serverApiKey || !authHeader || authHeader !== `Bearer ${serverApiKey}`) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   try {

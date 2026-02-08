@@ -97,8 +97,8 @@ const getAuthErrorMessage = (error: unknown) => {
 const LOCAL_USERS_KEY = 'elix_local_users_v1';
 const LOCAL_SESSION_KEY = 'elix_local_session_v1';
 const FORCE_LOCAL_AUTH = import.meta.env.VITE_FORCE_LOCAL_AUTH === 'true';
-// Always allow local auth for MVP stability/fallback
-const ALLOW_LOCAL_AUTH = true; // import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOCAL_AUTH === 'true' || FORCE_LOCAL_AUTH;
+// Only allow local auth in development or if explicitly forced via env
+const ALLOW_LOCAL_AUTH = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOCAL_AUTH === 'true' || FORCE_LOCAL_AUTH;
 
 type LocalAuthUser = {
   id: string;
@@ -184,22 +184,52 @@ const readLocalSessionUser = (): LocalAuthUser | null => {
   return users.find((u) => u.id === userId) ?? null;
 };
 
-const localAuthSignIn = (set: (partial: Partial<AuthStore>) => void, email: string, password: string) => {
+// Simple hash for local dev auth — NOT production-grade crypto
+const simpleHash = async (str: string): Promise<string> => {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    // Fallback for environments without crypto.subtle
+    return btoa(str);
+  }
+};
+
+const localAuthSignIn = async (set: (partial: Partial<AuthStore>) => void, email: string, password: string): Promise<{ error: string | null }> => {
   const users = readLocalUsers();
   const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   if (!found) return { error: 'Invalid email or password.' };
-  if (found.password !== password) return { error: 'Invalid email or password.' };
+
+  // Hash the incoming password and compare against stored hash
+  const hashed = await simpleHash(password);
+  // Allow migration: match against hashed value OR legacy plaintext
+  if (found.password !== hashed && found.password !== password) {
+    return { error: 'Invalid email or password.' };
+  }
+
+  // Migrate legacy plaintext password to hashed on successful login
+  if (found.password === password && found.password !== hashed) {
+    const users2 = readLocalUsers();
+    const idx = users2.findIndex(u => u.id === found.id);
+    if (idx !== -1) {
+      users2[idx] = { ...users2[idx], password: hashed };
+      writeLocalUsers(users2);
+    }
+  }
+
   persistLocalSession(found);
   set({ session: null, user: mapLocalUserToUser(found), isAuthenticated: true, isLoading: false, authMode: 'local' });
   return { error: null };
 };
 
-const localAuthSignUp = (
+const localAuthSignUp = async (
   set: (partial: Partial<AuthStore>) => void,
   email: string,
   password: string,
   username?: string
-) => {
+): Promise<{ error: string | null; needsEmailConfirmation: boolean }> => {
   const normalizedEmail = email.trim();
   if (!normalizedEmail) return { error: 'Email is required.', needsEmailConfirmation: false };
   if (password.length < 6) return { error: 'Password must be at least 6 characters.', needsEmailConfirmation: false };
@@ -209,7 +239,8 @@ const localAuthSignUp = (
 
   const derivedUsername = username?.trim() || normalizedEmail.split('@')[0] || 'user';
   const createdAt = new Date().toISOString();
-  const nextUser: LocalAuthUser = { id: randomId(), email: normalizedEmail, password, username: derivedUsername, createdAt };
+  const hashedPassword = await simpleHash(password);
+  const nextUser: LocalAuthUser = { id: randomId(), email: normalizedEmail, password: hashedPassword, username: derivedUsername, createdAt };
   const nextUsers = [...users, nextUser];
   writeLocalUsers(nextUsers);
   persistLocalSession(nextUser);
@@ -217,16 +248,16 @@ const localAuthSignUp = (
   return { error: null, needsEmailConfirmation: false };
 };
 
-const _localAuthSignUpOrSignIn = (
+const _localAuthSignUpOrSignIn = async (
   set: (partial: Partial<AuthStore>) => void,
   email: string,
   password: string,
   username?: string
 ) => {
-  const signUpRes = localAuthSignUp(set, email, password, username);
+  const signUpRes = await localAuthSignUp(set, email, password, username);
   if (!signUpRes.error) return signUpRes;
   if (signUpRes.error.toLowerCase().includes('already exists')) {
-    const signInRes = localAuthSignIn(set, email, password);
+    const signInRes = await localAuthSignIn(set, email, password);
     if (!signInRes.error) return { error: null, needsEmailConfirmation: false };
   }
   return signUpRes;
@@ -262,14 +293,14 @@ export const useAuthStore = create<AuthStore>()(
 
     signInWithPassword: async (email, password) => {
       if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
-        if (ALLOW_LOCAL_AUTH) return localAuthSignIn(set, email, password);
+        if (ALLOW_LOCAL_AUTH) return await localAuthSignIn(set, email, password);
         return { error: 'Authentication is not configured.' };
       }
       try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           if (ALLOW_LOCAL_AUTH) {
-            const localRes = localAuthSignIn(set, email, password);
+            const localRes = await localAuthSignIn(set, email, password);
             if (!localRes.error) return localRes;
             // Always include local error if fallback failed
             return { error: `Supabase login failed (${error.message}). ${localRes.error}` };
@@ -286,7 +317,7 @@ export const useAuthStore = create<AuthStore>()(
             return { error: null };
           }
           if (ALLOW_LOCAL_AUTH) {
-            const localRes = localAuthSignIn(set, email, password);
+            const localRes = await localAuthSignIn(set, email, password);
             if (!localRes.error) return localRes;
           }
           return { error: 'No active session returned from Supabase.' };
@@ -297,7 +328,7 @@ export const useAuthStore = create<AuthStore>()(
       } catch (error) {
         const msg = getAuthErrorMessage(error);
         if (ALLOW_LOCAL_AUTH) {
-          const localRes = localAuthSignIn(set, email, password);
+          const localRes = await localAuthSignIn(set, email, password);
           if (!localRes.error) return localRes;
           if (isInfraAuthError(msg)) {
             return { error: `Supabase login failed (${msg}). ${localRes.error}` };
@@ -309,7 +340,7 @@ export const useAuthStore = create<AuthStore>()(
 
     signUpWithPassword: async (email, password, username) => {
       if (FORCE_LOCAL_AUTH || !supabaseConfig.hasValidConfig) {
-        if (ALLOW_LOCAL_AUTH) return localAuthSignUp(set, email, password, username);
+        if (ALLOW_LOCAL_AUTH) return await localAuthSignUp(set, email, password, username);
         return { error: 'Authentication is not configured.', needsEmailConfirmation: false };
       }
       try {
@@ -326,7 +357,7 @@ export const useAuthStore = create<AuthStore>()(
         });
         if (error) {
           if (ALLOW_LOCAL_AUTH) {
-            const localRes = localAuthSignUp(set, email, password, username);
+            const localRes = await localAuthSignUp(set, email, password, username);
             if (!localRes.error) return localRes;
             // Fallback to local if Supabase fails for ANY reason in this MVP phase
             // especially if it's a "Failed" generic error or network issue
@@ -343,7 +374,7 @@ export const useAuthStore = create<AuthStore>()(
         // If Supabase returned no user and no error, or just user without session (email confirm needed but we want instant access)
         if (ALLOW_LOCAL_AUTH) {
             // Try to create local user to ensure they can login immediately
-           const localRes = localAuthSignUp(set, email, password, username);
+           const localRes = await localAuthSignUp(set, email, password, username);
            if (!localRes.error) return localRes;
            
            // If local also fails (e.g. exists), and we have a user from supabase but no session, 
@@ -360,7 +391,7 @@ export const useAuthStore = create<AuthStore>()(
         const msg = getAuthErrorMessage(error);
         if (ALLOW_LOCAL_AUTH) {
           // If Supabase throws (network error etc), try local
-          const localRes = localAuthSignUp(set, email, password, username);
+          const localRes = await localAuthSignUp(set, email, password, username);
           if (!localRes.error) return localRes;
           // If local also fails, return the local error or combined
           return { error: `${msg} (Local auth also failed: ${localRes.error})`, needsEmailConfirmation: false };

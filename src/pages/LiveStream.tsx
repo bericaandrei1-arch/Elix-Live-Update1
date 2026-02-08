@@ -1,14 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  X,
   Send,
-  UsersRound,
   Search,
   Heart,
   Flame,
-  Link2,
   MessageCircle,
   Share2,
   RefreshCw,
@@ -16,16 +12,11 @@ import {
   MicOff,
   Settings2,
   LogOut,
-  Power,
-  ShoppingBag,
-  Pencil,
-  MoreHorizontal,
-  Gift,
-  MoreVertical,
   Volume2,
   VolumeX,
+  Gift,
+  MoreVertical,
   Users,
-  Play,
   Zap,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -72,7 +63,9 @@ interface SimulatedViewer {
   lastVisitDaysAgo: number; // how many days since last visit (0 = today, 1 = yesterday, 2+ = inactive/grey heart)
 }
 
-const VIEWER_POOL: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[] = [
+// In production, disable simulated viewers — only real viewers via WebSocket
+// In dev, use simulated viewers for testing
+const VIEWER_POOL: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[] = import.meta.env.DEV ? [
   { id: 'v1', username: 'emma_rose22', displayName: 'Emma Rose', level: 34, avatar: 'https://i.pravatar.cc/100?img=1', country: '🇺🇸', chatFrequency: 8, supportDays: 127, lastVisitDaysAgo: 0 },
   { id: 'v2', username: 'alex.madrid', displayName: 'Alex Madrid', level: 18, avatar: 'https://i.pravatar.cc/100?img=3', country: '🇪🇸', chatFrequency: 12, supportDays: 45, lastVisitDaysAgo: 1 },
   { id: 'v3', username: 'sofiab_', displayName: 'Sofia Bianchi', level: 45, avatar: 'https://i.pravatar.cc/100?img=5', country: '🇮🇹', chatFrequency: 6, supportDays: 203, lastVisitDaysAgo: 0 },
@@ -173,7 +166,7 @@ const VIEWER_POOL: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[] = [
   { id: 'v98', username: 'ana.bg', displayName: 'Ana Dimitrova', level: 45, avatar: 'https://i.pravatar.cc/100?u=ana_bg', country: '🇧🇬', chatFrequency: 9, supportDays: 186, lastVisitDaysAgo: 0 },
   { id: 'v99', username: 'malik_pk', displayName: 'Malik Hassan', level: 34, avatar: 'https://i.pravatar.cc/100?u=malik_pk', country: '🇵🇰', chatFrequency: 12, supportDays: 107, lastVisitDaysAgo: 2 },
   { id: 'v100', username: 'celine.be', displayName: 'Céline Dubois', level: 58, avatar: 'https://i.pravatar.cc/100?u=celine_be', country: '🇧🇪', chatFrequency: 7, supportDays: 289, lastVisitDaysAgo: 0 },
-];
+] : []; // Empty in production — no fake viewers
 
 // Realistic chat messages - hyper diverse, natural language with typos, slang, abbreviations
 const CHAT_MESSAGES = {
@@ -399,11 +392,11 @@ export default function LiveStream() {
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const giftPanelOpenedAtRef = useRef(0);
-  const openGiftPanel = useCallback(() => {
+  const _openGiftPanel = useCallback(() => {
     giftPanelOpenedAtRef.current = Date.now();
     setShowGiftPanel(true);
   }, []);
-  const closeGiftPanel = useCallback(() => {
+  const _closeGiftPanel = useCallback(() => {
     setShowGiftPanel(false);
   }, []);
   const [currentGift, setCurrentGift] = useState<string | null>(null);
@@ -447,7 +440,7 @@ export default function LiveStream() {
   const faceARCanvasRef = useRef<HTMLCanvasElement>(null);
   const [_faceARVideoEl, setFaceARVideoEl] = useState<HTMLVideoElement | null>(null);
   const [_faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
-  const [battleGiftIconFailed, setBattleGiftIconFailed] = useState(false);
+  const [_battleGiftIconFailed, _setBattleGiftIconFailed] = useState(false);
 
   useEffect(() => {
     if (videoRef.current) setFaceARVideoEl(videoRef.current);
@@ -612,7 +605,7 @@ export default function LiveStream() {
   const filledSlots = battleSlots.filter(s => s.status !== 'empty');
   const allFilledAccepted = filledSlots.length > 0 && filledSlots.every(s => s.status === 'accepted');
   const anySlotFilled = filledSlots.length > 0;
-  const allSlotsAccepted = allFilledAccepted;
+  const _allSlotsAccepted = allFilledAccepted;
 
   // Battle Mode State
   const [isBattleMode, setIsBattleMode] = useState(false);
@@ -796,7 +789,7 @@ export default function LiveStream() {
     return () => window.clearInterval(tick);
   }, [isBattleMode, battleCountdown]);
 
-  const startBattleWithCreator = (creatorName: string) => {
+  const _startBattleWithCreator = (creatorName: string) => {
     setOpponentCreatorName(creatorName);
     // If not in battle mode yet, enter it first
     if (!isBattleMode) {
@@ -873,7 +866,7 @@ export default function LiveStream() {
     });
   }, [isBattleMode, effectiveStreamId, setPromo]);
 
-  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, isSpeedTap?: boolean) => {
+  const awardBattlePoints = useCallback((target: 'me' | 'opponent' | 'player3' | 'player4', points: number, _isSpeedTap?: boolean) => {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
     
     // Apply speed multiplier if active - using Refs to avoid stale closures
@@ -1309,9 +1302,9 @@ export default function LiveStream() {
         // Set camera zoom to minimum for widest view
         try {
           const vTrack = stream.getVideoTracks()[0];
-          const caps = vTrack?.getCapabilities?.() as any;
+          const caps = vTrack?.getCapabilities?.() as Record<string, { min?: number; max?: number }>;
           if (caps?.zoom) {
-            await vTrack.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as any] });
+            await vTrack.applyConstraints({ advanced: [{ zoom: caps.zoom.min } as MediaTrackConstraintSet] });
           }
         } catch { /* zoom not supported */ }
 
@@ -1988,7 +1981,7 @@ export default function LiveStream() {
       resetComboTimer();
   };
 
-  const simulateIncomingGift = () => {
+  const _simulateIncomingGift = () => {
       const randomGift = GIFTS[Math.floor(Math.random() * GIFTS.length)];
       
       // Use a real active viewer as the gifter (much more realistic)
@@ -2123,8 +2116,8 @@ export default function LiveStream() {
   const universeText = currentUniverse
     ? `${currentUniverse.sender} sent ${universeGiftLabel} to ${currentUniverse.receiver}`
     : '';
-  const universeDurationSeconds = Math.max(6, Math.min(16, universeText.length * 0.12));
-  const isLiveNormal = isBroadcast && !isBattleMode;
+  const _universeDurationSeconds = Math.max(6, Math.min(16, universeText.length * 0.12));
+  const _isLiveNormal = isBroadcast && !isBattleMode;
   const activeLikes = liveLikes;
 
   return (
