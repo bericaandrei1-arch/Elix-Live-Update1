@@ -22,6 +22,36 @@ const giftUrl = (path: string) => {
  export const GIFTS: GiftItem[] = [ 
    // --- Small Gifts (Static) --- 
    { 
+     id: 's_rose', 
+     name: 'Red Rose', 
+     coins: 1, 
+     giftType: 'small', 
+     isActive: true,
+     icon: giftUrl('/gifts/pink_love_jet.png'), 
+     video: giftUrl('/gifts/pink_love_jet.png'), 
+     preview: giftUrl('/gifts/pink_love_jet.png'),
+   }, 
+   { 
+     id: 's_heart', 
+     name: 'Love Heart', 
+     coins: 5, 
+     giftType: 'small', 
+     isActive: true,
+     icon: giftUrl('/gifts/romantic_jet.png'), 
+     video: giftUrl('/gifts/romantic_jet.png'), 
+     preview: giftUrl('/gifts/romantic_jet.png'),
+   }, 
+   { 
+     id: 's_coffee', 
+     name: 'Morning Coffee', 
+     coins: 15, 
+     giftType: 'small', 
+     isActive: true, 
+     icon: 'https://cdn-icons-png.flaticon.com/512/924/924514.png', 
+     video: 'https://cdn-icons-png.flaticon.com/512/924/924514.png', 
+     preview: 'https://cdn-icons-png.flaticon.com/512/924/924514.png', 
+   }, 
+   { 
      id: 's_diamond', 
      name: 'Blue Diamond', 
      coins: 300, 

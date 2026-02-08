@@ -1724,8 +1724,6 @@ export default function LiveStream() {
   };
 
   const handleSendGift = async (gift: typeof GIFTS[0]) => {
-    if (!gift) return;
-
     try {
       // Allow everyone to spend if they have coins locally (which we just set to max)
       if (coinBalance < gift.coins) {
@@ -2505,11 +2503,23 @@ export default function LiveStream() {
               );
             })()}
 
-            {/* MVP Circles removed as per user request */}
+            {/* MVP Circles - outside below battle frame, 3 left + 3 right */}
             <div className="w-full px-3 py-2 flex items-center justify-between flex-none pointer-events-none mt-1 relative z-30">
-               {/* Speed Challenge Timer - MOVED HERE between circles */}
+              {/* Left side - top gifters for P1 */}
+              <div className="flex items-center -space-x-1.5">
+                {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                  const g = getTopGifters('me')[i];
+                  return g ? (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ borderColor: c, zIndex: 3 - i }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                  ) : (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] bg-black/80" style={{ borderColor: c, zIndex: 3 - i }}><img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover opacity-50" /></div>
+                  );
+                })}
+              </div>
+
+              {/* Speed Challenge Timer - MOVED HERE between circles */}
               {SPEED_CHALLENGE_ENABLED && speedChallengeActive && (
-                <div className="flex items-center gap-3 px-5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-[#E6B36A]/30 shadow-[0_0_15px_rgba(230,179,106,0.3)] animate-luxury-fade-in mx-auto">
+                <div className="flex items-center gap-3 px-5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-[#E6B36A]/30 shadow-[0_0_15px_rgba(230,179,106,0.3)] animate-luxury-fade-in">
                   <span className="text-[#E6B36A] text-[9px] font-bold uppercase tracking-[0.1em]">⚡ Speed</span>
                   <span className="text-white text-[14px] font-black tabular-nums">{speedChallengeTime}s</span>
                   {speedMultiplier > 1 && (
@@ -2517,6 +2527,18 @@ export default function LiveStream() {
                   )}
                 </div>
               )}
+
+              {/* Right side - top gifters for P2 */}
+              <div className="flex items-center -space-x-1.5">
+                {[['#FFD700'], ['#C0C0C0'], ['#CD7F32']].map(([c], i) => {
+                  const g = getTopGifters('opponent')[i];
+                  return g ? (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ borderColor: c, zIndex: 3 - i }}><img src={g.avatar} alt={g.name} className="w-full h-full object-cover" /></div>
+                  ) : (
+                    <div key={i} className="w-9 h-9 rounded-full overflow-hidden border-[2.5px] bg-black/80" style={{ borderColor: c, zIndex: 3 - i }}><img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="" className="w-full h-full object-cover opacity-50" /></div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

@@ -156,13 +156,12 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
                 <button
                   key={universeGift.id}
                   onClick={() => {
-                    if (!universeGift) return;
                     setPoppedGiftId(universeGift.id);
                     window.setTimeout(() => setPoppedGiftId((v) => (v === universeGift.id ? null : v)), 520);
                     onSelectGift(universeGift);
                   }}
-                  onMouseEnter={() => universeGift && setActiveGiftId(universeGift.id)}
-                  onMouseLeave={() => universeGift && setActiveGiftId((v) => (v === universeGift.id ? null : v))}
+                  onMouseEnter={() => setActiveGiftId(universeGift.id)}
+                  onMouseLeave={() => setActiveGiftId((v) => (v === universeGift.id ? null : v))}
                   className="group flex flex-col items-center gap-1.5 p-1 rounded-xl hover:brightness-125 border border-secondary/30 transition-all duration-300 active:scale-95 relative overflow-hidden"
                 >
                   <div
