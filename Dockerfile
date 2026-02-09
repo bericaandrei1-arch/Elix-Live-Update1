@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -20,3 +20,4 @@ EXPOSE 3000
 
 # Start the monolithic server (Express + WebSocket + Static Files)
 CMD ["npm", "start"]
+
