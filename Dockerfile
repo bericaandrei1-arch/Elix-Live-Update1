@@ -1,23 +1,17 @@
-FROM node:18-alpine
-
-# Set working directory
+# Stage 1: Build
+FROM node:18-alpine AS builder
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies (including devDependencies for build)
 RUN npm install --legacy-peer-deps
-
-# Copy source code
 COPY . .
-
-# Build the application (Vite)
 RUN npm run build
 
-# Expose port
+# Stage 2: Run
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --only=production --legacy-peer-deps
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server ./server
 EXPOSE 3000
-
-# Start the monolithic server (Express + WebSocket + Static Files)
 CMD ["npm", "start"]
-
