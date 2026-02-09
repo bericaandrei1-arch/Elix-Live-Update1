@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Increase memory for build
 ENV NODE_OPTIONS="--max-old-space-size=4096"
@@ -10,9 +10,6 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies with speed optimizations
-# --no-audit: Skip security audit (saves time)
-# --no-fund: Skip funding messages
-# --legacy-peer-deps: Fix conflicts
 RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 # Copy source
@@ -25,7 +22,7 @@ RUN npm run build
 RUN npm prune --production --legacy-peer-deps
 
 # Stage 2: Run
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
