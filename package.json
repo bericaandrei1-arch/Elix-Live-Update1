@@ -30,7 +30,7 @@
     "@capacitor/android": "^7.4.3",
     "@capacitor/app": "^8.0.0",
     "@capacitor/clipboard": "^8.0.0",
-    "@capacitor/core": "^7.4.3",
+    "@capacitor/core": "^8.0.2",
     "@capacitor/ios": "^7.4.3",
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/push-notifications": "^8.0.0",
@@ -96,3 +96,4 @@
     "ws": "^8.19.0"
   }
 }
+
