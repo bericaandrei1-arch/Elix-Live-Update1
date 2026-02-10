@@ -149,7 +149,7 @@ export default function Upload() {
         try {
           const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
           if (permStatus.state === 'denied') {
-            setCameraError('Allow camera permissions to continue.');
+            setCameraError('Camera blocked. Tap the lock icon in your address bar → Allow camera, then try again.');
             return;
           }
         } catch {
@@ -165,6 +165,16 @@ export default function Upload() {
         console.error("Error accessing camera:", err);
         const error = err as { name?: string };
         if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+          // Check if permanently denied
+          try {
+            const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+            if (permStatus.state === 'denied') {
+              setCameraError('Camera blocked. Tap the lock icon in your address bar → Allow camera, then try again.');
+              return;
+            }
+          } catch {
+            // ignore
+          }
           setCameraError('Allow camera permissions to continue.');
         } else if (error?.name === 'NotFoundError') {
           setCameraError('No camera found.');
@@ -524,11 +534,9 @@ export default function Upload() {
                   <div className="w-14 h-14 rounded-full bg-[#E6B36A]/20 flex items-center justify-center mb-3">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9.34"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/></svg>
                   </div>
-                  <p className="text-[#E6B36A] text-sm font-medium mb-1">{cameraError}</p>
-                  <p className="text-white/40 text-xs mb-4 max-w-[240px]">
-                    {cameraError.includes('permission') || cameraError.includes('Allow')
-                      ? 'Please allow camera access in your browser or device settings.'
-                      : 'Make sure your camera is connected and not in use by another app.'}
+                  <p className="text-[#E6B36A] text-sm font-medium mb-1">Camera Access Needed</p>
+                  <p className="text-white/50 text-xs mb-4 max-w-[260px] leading-relaxed">
+                    {cameraError}
                   </p>
                   <button
                     onClick={() => {
