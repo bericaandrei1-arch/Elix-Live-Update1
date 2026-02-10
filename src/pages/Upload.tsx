@@ -625,6 +625,7 @@ export default function Upload() {
                   <button 
                     className="absolute top-[50%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Flash')}
+                    title="Flash"
                   >
                     <Zap size={20} className="text-white" />
                   </button>
@@ -646,6 +647,7 @@ export default function Upload() {
                           <button 
                             className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white border-2 border-white animate-in fade-in zoom-in duration-300 absolute -right-20"
                             onClick={stopRecordingFinal}
+                            title="Done"
                           >
                               <Check size={24} />
                           </button>

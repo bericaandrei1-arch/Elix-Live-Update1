@@ -2654,7 +2654,7 @@ export default function LiveStream() {
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                           </button>
                         </div>
-                        <button type="button" onClick={stopBroadcast} className="w-8 h-8 rounded-full bg-[#FF4D6A]/20 border border-[#FF4D6A]/40 flex items-center justify-center">
+                        <button type="button" onClick={stopBroadcast} className="w-8 h-8 rounded-full bg-[#FF4D6A]/20 border border-[#FF4D6A]/40 flex items-center justify-center" title="End broadcast">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
                         </button>
                       </div>
@@ -2868,6 +2868,7 @@ export default function LiveStream() {
             }}
             role="button"
             tabIndex={-1}
+            title="Close find creators"
           />
           <div
             className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto"
@@ -3183,6 +3184,7 @@ export default function LiveStream() {
             }}
             role="button"
             tabIndex={-1}
+            title="Close menu"
           />
           <div
             className="absolute bottom-[82px] z-[700] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto"
