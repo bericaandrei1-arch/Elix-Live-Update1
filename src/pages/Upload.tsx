@@ -581,6 +581,7 @@ export default function Upload() {
                   <button 
                     className="absolute top-[18%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Flip Camera')}
+                    title="Flip Camera"
                   >
                     <RefreshCw size={20} className="text-white" />
                   </button>
@@ -589,6 +590,7 @@ export default function Upload() {
                   <button 
                     className="absolute top-[26%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Speed')}
+                    title="Speed"
                   >
                     <span className="text-white font-bold text-xs">1x</span>
                   </button>
@@ -597,6 +599,7 @@ export default function Upload() {
                   <button 
                     className="absolute top-[34%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Beauty')}
+                    title="Beauty"
                   >
                     <span className="text-white text-xs">✨</span>
                   </button>
@@ -605,6 +608,7 @@ export default function Upload() {
                   <button 
                     className="absolute top-[42%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Timer')}
+                    title="Timer"
                   >
                     <Clock size={20} className="text-white" />
                   </button>

@@ -599,6 +599,7 @@ export default function Create() {
           type="file"
           accept="video/*"
           className="hidden"
+          aria-label="Select video file"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (!file) return;
