@@ -14,7 +14,7 @@ export default function SavedVideos() {
 
   return (
     <div className="min-h-screen bg-black text-white flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         <div className="p-4 flex items-center gap-4">
           <button onClick={() => navigate('/feed')} className="p-1">
             <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />

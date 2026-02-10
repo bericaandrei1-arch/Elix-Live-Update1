@@ -70,7 +70,7 @@ export default function LiveDiscover() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">
-      <div className="relative w-full h-[100dvh] md:w-[450px] md:h-[90vh] md:max-h-[850px] md:rounded-3xl bg-black overflow-hidden shadow-2xl">
+      <div className="relative w-full h-[100dvh] bg-black overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-black" />
 
         <div className="relative z-10 px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>

@@ -138,7 +138,7 @@ export default function CreatorLoginDetails() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         <header className="flex items-center justify-between mb-6">
           <button onClick={() => navigate(-1)}><img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" /></button>
           <h1 className="font-bold text-lg">Creator Login Details</h1>

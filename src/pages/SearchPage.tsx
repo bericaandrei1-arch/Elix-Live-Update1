@@ -61,7 +61,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
       {/* Content */}
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">

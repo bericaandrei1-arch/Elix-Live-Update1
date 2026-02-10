@@ -373,7 +373,7 @@ export default function EnhancedVideoPlayer({
     >
       {/* Video Element - iPhone 14 Pro Max: 6.7" Super Retina XDR, 2796×1290px, 19.5:9, ~460ppi */}
       <div className="absolute inset-0 flex items-center justify-center bg-black" style={{ margin: 0, padding: 0, gap: 0 }}>
-        <div className="w-full max-w-[500px] min-h-full" style={{ aspectRatio: '1290/2796', margin: 0, padding: 0 }}>
+        <div className="w-full min-h-full" style={{ aspectRatio: '1290/2796', margin: 0, padding: 0 }}>
         <audio ref={audioRef} preload="auto" className="hidden" />
         <video
           ref={videoRef}

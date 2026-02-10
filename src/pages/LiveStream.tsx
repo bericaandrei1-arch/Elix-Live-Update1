@@ -2139,7 +2139,7 @@ export default function LiveStream() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">
-      <div className="relative w-full h-screen md:w-[450px] md:h-[90vh] md:max-h-[850px] md:rounded-3xl bg-black overflow-hidden border-none">
+      <div className="relative w-full h-screen bg-black overflow-hidden border-none">
         <div className="h-full w-full relative">
         {/* BACKGROUND: VIDEO AREA (Unified frame) */}
         <div className="absolute inset-0 z-0 bg-black overflow-hidden">
@@ -2766,7 +2766,7 @@ export default function LiveStream() {
 
           {/* BOTTOM ZONE: INPUT (Fixed) */}
           <div className="bottom-zone flex-none pointer-events-auto bg-transparent px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-2 min-h-[70px] flex items-center absolute bottom-0 left-0 right-0 z-[200]">
-        <div className="w-full max-w-[500px] mx-auto">
+        <div className="w-full mx-auto">
           {/* Spectator Input & Actions */}
           {!isBroadcast && (
             <div className="flex items-center gap-3 w-full">
@@ -3023,7 +3023,7 @@ export default function LiveStream() {
           >
             <div className="absolute inset-0 bg-black" />
             <motion.div
-              className="relative w-full md:w-[450px] rounded-t-3xl bg-black border border-transparent px-4 pt-4 pb-[calc(20px+env(safe-area-inset-bottom))]"
+              className="relative w-full rounded-t-3xl bg-black border border-transparent px-4 pt-4 pb-[calc(20px+env(safe-area-inset-bottom))]"
               initial={{ y: 24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 24, opacity: 0 }}
@@ -3349,7 +3349,7 @@ export default function LiveStream() {
         >
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pointer-events-auto">
             <div
-              className="mx-auto w-full max-w-[500px] bg-black overflow-hidden"
+              className="mx-auto w-full bg-black overflow-hidden"
               onClick={(e) => e.stopPropagation()}
               role="button"
               tabIndex={-1}

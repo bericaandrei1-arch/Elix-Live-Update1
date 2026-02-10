@@ -28,7 +28,7 @@ export default function ChatThread() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex justify-center">
-      <div className="w-full max-w-[500px] flex flex-col min-h-[100dvh]">
+      <div className="w-full flex flex-col min-h-[100dvh]">
         <header className="flex items-center justify-between mb-4">
           <button onClick={() => navigate('/inbox')} aria-label="Back" title="Back to Inbox">
             <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />

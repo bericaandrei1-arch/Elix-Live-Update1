@@ -20,7 +20,7 @@ export default function Legal() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         <header className="flex items-center justify-between mb-6">
           <button onClick={() => navigate(-1)} aria-label="Back">
             <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />

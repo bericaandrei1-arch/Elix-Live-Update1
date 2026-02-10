@@ -21,7 +21,7 @@ export default function VideoView() {
 
   return (
     <div className="h-[100dvh] w-full bg-black flex justify-center">
-      <div className="w-full h-full md:w-[500px] relative">
+      <div className="w-full h-full relative">
         <div className="absolute left-3 top-3 z-[250]">
           <button
             onClick={() => navigate(-1)}

@@ -199,7 +199,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-black text-white pb-24 pt-4 flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         <header className="flex justify-between items-center px-4 mb-6">
             <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
               <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
@@ -219,7 +219,7 @@ export default function Profile() {
         {showAccountMenu && (
           <div className="fixed inset-0 z-[200] bg-black/70 flex items-end justify-center" onClick={() => setShowAccountMenu(false)}>
             <div 
-              className="w-full max-w-[500px] bg-[#111] rounded-t-2xl border-t border-white/10 pb-safe animate-in slide-in-from-bottom duration-300"
+              className="w-full bg-[#111] rounded-t-2xl border-t border-white/10 pb-safe animate-in slide-in-from-bottom duration-300"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

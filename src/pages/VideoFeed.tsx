@@ -156,7 +156,7 @@ export default function VideoFeed() {
       <div className="fixed left-0 right-0 z-[200] flex justify-center pointer-events-none"
            style={{ top: 'max(var(--safe-top), 1vh)' }}>
         <div className="w-full relative px-[1%] pt-[0.5%] pb-[0.25%]"
-             style={{ transform: 'scaleY(0.75)', maxWidth: 'min(500px, 100vw)' }}>
+             style={{ transform: 'scaleY(0.75)' }}>
           
           {/* Background Image with Premium Glow */}
           <div className="relative">
@@ -245,7 +245,7 @@ export default function VideoFeed() {
                 scrollSnapStop: 'always'
               }}
             >
-              <div className="w-full h-full md:w-[500px] relative">
+              <div className="w-full h-full relative">
                 <PromoCard
                   promo={item.promo}
                   onOpen={() =>
@@ -271,7 +271,7 @@ export default function VideoFeed() {
             }}
           >
             <div 
-              className="w-full h-[100dvh] md:w-[500px] relative" 
+              className="w-full h-[100dvh] relative" 
               style={{ 
                 paddingBottom: 'clamp(40px, 5vh, 52px)', 
                 margin: 0, 

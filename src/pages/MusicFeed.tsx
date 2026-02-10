@@ -39,7 +39,7 @@ export default function MusicFeed() {
 
   return (
     <div className="min-h-screen bg-black text-white flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         {/* Header Info */}
         <div className="p-4 pt-6 bg-gradient-to-b from-gray-900 to-black">
          <button onClick={() => navigate('/feed')} className="p-2 mb-4" title="Back to For You">

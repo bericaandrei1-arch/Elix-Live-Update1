@@ -87,7 +87,7 @@ function SoundPickerModal({
 
   return (
     <div className="fixed inset-0 z-[500] bg-black flex items-end justify-center">
-      <div className="w-full max-w-[500px] bg-black border-t border-[#E6B36A]/30 rounded-t-2xl overflow-hidden">
+      <div className="w-full bg-black border-t border-[#E6B36A]/30 rounded-t-2xl overflow-hidden">
         <audio
           ref={audioRef}
           preload="auto"
@@ -592,7 +592,7 @@ export default function Create() {
 
   return (
     <div className="min-h-[100dvh] bg-black text-white flex justify-center">
-      <div className="relative w-full max-w-[500px] min-h-[100dvh] overflow-hidden">
+      <div className="relative w-full min-h-[100dvh] overflow-hidden">
         
         <input
           ref={fileInputRef}

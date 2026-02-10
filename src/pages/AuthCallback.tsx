@@ -58,7 +58,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex justify-center">
-      <div className="w-full max-w-[500px]">
+      <div className="w-full">
         <h1 className="font-bold text-lg mb-3">Auth Callback</h1>
         <div className="text-sm text-white/70">
           {status === 'working' ? 'Working...' : 'Something went wrong.'}
