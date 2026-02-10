@@ -416,9 +416,9 @@ async function updateViewerCount(roomId: string) {
   }
 }
 
-// Start Server
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start Server — bind to 0.0.0.0 so Railway/Docker can reach it
+server.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Server is running on 0.0.0.0:${PORT}`);
 });
 
 // Graceful shutdown
