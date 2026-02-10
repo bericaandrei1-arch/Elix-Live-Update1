@@ -8,41 +8,49 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
     throw new Error('Missing Supabase env. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   }
 
+  // Validate file type
   if (!file.type.startsWith('image/')) {
     throw new Error('Selected file is not an image.');
   }
 
-  const maxBytes = 8 * 1024 * 1024;
+  // Validate file size (max 5MB)
+  const maxBytes = 5 * 1024 * 1024;
   if (file.size > maxBytes) {
-    throw new Error('Image is too large (max 8MB).');
+    throw new Error('Image is too large (max 5MB).');
   }
 
-  const nameParts = file.name.split('.');
-  const ext = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'png';
-  const bucket =
-    import.meta.env.VITE_SUPABASE_AVATAR_BUCKET ||
-    import.meta.env.VITE_SUPABASE_STORAGE_BUCKET ||
-    'avatars';
-  const basePath = (import.meta.env.VITE_SUPABASE_AVATAR_PATH ?? '').replace(/^\/+|\/+$/g, '');
-  const fileName = `${Date.now()}.${ext}`;
-  const objectPath = basePath ? `${basePath}/${userId}/${fileName}` : `${userId}/${fileName}`;
+  // Generate clean filename
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const fileName = `${Date.now()}.${fileExt}`;
+  const filePath = `avatars/${userId}/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, {
-    upsert: true,
-    contentType: file.type,
-    cacheControl: '3600'
-  });
+  try {
+    // 1. Upload to 'user-content' bucket
+    const { error: uploadError } = await supabase.storage
+      .from('user-content')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
 
-  if (uploadError) {
-    throw new Error(uploadError.message);
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      throw uploadError;
+    }
+
+    // 2. Get Public URL
+    const { data } = supabase.storage
+      .from('user-content')
+      .getPublicUrl(filePath);
+
+    if (!data.publicUrl) {
+      throw new Error('Failed to retrieve public URL');
+    }
+
+    return data.publicUrl;
+
+  } catch (err: any) {
+    console.error('Avatar upload failed:', err);
+    throw new Error(err.message || 'Failed to upload image');
   }
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath);
-  const publicUrl = data?.publicUrl;
-
-  if (!publicUrl) {
-    throw new Error('Failed to get public URL for uploaded image.');
-  }
-
-  return publicUrl;
 }

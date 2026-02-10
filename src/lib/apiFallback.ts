@@ -1,398 +1,327 @@
-// 🔄 Automatic API Fallback System
-// This file automatically detects if you have API keys configured
-// If not, it uses mock data so your app works immediately
+// 🔄 Real API Only System (Apple Store Compliant)
+// This file enforces real API usage and removes mock data fallback
 
-import { mockApi } from './mockApi';
 import { supabase } from './supabase';
 
 const isProd = import.meta.env.PROD;
 
-// Check if API keys are configured
-const hasApiKeys = () => {
-  try {
-    // Check if environment variables exist and are not placeholders
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    return supabaseUrl && 
-           supabaseKey && 
-           !supabaseUrl.includes('your-') && 
-           !supabaseKey.includes('your-') &&
-           supabaseUrl !== 'https://test-12345.supabase.co'; // Don't use test keys in production
-  } catch {
-    return false;
-  }
+// Force real API usage in production
+export const useRealApi = true;
+
+const handleRealApiError = async <T,>(error: unknown): Promise<T> => {
+  console.error('[API] Production API request failed:', error);
+  // In production, propagate the error instead of serving mock data
+  throw error;
 };
 
-// Determine which API to use
-export const useRealApi = hasApiKeys();
-
-if (isProd && !useRealApi) {
-  console.error('[API] ❌ Missing API configuration in PRODUCTION. Mock data will NOT be served.');
-}
-
-const handleRealApiError = async <T,>(error: unknown, fallback: () => Promise<T>): Promise<T> => {
-  if (isProd) {
-    console.error('[API] Production API request failed:', error);
-    // In production, propagate the error instead of serving mock data
-    throw error;
-  }
-  return fallback();
-};
-
-// Wrapper functions that automatically choose between real and mock APIs
+// Wrapper functions that strictly use real API
 export const api = {
   // User functions
   getUser: async (userId: string) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single();
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getUser(userId));
-      }
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getUser(userId);
   },
 
   getUsers: async () => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .limit(10);
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getUsers());
-      }
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .limit(10);
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getUsers();
   },
 
   // Video functions
   getVideos: async (page = 1, limit = 10) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('videos')
-          .select(`
-            *,
-            user:users(id, username, display_name, avatar_url, verified, level)
-          `)
-          .order('created_at', { ascending: false })
-          .range((page - 1) * limit, page * limit - 1);
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getVideos(page, limit));
-      }
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:users(id, username, display_name, avatar_url, verified, level)
+        `)
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getVideos(page, limit);
   },
 
   getVideo: async (videoId: string) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('videos')
-          .select(`
-            *,
-            user:users(id, username, display_name, avatar_url, verified, level)
-          `)
-          .eq('id', videoId)
-          .single();
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getVideo(videoId));
-      }
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:users(id, username, display_name, avatar_url, verified, level)
+        `)
+        .eq('id', videoId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getVideo(videoId);
   },
 
   // Live stream functions
   getLiveStreams: async () => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('live_streams')
-          .select(`
-            *,
-            user:users(id, username, display_name, avatar_url, verified, level)
-          `)
-          .eq('is_live', true)
-          .order('started_at', { ascending: false });
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getLiveStreams());
-      }
+    try {
+      const { data, error } = await supabase
+        .from('live_streams')
+        .select(`
+          *,
+          user:users(id, username, display_name, avatar_url, verified, level)
+        `)
+        .eq('is_live', true)
+        .order('started_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getLiveStreams();
   },
 
   getLiveStream: async (streamId: string) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('live_streams')
-          .select(`
-            *,
-            user:users(id, username, display_name, avatar_url, verified, level)
-          `)
-          .eq('id', streamId)
-          .single();
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getLiveStream(streamId));
-      }
+    try {
+      const { data, error } = await supabase
+        .from('live_streams')
+        .select(`
+          *,
+          user:users(id, username, display_name, avatar_url, verified, level)
+        `)
+        .eq('id', streamId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getLiveStream(streamId);
   },
 
   // Gift functions
   getGifts: async () => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('gifts')
-          .select('*')
-          .order('price', { ascending: true });
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getGifts());
-      }
+    try {
+      const { data, error } = await supabase
+        .from('gifts')
+        .select('*')
+        .order('price', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getGifts();
   },
 
   // Comment functions
   getComments: async (videoId: string) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase
-          .from('comments')
-          .select(`
-            *,
-            user:users(id, username, display_name, avatar_url)
-          `)
-          .eq('video_id', videoId)
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.getComments(videoId));
-      }
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          user:users(id, username, display_name, avatar_url)
+        `)
+        .eq('video_id', videoId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      throw error;
     }
-    return mockApi.getComments(videoId);
   },
 
   // Like/Unlike functions
   likeVideo: async (videoId: string) => {
-    if (useRealApi) {
-      try {
-        // Get current video data
-        const { data: video } = await supabase
+    try {
+      // Get current video data
+      const { data: video } = await supabase
+        .from('videos')
+        .select('likes')
+        .eq('id', videoId)
+        .single();
+      
+      if (video) {
+        const { error } = await supabase
           .from('videos')
-          .select('likes')
-          .eq('id', videoId)
-          .single();
+          .update({ likes: video.likes + 1 })
+          .eq('id', videoId);
         
-        if (video) {
-          const { error } = await supabase
-            .from('videos')
-            .update({ likes: video.likes + 1 })
-            .eq('id', videoId);
-          
-          if (error) throw error;
-        }
-        
-        return { success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.likeVideo(videoId));
+        if (error) throw error;
       }
+      
+      return { success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.likeVideo(videoId);
   },
 
   unlikeVideo: async (videoId: string) => {
-    if (useRealApi) {
-      try {
-        // Get current video data
-        const { data: video } = await supabase
+    try {
+      // Get current video data
+      const { data: video } = await supabase
+        .from('videos')
+        .select('likes')
+        .eq('id', videoId)
+        .single();
+      
+      if (video) {
+        const { error } = await supabase
           .from('videos')
-          .select('likes')
-          .eq('id', videoId)
-          .single();
+          .update({ likes: Math.max(0, video.likes - 1) })
+          .eq('id', videoId);
         
-        if (video) {
-          const { error } = await supabase
-            .from('videos')
-            .update({ likes: Math.max(0, video.likes - 1) })
-            .eq('id', videoId);
-          
-          if (error) throw error;
-        }
-        
-        return { success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.unlikeVideo(videoId));
+        if (error) throw error;
       }
+      
+      return { success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.unlikeVideo(videoId);
   },
 
   // Follow/Unfollow functions
   followUser: async (userId: string) => {
-    if (useRealApi) {
-      try {
-        // Get current user data
-        const { data: user } = await supabase
+    try {
+      // Get current user data
+      const { data: user } = await supabase
+        .from('users')
+        .select('followers')
+        .eq('id', userId)
+        .single();
+      
+      if (user) {
+        const { error } = await supabase
           .from('users')
-          .select('followers')
-          .eq('id', userId)
-          .single();
+          .update({ followers: user.followers + 1 })
+          .eq('id', userId);
         
-        if (user) {
-          const { error } = await supabase
-            .from('users')
-            .update({ followers: user.followers + 1 })
-            .eq('id', userId);
-          
-          if (error) throw error;
-        }
-        
-        return { success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.followUser(userId));
+        if (error) throw error;
       }
+      
+      return { success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.followUser(userId);
   },
 
   unfollowUser: async (userId: string) => {
-    if (useRealApi) {
-      try {
-        // Get current user data
-        const { data: user } = await supabase
+    try {
+      // Get current user data
+      const { data: user } = await supabase
+        .from('users')
+        .select('followers')
+        .eq('id', userId)
+        .single();
+      
+      if (user) {
+        const { error } = await supabase
           .from('users')
-          .select('followers')
-          .eq('id', userId)
-          .single();
+          .update({ followers: Math.max(0, user.followers - 1) })
+          .eq('id', userId);
         
-        if (user) {
-          const { error } = await supabase
-            .from('users')
-            .update({ followers: Math.max(0, user.followers - 1) })
-            .eq('id', userId);
-          
-          if (error) throw error;
-        }
-        
-        return { success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.unfollowUser(userId));
+        if (error) throw error;
       }
+      
+      return { success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.unfollowUser(userId);
   },
 
   // Gift sending
   sendGift: async (streamId: string, giftId: string, userId: string) => {
-    if (useRealApi) {
-      try {
-        // Get gift and stream data
-        const [giftResult, streamResult] = await Promise.all([
-          supabase.from('gifts').select('*').eq('id', giftId).single(),
-          supabase.from('live_streams').select('*').eq('id', streamId).single()
-        ]);
+    try {
+      // Get gift and stream data
+      const [giftResult, streamResult] = await Promise.all([
+        supabase.from('gifts').select('*').eq('id', giftId).single(),
+        supabase.from('live_streams').select('*').eq('id', streamId).single()
+      ]);
+      
+      if (giftResult.data && streamResult.data) {
+        // Update stream gifts count
+        await supabase
+          .from('live_streams')
+          .update({ gifts: streamResult.data.gifts + 1 })
+          .eq('id', streamId);
         
-        if (giftResult.data && streamResult.data) {
-          // Update stream gifts count
-          await supabase
-            .from('live_streams')
-            .update({ gifts: streamResult.data.gifts + 1 })
-            .eq('id', streamId);
-          
-          // Create gift transaction record
-          await supabase.from('gift_transactions').insert({
-            stream_id: streamId,
-            gift_id: giftId,
-            user_id: userId,
-            amount: giftResult.data.price
-          });
-        }
-        
-        return { 
-          success: true, 
-          message: `Sent ${giftResult.data?.name || 'gift'}!`,
-          gift: giftResult.data
-        };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.sendGift(streamId, giftId, userId));
+        // Create gift transaction record
+        await supabase.from('gift_transactions').insert({
+          stream_id: streamId,
+          gift_id: giftId,
+          user_id: userId,
+          amount: giftResult.data.price
+        });
       }
+      
+      return { 
+        success: true, 
+        message: `Sent ${giftResult.data?.name || 'gift'}!`,
+        gift: giftResult.data
+      };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.sendGift(streamId, giftId, userId);
   },
 
   // Authentication
   login: async (email: string, password: string) => {
-    if (useRealApi) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-        return { user: data.user, token: data.session?.access_token, success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.login(email, password));
-      }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      return { user: data.user, token: data.session?.access_token, success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.login(email, password);
   },
 
   register: async (email: string, password: string, username: string) => {
-    if (useRealApi) {
-      try {
-        const emailRedirectTo =
-          typeof window !== 'undefined'
-            ? `${window.location.origin}/auth/callback`
-            : undefined;
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { username },
-            emailRedirectTo
-          }
-        });
-        
-        if (error) throw error;
-        return { user: data.user, token: data.session?.access_token, success: true };
-      } catch (error) {
-        return handleRealApiError(error, () => mockApi.register(email, password, username));
-      }
+    try {
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback`
+          : undefined;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username },
+          emailRedirectTo
+        }
+      });
+      
+      if (error) throw error;
+      return { user: data.user, token: data.session?.access_token, success: true };
+    } catch (error) {
+      throw error;
     }
-    return mockApi.register(email, password, username);
   }
 };
 

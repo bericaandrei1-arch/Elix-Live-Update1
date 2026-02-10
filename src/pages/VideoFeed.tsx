@@ -58,7 +58,7 @@ function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) 
 }
 
 export default function VideoFeed() {
-  const videos = useVideoStore((s) => s.videos);
+  const { videos, fetchVideos } = useVideoStore();
   const blockedUserIds = useSafetyStore((s) => s.blockedUserIds);
   const promoBattle = useLivePromoStore((s) => s.promoBattle);
   const promoLive = useLivePromoStore((s) => s.promoLive);
@@ -75,6 +75,10 @@ export default function VideoFeed() {
       : [];
   const promoCount = promos.length;
   const [loopCount, setLoopCount] = useState(1);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const visibleVideos = blockedUserIds.length
     ? videos.filter((v) => !blockedUserIds.includes(v.user.id))
@@ -149,8 +153,10 @@ export default function VideoFeed() {
       onScroll={handleScroll}
     >
       {/* Top Navigation Bar - LUXURY REDESIGN */}
-      <div className="fixed right-0 z-[200] flex justify-center pointer-events-none" style={{ top: '5mm', left: '-4mm' }}>
-        <div className="w-full relative px-2 pt-2 pb-1" style={{ transform: 'scaleY(0.75)', maxWidth: 'calc(500px + 3mm)' }}>
+      <div className="fixed left-0 right-0 z-[200] flex justify-center pointer-events-none"
+           style={{ top: 'max(var(--safe-top), 1vh)' }}>
+        <div className="w-full relative px-[1%] pt-[0.5%] pb-[0.25%]"
+             style={{ transform: 'scaleY(0.75)', maxWidth: 'min(500px, 100vw)' }}>
           
           {/* Background Image with Premium Glow */}
           <div className="relative">
@@ -175,7 +181,7 @@ export default function VideoFeed() {
               
               {/* STEM Button - 11% */}
               <button
-                onClick={() => { setActiveTab('stem'); navigate('/stem'); }}
+                onClick={() => { setActiveTab('stem'); navigate('/discover'); }}
                 className="h-full transition-all active:opacity-60 hover:brightness-125"
                 style={{ width: '11%' }}
                 title="STEM"
@@ -199,7 +205,7 @@ export default function VideoFeed() {
               
               {/* Shop Button - 12% */}
               <button
-                onClick={() => { setActiveTab('shop'); navigate('/saved'); }}
+                onClick={() => { setActiveTab('shop'); navigate('/purchase-coins'); }}
                 className="h-full transition-all active:opacity-60 hover:brightness-125"
                 style={{ width: '12%' }}
                 title="Shop"
@@ -207,7 +213,7 @@ export default function VideoFeed() {
               
               {/* For You Button - 17% */}
               <button
-                onClick={() => { setActiveTab('foryou'); navigate('/'); }}
+                onClick={() => { setActiveTab('foryou'); }}
                 className="h-full transition-all active:opacity-60 hover:brightness-125"
                 style={{ width: '17%' }}
                 title="For You"
@@ -233,8 +239,8 @@ export default function VideoFeed() {
               className="h-full w-full snap-start relative flex justify-center bg-black"
               style={{ 
                 margin: 0, 
-                padding: 0,
-                paddingTop: '8mm',
+                padding: 0, 
+                paddingTop: 'max(var(--safe-top), clamp(16px, 3vh, 32px))',
                 scrollSnapAlign: 'start',
                 scrollSnapStop: 'always'
               }}
@@ -258,7 +264,7 @@ export default function VideoFeed() {
             style={{ 
               margin: 0, 
               padding: 0, 
-              paddingTop: '8mm',
+              paddingTop: 'max(var(--safe-top), clamp(16px, 3vh, 32px))',
               gap: 0,
               scrollSnapAlign: 'start',
               scrollSnapStop: 'always'

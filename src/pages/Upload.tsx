@@ -6,6 +6,8 @@ import { useVideoStore } from '../store/useVideoStore';
 import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
 import { trackEvent } from '../lib/analytics';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { videoUploadService } from '../lib/videoUpload';
+import { supabase } from '../lib/supabase';
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -29,7 +31,7 @@ export default function Upload() {
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null); // For video background
   const [customTracks, setCustomTracks] = useState<SoundTrack[]>([]);
 
-  const { addVideo } = useVideoStore();
+  const { addVideo, fetchVideos } = useVideoStore();
 
   type UploadMusic = {
     id: string;
@@ -138,13 +140,37 @@ export default function Upload() {
   useEffect(() => {
     async function startCamera() {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setCameraError('Camera not supported on this device.');
+          return;
+        }
+
+        // Check permission status before requesting
+        try {
+          const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          if (permStatus.state === 'denied') {
+            setCameraError('Allow camera permissions to continue.');
+            return;
+          }
+        } catch {
+          // permissions.query not supported — proceed directly
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (err) {
+        setCameraError(null);
+      } catch (err: unknown) {
         console.error("Error accessing camera:", err);
-        setCameraError("Camera access denied or not available.");
+        const error = err as { name?: string };
+        if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+          setCameraError('Allow camera permissions to continue.');
+        } else if (error?.name === 'NotFoundError') {
+          setCameraError('No camera found.');
+        } else {
+          setCameraError('Camera access denied or not available.');
+        }
       }
     }
     
@@ -280,96 +306,60 @@ export default function Upload() {
   const handlePost = async () => {
       if (!recordedVideoUrl || isPosting) return;
 
-      const normalizedCaption = caption.trim();
-      const captionHashtags = Array.from(normalizedCaption.matchAll(/#([\p{L}0-9_]+)/gu)).map((m) => m[1]);
-      const manualHashtags = hashtagsText
-        .split(/[\s,]+/)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .map((t) => (t.startsWith('#') ? t.slice(1) : t));
-
-      const hashtags = Array.from(new Set([...captionHashtags, ...manualHashtags].map((h) => h.toLowerCase()))).slice(0, 20);
-
-      let resolvedMusic: UploadMusic = {
-        id: 'original_sound',
-        title: 'Original Sound',
-        artist: 'Current User',
-        duration: '0:15',
-      };
-
-      if (postWithoutAudio || selectedAudioId === 'none') {
-        resolvedMusic = { id: 'no_audio', title: 'No audio', artist: '', duration: '0:15' };
-      } else if (selectedAudioId.startsWith('track_')) {
-        const raw = selectedAudioId.slice('track_'.length);
-        const id = Number(raw);
-        const picked = musicTracks.find((t) => t.id === id);
-        if (picked?.url) {
-          resolvedMusic = {
-            id: `track_${picked.id}`,
-            title: picked.title,
-            artist: picked.artist,
-            duration: formatClip(picked.clipStartSeconds, picked.clipEndSeconds),
-            previewUrl: picked.url,
-          };
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("You must be logged in to post videos.");
+        return;
       }
 
       setIsPosting(true);
       setPostProgress(0);
-      trackEvent('upload_post_start', { hasCaption: !!normalizedCaption, hashtagsCount: hashtags.length, audio: resolvedMusic.id });
 
-      await new Promise<void>((resolve) => {
-        const started = Date.now();
-        const tick = () => {
-          const elapsed = Date.now() - started;
-          const next = Math.min(100, Math.floor((elapsed / 1100) * 100));
-          setPostProgress(next);
-          if (next >= 100) resolve();
-          else window.setTimeout(tick, 60);
-        };
-        tick();
-      });
+      try {
+        const normalizedCaption = caption.trim();
+        const captionHashtags = Array.from(normalizedCaption.matchAll(/#([\p{L}0-9_]+)/gu)).map((m) => m[1]);
+        const manualHashtags = hashtagsText
+          .split(/[\s,]+/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .map((t) => (t.startsWith('#') ? t.slice(1) : t));
 
-      const newVideo = {
-          id: Date.now().toString(),
-          url: recordedVideoUrl,
-          thumbnail: `https://picsum.photos/400/600?random=${Date.now()}`,
-          duration: '0:15',
-          user: {
-            id: 'current_user',
-            username: 'me',
-            name: 'Current User',
-            avatar: 'https://ui-avatars.com/api/?name=Me',
-            isVerified: false,
-            followers: 1234,
-            following: 567
-          },
-          description: normalizedCaption || 'New video',
-          hashtags,
-          music: resolvedMusic,
-          stats: {
-            views: 0,
-            likes: 0,
-            comments: 0,
-            shares: 0,
-            saves: 0
-          },
-          createdAt: new Date().toISOString(),
-          isLiked: false,
-          isSaved: false,
-          isFollowing: false,
-          comments: [],
-          quality: 'auto' as const,
-          privacy: 'public' as const
-      };
+        const hashtags = Array.from(new Set([...captionHashtags, ...manualHashtags].map((h) => h.toLowerCase()))).slice(0, 20);
 
-      addVideo(newVideo);
-      trackEvent('upload_post_success', { videoId: newVideo.id });
-      setRecordedVideoUrl(null);
-      setChunks([]);
-      setIsPosting(false);
-      setPostProgress(0);
-      alert("Video Posted to For You Feed! ✅");
+        // Prepare file for upload
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+
+        // Subscribe to progress
+        videoUploadService.onProgress(({ progress, message }) => {
+          setPostProgress(progress);
+          console.log(message);
+        });
+
+        // Upload
+        const videoId = await videoUploadService.uploadVideo(file, user.id, {
+          description: normalizedCaption,
+          hashtags: hashtags,
+          isPrivate: false // Default public
+        });
+
+        // Refresh feed
+        await fetchVideos();
+
+        trackEvent('upload_post_success', { videoId });
+        setRecordedVideoUrl(null);
+        setChunks([]);
+        setIsPosting(false);
+        setPostProgress(0);
+        alert("Video Posted to For You Feed! ✅");
+        navigate('/feed'); // Go to feed
+        
+      } catch (error) {
+        console.error("Post failed:", error);
+        alert("Failed to post video. Please try again.");
+        setIsPosting(false);
+        setPostProgress(0);
+      }
   };
 
   const handleDiscard = () => {
@@ -386,6 +376,12 @@ export default function Upload() {
       if (file) {
         const url = URL.createObjectURL(file);
         setRecordedVideoUrl(url);
+        // Also set chunks so we can upload this file
+        // NOTE: For file upload, we might need to handle it differently in handlePost
+        // Currently handlePost assumes 'chunks' has the data. 
+        // Let's populate chunks with the file blob to reuse logic
+        const blob = file.slice(0, file.size, file.type);
+        setChunks([blob]);
       }
     };
     input.click();
@@ -415,7 +411,10 @@ export default function Upload() {
                </div>
 
                {/* Preview Top Controls */}
-               <div className="absolute top-[2%] left-0 right-0 z-20 flex justify-center pointer-events-auto">
+               <div className="absolute top-[2%] left-0 right-0 z-20 flex items-center justify-between pointer-events-auto px-4">
+                    <button onClick={() => navigate('/feed')} className="p-1" title="Back to For You">
+                      <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5" />
+                    </button>
                     <button 
                         className="w-40 h-8 rounded-full flex items-center justify-center gap-1 bg-black border border-transparent"
                         onClick={() => setShowMusicModal(true)}
@@ -468,7 +467,7 @@ export default function Upload() {
                    {isPosting ? (
                      <div className="w-full">
                        <div className="flex items-center justify-between text-xs text-white/70 mb-1">
-                         <span>Posting…</span>
+                         <span>{postProgress < 100 ? 'Posting…' : 'Finalizing…'}</span>
                          <span>{postProgress}%</span>
                        </div>
                        <div className="h-2 bg-white rounded-full overflow-hidden">
@@ -521,8 +520,31 @@ export default function Upload() {
               />
 
               {cameraError && (
-                <div className="absolute inset-0 flex items-center justify-center z-0 bg-gray-900 text-white p-4 text-center">
-                  <p>{cameraError}</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-[5] bg-black text-white p-6 text-center">
+                  <div className="w-14 h-14 rounded-full bg-[#E6B36A]/20 flex items-center justify-center mb-3">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E6B36A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9.34"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/></svg>
+                  </div>
+                  <p className="text-[#E6B36A] text-sm font-medium mb-1">{cameraError}</p>
+                  <p className="text-white/40 text-xs mb-4 max-w-[240px]">
+                    {cameraError.includes('permission') || cameraError.includes('Allow')
+                      ? 'Please allow camera access in your browser or device settings.'
+                      : 'Make sure your camera is connected and not in use by another app.'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setCameraError(null);
+                      // Force re-trigger by clearing and restarting
+                      if (videoRef.current && videoRef.current.srcObject) {
+                        const stream = videoRef.current.srcObject as MediaStream;
+                        stream.getTracks().forEach(track => track.stop());
+                        videoRef.current.srcObject = null;
+                      }
+                      setRecordedVideoUrl(null);
+                    }}
+                    className="px-5 py-2.5 rounded-full bg-[#E6B36A] text-black text-sm font-semibold active:scale-95 transition-transform pointer-events-auto"
+                  >
+                    Try Again
+                  </button>
                 </div>
               )}
 
@@ -537,11 +559,11 @@ export default function Upload() {
               <div className="absolute inset-0 z-20 w-full h-full pointer-events-auto">
                   {/* 1. Close Button */}
                   <button 
-                    onClick={() => navigate('/')} 
-                    className="absolute top-[2%] left-[5%] w-10 h-10 flex items-center justify-center bg-red-500/50 rounded-full"
+                    onClick={() => navigate('/feed')} 
+                    className="absolute top-[2%] left-[5%] w-10 h-10 flex items-center justify-center"
                     title="Close"
                   >
-                    X
+                    <img src="/Icons/power-button.png" alt="Close" className="w-6 h-6" />
                   </button>
 
                   {/* 2. Sound/Music */}
@@ -695,9 +717,9 @@ export default function Upload() {
                             </button>
                             <button 
                               onClick={() => setShowMusicModal(false)}
-                              className="text-white p-2"
+                              className="p-2"
                             >
-                                X
+                                <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5" />
                             </button>
                           </div>
                       </div>

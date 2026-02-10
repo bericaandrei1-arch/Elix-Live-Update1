@@ -42,8 +42,8 @@ export default function MusicFeed() {
       <div className="w-full max-w-[500px]">
         {/* Header Info */}
         <div className="p-4 pt-6 bg-gradient-to-b from-gray-900 to-black">
-         <button onClick={() => navigate(-1)} className="p-2 mb-4" title="Back">
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+         <button onClick={() => navigate('/feed')} className="p-2 mb-4" title="Back to For You">
+           <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
          </button>
          <div className="flex gap-4">
          <div className="w-24 h-24 bg-gray-800 rounded-md flex items-center justify-center shrink-0">

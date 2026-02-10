@@ -86,8 +86,20 @@ export default function EditProfile() {
         data: { publicUrl },
       } = supabase.storage.from('user-content').getPublicUrl(filePath);
 
+      // Immediately update the database with the new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', currentUserId);
+
+      if (updateError) throw updateError;
+
       setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
       trackEvent('profile_avatar_change', {});
+      
+      // Optional: Force a refresh of the user metadata if needed by other components
+      await supabase.auth.refreshSession();
+      
     } catch (error) {
       console.error('Failed to upload avatar:', error);
       alert('Failed to upload avatar');
@@ -131,7 +143,7 @@ export default function EditProfile() {
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 py-4 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-          <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+          <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold">Edit Profile</h1>
         <button
@@ -146,26 +158,34 @@ export default function EditProfile() {
       <div className="px-4 py-6 space-y-6">
         {/* Avatar */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative">
+          <div className="relative group cursor-pointer">
             <img
               src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.username}`}
               alt="Avatar"
-              className="w-24 h-24 object-cover"
+              className="w-24 h-24 object-cover rounded-full border-2 border-[#E6B36A]"
+              onClick={() => document.getElementById('avatar-upload')?.click()}
             />
             <label
               htmlFor="avatar-upload"
-              className="absolute bottom-0 right-0 w-8 h-8 bg-[#E6B36A] rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition"
+              className="absolute bottom-0 right-0 w-8 h-8 bg-[#E6B36A] rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition shadow-lg"
             >
               <Camera className="w-4 h-4 text-black" />
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
             </label>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
           </div>
+          <button 
+            type="button"
+            onClick={() => document.getElementById('avatar-upload')?.click()}
+            className="text-sm font-semibold text-[#E6B36A] hover:text-[#E6B36A]/80 transition"
+          >
+            Change Photo
+          </button>
           {uploading && <p className="text-sm text-white/60">Uploading...</p>}
           <p className="text-sm text-white/60">@{profile.username}</p>
         </div>

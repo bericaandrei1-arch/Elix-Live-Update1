@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Search, TrendingUp, Hash, Users, Video as VideoIcon } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
@@ -28,6 +29,7 @@ interface Hashtag {
 }
 
 export default function Discover() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'trending' | 'search' | 'hashtags'>('trending');
   const [searchQuery, setSearchQuery] = useState('');
   const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
@@ -127,7 +129,12 @@ export default function Discover() {
     <div className="min-h-screen bg-black text-white pb-24">
       {/* Header */}
       <div className="sticky top-0 bg-black z-10 px-4 py-4 border-b border-transparent">
-        <h1 className="text-2xl font-bold mb-4">Discover</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold">Discover</h1>
+        </div>
 
         {/* Search Bar */}
         <div className="flex items-center gap-3 rounded-full px-4 py-3">
@@ -260,8 +267,9 @@ function TabButton({
 }
 
 function VideoThumbnail({ video }: { video: Video }) {
+  const navigate = useNavigate();
   return (
-    <a href={`/video/${video.id}`} className="relative aspect-[9/16] bg-gray-800 rounded overflow-hidden">
+    <button onClick={() => navigate(`/video/${video.id}`)} className="relative aspect-[9/16] bg-gray-800 rounded overflow-hidden w-full">
       <img
         src={video.thumbnail_url || '/placeholder-video.png'}
         alt="Video"
@@ -271,38 +279,39 @@ function VideoThumbnail({ video }: { video: Video }) {
         <Heart className="w-3 h-3" />
         {formatNumber(video.views_count)}
       </div>
-    </a>
+    </button>
   );
 }
 
 function UserSearchResult({ user }: { user: User }) {
+  const navigate = useNavigate();
   return (
-    <a
-      href={`/profile/${user.username}`}
-      className="flex items-center gap-3 p-3 rounded-lg hover:brightness-125 transition"
+    <button
+      onClick={() => navigate(`/profile/${user.user_id}`)}
+      className="w-full flex items-center gap-3 p-3 rounded-lg hover:brightness-125 transition text-left"
     >
       <img
         src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}`}
         alt={user.username}
-        className="w-12 h-12 object-cover"
+        className="w-12 h-12 object-cover rounded-full"
       />
       <div className="flex-1">
         <p className="font-semibold">{user.username}</p>
         <p className="text-sm text-white/60">{formatNumber(user.followers_count || 0)} followers</p>
       </div>
-      <button className="px-4 py-2 bg-[#E6B36A] text-black rounded-full font-semibold text-sm">
+      <span className="px-4 py-2 bg-[#E6B36A] text-black rounded-full font-semibold text-sm">
         Follow
-      </button>
-    </a>
+      </span>
+    </button>
   );
 }
 
 function HashtagItem({ hashtag }: { hashtag: Hashtag }) {
+  const navigate = useNavigate();
   return (
-    <a
-      href={`/hashtag/${hashtag.tag}`}
-      onClick={() => trackEvent('hashtag_click', { hashtag: hashtag.tag })}
-      className="flex items-center justify-between p-4 rounded-lg hover:brightness-125 transition"
+    <button
+      onClick={() => { trackEvent('hashtag_click', { hashtag: hashtag.tag }); navigate(`/hashtag/${hashtag.tag}`); }}
+      className="w-full flex items-center justify-between p-4 rounded-lg hover:brightness-125 transition text-left"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-[#E6B36A] to-[#B8935C] rounded-full flex items-center justify-center">
@@ -314,7 +323,7 @@ function HashtagItem({ hashtag }: { hashtag: Hashtag }) {
         </div>
       </div>
       <TrendingUp className="w-5 h-5 text-[#E6B36A]" />
-    </a>
+    </button>
   );
 }
 

@@ -133,8 +133,8 @@ export default function PurchaseCoins() {
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <div className="sticky top-0 bg-black z-10 px-4 py-4 border-b border-transparent flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-          <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+        <button onClick={() => navigate('/feed')} className="p-2 hover:brightness-125 rounded-full transition">
+          <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold">Get Coins</h1>
         <div className="w-10"></div>

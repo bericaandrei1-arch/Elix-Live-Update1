@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Check } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -104,23 +104,32 @@ export default function Login() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 px-3 py-2 bg-white/10 border border-white/10 rounded-xl cursor-pointer">
-            <input
-              type="checkbox"
-              checked={saveDetails}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setSaveDetails(checked);
-                window.localStorage.setItem('login_save_details', checked ? 'true' : 'false');
-                if (!checked) {
-                  window.localStorage.removeItem('login_saved_email');
-                }
-                // Always clean up any legacy password storage
-                window.localStorage.removeItem('login_saved_password');
-              }}
-              className="w-4 h-4 rounded border-white/20 bg-white/10 text-[#E6B36A] focus:ring-[#E6B36A]"
-            />
-            <span className="text-sm text-white/70">Remember my email</span>
+          <label className="flex items-center gap-3 px-3 py-3 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition">
+            <div className="relative flex items-center">
+              <input
+                type="checkbox"
+                checked={saveDetails}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSaveDetails(checked);
+                  window.localStorage.setItem('login_save_details', checked ? 'true' : 'false');
+                  if (!checked) {
+                    window.localStorage.removeItem('login_saved_email');
+                  }
+                  // Always clean up any legacy password storage
+                  window.localStorage.removeItem('login_saved_password');
+                }}
+                className="peer sr-only"
+              />
+              <div className={`w-5 h-5 rounded-md border transition-all flex items-center justify-center ${
+                saveDetails 
+                  ? 'bg-[#E6B36A] border-[#E6B36A]' 
+                  : 'bg-white/10 border-white/30 group-hover:border-white/50'
+              }`}>
+                {saveDetails && <Check className="w-3.5 h-3.5 text-black stroke-[3]" />}
+              </div>
+            </div>
+            <span className="text-sm text-white/70 select-none">Remember my email</span>
           </label>
 
           {error && (

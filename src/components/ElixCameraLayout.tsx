@@ -25,7 +25,8 @@ import {
   SlidersHorizontal,
   RotateCcw,
   ImagePlus,
-  Layers
+  Layers,
+  Crosshair
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════
@@ -118,6 +119,29 @@ export default function ElixCameraLayout({
   currentSpeed = 1,
 }: ElixCameraLayoutProps) {
   const [selectedDuration, setSelectedDuration] = useState('60s');
+  const [focusLocked, setFocusLocked] = useState(false);
+
+  const toggleFocusLock = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !video.srcObject) return;
+    const stream = video.srcObject as MediaStream;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const caps = track.getCapabilities?.() as any;
+      if (caps?.focusMode) {
+        const newLocked = !focusLocked;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await track.applyConstraints({ advanced: [{ focusMode: newLocked ? 'manual' : 'continuous' } as any] });
+        setFocusLocked(newLocked);
+      } else {
+        setFocusLocked((v) => !v);
+      }
+    } catch {
+      setFocusLocked((v) => !v);
+    }
+  }, [focusLocked, videoRef]);
   const [beautyEnabled, setBeautyEnabled] = useState(true);
   const [beautyLevel, setBeautyLevel] = useState(0.5); // 0 to 1
 
@@ -232,7 +256,7 @@ export default function ElixCameraLayout({
       {/* TOP BAR */}
       {/* ══════════════════════════════════════════ */}
       <div className="absolute top-0 left-0 right-0 z-50 px-3 flex items-center justify-between pointer-events-auto" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}>
-        <div className="w-8 h-8"></div>
+        <div className="w-10 h-10"></div>
 
         {/* Add Sound Button */}
         <button
@@ -246,21 +270,10 @@ export default function ElixCameraLayout({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="w-6 h-6 flex items-center justify-center hover:scale-110 transition-transform active:scale-90"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform active:scale-90 z-[60] relative"
           title="Close"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D6A088" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-
-      {/* Flip Camera Button */}
-      <div className="absolute top-0 right-3 z-50 pointer-events-auto" style={{ paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 3rem))' }}>
-        <button
-          onClick={onFlipCamera}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform active:scale-90"
-          title="Flip Camera"
-        >
-          <RefreshCw size={18} strokeWidth={2} className="text-[#D6A088]" />
+          <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5 object-contain" />
         </button>
       </div>
 
@@ -313,6 +326,15 @@ export default function ElixCameraLayout({
       {/* ══════════════════════════════════════════ */}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-2.5 pointer-events-auto max-h-[65vh] overflow-y-auto scrollbar-hide pb-safe">
         
+        {/* Flip Camera */}
+        <button
+          onClick={onFlipCamera}
+          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+          title="Flip Camera"
+        >
+          <RefreshCw size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+        </button>
+
         {/* Flash */}
         <button 
           onClick={onFlashToggle}
@@ -326,9 +348,21 @@ export default function ElixCameraLayout({
           )}
         </button>
 
-        <div className="w-6 h-[1px] bg-[#D6A088]/25 rounded-full"></div>
+        {/* Focus Lock */}
+        <button 
+          onClick={toggleFocusLock}
+          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
+          title="Focus Lock"
+        >
+          <Crosshair size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          {focusLocked && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#D6A088] rounded-full flex items-center justify-center">
+              <Check size={8} className="text-white" strokeWidth={2.5} />
+            </div>
+          )}
+        </button>
 
-        {/* Timer */}
+        <div className="w-6 h-[1px] bg-[#D6A088]/25 rounded-full"></div>
         <button 
           onClick={onTimerCycle}
           className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
@@ -748,21 +782,17 @@ export default function ElixCameraLayout({
       {/* ══════════════════════════════════════════ */}
       {!showEffectsPanel && !showCapCutPanel && !showStickerPicker && (
         <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-auto" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
-          {/* Duration Selector */}
-          <div className="flex items-center justify-start gap-1.5 mb-3 overflow-x-auto px-3 pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#D6A088 transparent' }}>
-            {durations.map((duration) => (
-              <button
-                key={duration}
-                onClick={() => setSelectedDuration(duration)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex-shrink-0 active:scale-90 ${
-                  selectedDuration === duration
-                    ? 'bg-[#D6A088] text-black scale-105'
-                    : 'text-[#D6A088] hover:bg-[#D6A088]/8'
-                }`}
-              >
-                {duration}
-              </button>
-            ))}
+          {/* Duration Selector - Tap to cycle */}
+          <div className="flex justify-center mb-3">
+            <button
+              onClick={() => {
+                const idx = durations.indexOf(selectedDuration);
+                setSelectedDuration(durations[(idx + 1) % durations.length]);
+              }}
+              className="px-4 py-1.5 rounded-full bg-[#D6A088] text-black text-xs font-semibold active:scale-90 transition-transform"
+            >
+              {selectedDuration}
+            </button>
           </div>
 
           {/* Record Button */}

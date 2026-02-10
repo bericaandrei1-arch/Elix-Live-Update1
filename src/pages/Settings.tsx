@@ -58,7 +58,10 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-black text-white pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 px-4 py-4">
+      <div className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+          <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+        </button>
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 

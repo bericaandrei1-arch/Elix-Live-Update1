@@ -75,9 +75,14 @@ export default function LiveDiscover() {
 
         <div className="relative z-10 px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-extrabold text-xl">Live</p>
-              <p className="text-white/60 text-xs font-semibold">Cine e live acum</p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+                <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+              </button>
+              <div>
+                <p className="text-white font-extrabold text-xl">Live</p>
+                <p className="text-white/60 text-xs font-semibold">Cine e live acum</p>
+              </div>
             </div>
             <button 
               onClick={fetchLiveStreams}

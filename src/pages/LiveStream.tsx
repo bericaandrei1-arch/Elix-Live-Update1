@@ -870,7 +870,8 @@ export default function LiveStream() {
     if (!isBattleMode || battleTime <= 0 || battleWinner) return;
     
     // Apply speed multiplier if active - using Refs to avoid stale closures
-    const finalPoints = speedChallengeActiveRef.current ? points * speedMultiplierRef.current : points;
+    const rawPoints = speedChallengeActiveRef.current ? points * speedMultiplierRef.current : points;
+    const finalPoints = points <= 5 ? Math.min(rawPoints, 5) : rawPoints;
     
     if (target === 'me') {
       setMyScore((prev) => prev + finalPoints);
@@ -921,6 +922,20 @@ export default function LiveStream() {
       return `${label}K`;
     }
     return coins.toLocaleString();
+  };
+
+  const formatCountShort = (count: number) => {
+    if (count >= 1_000_000) {
+      const m = Math.round((count / 1_000_000) * 10) / 10;
+      const label = Number.isInteger(m) ? String(Math.trunc(m)) : String(m);
+      return `${label}M`;
+    }
+    if (count >= 1000) {
+      const k = Math.round((count / 1000) * 10) / 10;
+      const label = Number.isInteger(k) ? String(Math.trunc(k)) : String(k);
+      return `${label}K`;
+    }
+    return String(count);
   };
 
   const activeViewersRef = useRef<SimulatedViewer[]>([]);
@@ -2064,16 +2079,16 @@ export default function LiveStream() {
   };
 
   const handleScreenTap = () => {
-    const now = Date.now();
-    const last = lastScreenTapRef.current;
-    lastScreenTapRef.current = now;
-    if (now - last > 320) return;
     if (isBattleMode) {
       if (isBroadcast) return;
       addLiveLikes(1);
       awardBattlePoints(giftTarget, 3);
       return;
     }
+    const now = Date.now();
+    const last = lastScreenTapRef.current;
+    lastScreenTapRef.current = now;
+    if (now - last > 320) return;
     handleComboClick();
   };
 
@@ -2244,7 +2259,7 @@ export default function LiveStream() {
                 <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
                   <div className="flex items-center gap-1.5">
                     <span className="text-white font-bold text-[12px]">Viewers</span>
-                    <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 text-[9px] font-bold">{viewerCount.toLocaleString()}</span>
+                    <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 text-[8px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
                   </div>
                   <button onClick={() => setShowViewerList(false)} title="Close viewer list" className="p-1">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2635,7 +2650,7 @@ export default function LiveStream() {
                             })}
                           </div>
                           <button onClick={() => setShowViewerList(prev => !prev)} className="flex items-center gap-0.5">
-                            <span className="text-white text-[11px] font-bold tabular-nums">{viewerCount.toLocaleString()}</span>
+                            <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                           </button>
                         </div>
@@ -2707,7 +2722,7 @@ export default function LiveStream() {
                                 <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
                               ))}
                             </div>
-                            <span className="text-white text-[10px] font-bold">{viewerCount.toLocaleString()}</span>
+                            <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
                           </button>
                           <button type="button" onClick={() => navigate('/')} className="w-10 h-10 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
                             <LogOut size={20} strokeWidth={2.5} />
@@ -2786,10 +2801,26 @@ export default function LiveStream() {
             </div>
           )}
 
-          {/* Broadcaster Spacer (allows keyboard to lift without UI clutter) */}
           {isBroadcast && (
-            <div className="h-10 flex items-center justify-end gap-3 pointer-events-auto translate-y-[12px]">
-              {/* Added buttons bottom right for broadcaster - REORDERED: Invite, Gift, More */}
+            <div className="flex items-center gap-3 pointer-events-auto translate-y-[12px]">
+              <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2 border border-white/10 h-10 min-w-0">
+                <input
+                  type="text"
+                  inputMode="text"
+                  enterKeyHint="send"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  placeholder="Say something..."
+                  className="bg-transparent text-white text-sm outline-none flex-1 placeholder:text-white/40 min-w-0"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                />
+                <button type="submit" className="text-[#E6B36A] hover:text-[#E6B36A]/80 transition flex-shrink-0" title="Send">
+                  <Send size={18} />
+                </button>
+              </form>
+
+              <div className="flex items-center justify-end gap-3 flex-shrink-0">
               {isBattleMode && battleWinner && (
                 <button 
                   type="button" 
@@ -2818,6 +2849,7 @@ export default function LiveStream() {
               <button type="button" onClick={() => setIsMoreMenuOpen(true)} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
                 <MoreVertical size={20} className="text-white" />
               </button>
+              </div>
             </div>
           )}
         </div>

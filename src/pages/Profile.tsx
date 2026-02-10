@@ -167,9 +167,28 @@ export default function Profile() {
 
     try {
       const publicUrl = await uploadAvatar(file, user.id);
-      const { error } = await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
-      if (error) throw new Error(error.message);
+      
+      // 1. Update Auth Metadata
+      const { error: authError } = await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+      if (authError) throw authError;
+
+      // 2. Update Public Profiles Table (CRITICAL for display)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+      
+      if (profileError) throw profileError;
+
+      // 3. Update Local State
       updateUser({ avatar: publicUrl });
+      
+      // 4. Update Current View
+      if (profileData) {
+        setProfileData({ ...profileData, avatar_url: publicUrl });
+      }
+      
+      trackEvent('profile_avatar_change', { from: 'profile_page' });
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : 'Avatar upload failed.');
     } finally {
@@ -182,7 +201,9 @@ export default function Profile() {
     <div className="min-h-screen bg-black text-white pb-24 pt-4 flex justify-center">
       <div className="w-full max-w-[500px]">
         <header className="flex justify-between items-center px-4 mb-6">
-            <div className="w-6"></div>
+            <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+              <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+            </button>
             <h1 className="font-black text-2xl flex items-center gap-2 text-white/90 tracking-tight drop-shadow-sm">
                 {displayName}
             </h1>
@@ -431,10 +452,10 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-[1px] mt-[1px]">
              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
              {videos.map((video: any) => (
-                 <a
+                 <button
                    key={video.id}
-                   href={`/video/${video.id}`}
-                   className="aspect-[3/4] bg-gray-800 relative group"
+                   onClick={() => navigate(`/video/${video.id}`)}
+                   className="aspect-[3/4] bg-gray-800 relative group text-left"
                  >
                     <img 
                         src={video.thumbnail_url || '/placeholder-video.png'} 
@@ -449,7 +470,7 @@ export default function Profile() {
                     <span className="absolute bottom-1 left-1 flex items-center text-xs font-bold text-white drop-shadow-md">
                         <Play size={10} className="mr-1" fill="white" /> {formatNumber(video.views_count)}
                     </span>
-                 </a>
+                 </button>
              ))}
         </div>
         

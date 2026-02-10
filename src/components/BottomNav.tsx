@@ -18,8 +18,9 @@ export const BottomNav = () => {
   }
 
   return (
-    <nav className="fixed right-0 z-[199] pointer-events-none bg-transparent" style={{ bottom: '-3mm', paddingBottom: 'env(safe-area-inset-bottom, 8px)', left: '-4mm' }}>
-      <div className="flex justify-center px-2 pb-2 bg-transparent">
+    <nav className="fixed left-0 right-0 z-[199] pointer-events-none bg-transparent"
+         style={{ bottom: '0', paddingBottom: 'var(--safe-bottom)' }}>
+      <div className="flex justify-center px-[1%] bg-transparent">
         <div className="relative w-full max-w-[500px]" style={{ transform: 'scaleY(0.85)' }}>
           {/* Background bar with LUXURY GLOW */}
           <img 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Hash, TrendingUp } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
@@ -12,6 +12,7 @@ interface Video {
 }
 
 export default function Hashtag() {
+  const navigate = useNavigate();
   const { tag } = useParams<{ tag: string }>();
   const [videos, setVideos] = useState<Video[]>([]);
   const [hashtagInfo, setHashtagInfo] = useState<{ use_count: number; trending_score: number } | null>(null);
@@ -61,6 +62,9 @@ export default function Hashtag() {
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 py-6">
         <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+          </button>
           <div className="w-16 h-16 bg-gradient-to-br from-[#E6B36A] to-[#B8935C] rounded-full flex items-center justify-center">
             <Hash className="w-8 h-8 text-black" />
           </div>

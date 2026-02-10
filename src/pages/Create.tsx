@@ -128,27 +128,26 @@ function SoundPickerModal({
           </div>
         </div>
 
-        <div className="max-h-[55vh] overflow-y-auto">
+        <div className="max-h-[45vh] overflow-y-auto">
           {sounds.map((s) => (
             <div
               key={s.id}
-              className="w-full px-4 py-4 flex items-center justify-between hover:brightness-125 transition-colors"
+              className="w-full px-3 py-2 flex items-center justify-between hover:brightness-125 transition-colors"
             >
-              <div className="text-left">
-                <p className="text-white font-medium leading-5">{s.title}</p>
-                <p className="text-white/60 text-sm leading-5">{s.artist}</p>
-                <p className="text-white/40 text-[11px] leading-5">{formatClip(s.clipStartSeconds, s.clipEndSeconds)} • {s.license} • {s.source}</p>
+              <div className="text-left flex-1 min-w-0 mr-2">
+                <p className="text-white text-sm font-medium leading-4 truncate">{s.title}</p>
+                <p className="text-white/50 text-xs leading-4 truncate">{s.artist} • {formatClip(s.clipStartSeconds, s.clipEndSeconds)}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => togglePreview(s)}
-                  className="w-10 h-10 rounded-full border border-[#E6B36A]/25 bg-black flex items-center justify-center"
+                  className="w-8 h-8 rounded-full border border-[#E6B36A]/25 bg-black flex items-center justify-center"
                 >
                   {playingId === String(s.id) ? (
-                    <Pause className="w-5 h-5 text-[#E6B36A]" strokeWidth={2} />
+                    <Pause className="w-3.5 h-3.5 text-[#E6B36A]" strokeWidth={2} />
                   ) : (
-                    <Play className="w-5 h-5 text-[#E6B36A]" strokeWidth={2} />
+                    <Play className="w-3.5 h-3.5 text-[#E6B36A]" strokeWidth={2} />
                   )}
                 </button>
                 <button
@@ -157,22 +156,13 @@ function SoundPickerModal({
                     onPick(s);
                     onClose();
                   }}
-                  className="px-3 py-1.5 rounded-full border border-[#E6B36A]/35 text-[#E6B36A] text-xs font-semibold"
+                  className="px-2.5 py-1 rounded-full border border-[#E6B36A]/35 text-[#E6B36A] text-[10px] font-semibold"
                 >
                   Use
                 </button>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="p-4 border-t border-[#E6B36A]/20">
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-xl bg-[#E6B36A] text-black font-semibold"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
@@ -198,6 +188,7 @@ export default function Create() {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isLandscapeStream, setIsLandscapeStream] = useState(false);
   const [hwZoomRange, setHwZoomRange] = useState<{ min: number; max: number } | null>(null);
+  const [retryCamera, setRetryCamera] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -316,7 +307,7 @@ export default function Create() {
       cancelled = true;
       stopStream();
     };
-  }, [isFrontCamera, previewUrl]);
+  }, [isFrontCamera, previewUrl, retryCamera]);
 
   const openUploadPicker = () => {
     fileInputRef.current?.click();
@@ -658,12 +649,19 @@ export default function Create() {
               />
 
               {cameraError && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <div className="w-16 h-16 rounded-full bg-[#E6B36A]/20 flex items-center justify-center mx-auto mb-4">
-                      <CameraOff className="w-8 h-8 text-[#E6B36A]" strokeWidth={2} />
-                    </div>
-                    <p className="text-[#E6B36A] text-sm">{cameraError}</p>
+                <div className="absolute inset-0 flex items-center justify-center bg-black z-[100]">
+                  <div className="text-center p-4 max-w-[220px]">
+                    <CameraOff className="w-10 h-10 text-[#E6B36A]/60 mx-auto mb-3" strokeWidth={1.5} />
+                    <p className="text-white/60 text-xs mb-3">{cameraError}</p>
+                    <button
+                      onClick={() => {
+                        setCameraError(null);
+                        setRetryCamera((c) => c + 1);
+                      }}
+                      className="px-4 py-2 rounded-full bg-[#E6B36A] text-black text-xs font-semibold active:scale-95 transition-transform"
+                    >
+                      Try Again
+                    </button>
                   </div>
                 </div>
               )}
@@ -710,7 +708,7 @@ export default function Create() {
           isRecording={isRecording}
           isPaused={false}
           onRecord={mode === 'live' ? startLive : (isRecording ? stopRecording : startRecording)}
-          onClose={() => navigate(-1)}
+          onClose={() => navigate('/feed')}
           onFlipCamera={flipCamera}
           onSelectMusic={() => setIsSoundOpen(true)}
           onAIMusicGenerator={() => setIsSoundOpen(true)}

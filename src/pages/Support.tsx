@@ -94,7 +94,7 @@ export default function Support() {
             onClick={() => setShowContactForm(false)}
             className="p-2 hover:brightness-125 rounded-full transition"
           >
-            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-bold">Contact Support</h1>
           <div className="w-10"></div>
@@ -154,7 +154,7 @@ export default function Support() {
       {/* Header */}
       <div className="sticky top-0  z-10 px-4 py-4 border-b border-transparent flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
-          <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+          <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
         </button>
         <h1 className="text-xl font-bold">Help & Support</h1>
       </div>

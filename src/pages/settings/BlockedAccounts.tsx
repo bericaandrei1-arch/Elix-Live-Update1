@@ -76,8 +76,8 @@ export default function BlockedAccounts() {
       {/* Header */}
       <div className="sticky top-0 bg-black z-10 px-4 py-4 border-b border-transparent">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-black rounded-full transition">
-            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+          <button onClick={() => navigate(-1)} className="p-2 hover:brightness-125 rounded-full transition">
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
           </button>
           <h1 className="text-xl font-bold">Blocked Accounts</h1>
         </div>

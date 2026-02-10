@@ -141,7 +141,7 @@ function App() {
     <div className="min-h-screen bg-background text-text font-sans">
       {isDev && <TouchBlockerDebug />}
       <OfflineBanner />
-      <main className={cn("min-h-screen", !isFullScreen && "pb-32")}>
+      <main className={cn("min-h-screen", !isFullScreen && "pb-nav")}>
         <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
         <Routes>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Heart, MessageCircle, UserPlus, Gift, Bell, Mail } from 'lucide-react';
 
@@ -25,6 +26,7 @@ interface Conversation {
 }
 
 export default function Inbox() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'notifications' | 'messages'>('notifications');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -115,7 +117,12 @@ export default function Inbox() {
     <div className="min-h-screen bg-black text-white pb-24">
       {/* Header */}
       <div className="sticky top-0 bg-black z-10 px-4 py-4 border-b border-transparent">
-        <h1 className="text-2xl font-bold">Inbox</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <button onClick={() => navigate('/feed')} className="p-1 hover:brightness-125 transition" title="Back to For You">
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold">Inbox</h1>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-4 mt-4">
@@ -154,7 +161,7 @@ export default function Inbox() {
                 onClick={() => {
                   markAsRead(notif.id);
                   if (notif.action_url) {
-                    window.location.href = notif.action_url;
+                    navigate(notif.action_url);
                   }
                 }}
                 className={`flex items-start gap-3 p-4 rounded-lg cursor-pointer transition ${
@@ -190,7 +197,7 @@ export default function Inbox() {
             {conversations.map(conv => (
               <div
                 key={conv.id}
-                onClick={() => (window.location.href = `/messages/${conv.id}`)}
+                onClick={() => navigate(`/inbox/${conv.id}`)}
                 className="flex items-center gap-3 p-4 rounded-lg cursor-pointer hover:brightness-125 transition"
               >
                 <img

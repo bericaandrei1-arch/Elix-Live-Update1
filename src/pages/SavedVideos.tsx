@@ -16,8 +16,8 @@ export default function SavedVideos() {
     <div className="min-h-screen bg-black text-white flex justify-center">
       <div className="w-full max-w-[500px]">
         <div className="p-4 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-1">
-            <img src="/Icons/power-button.png" alt="Back" className="w-4 h-4" />
+          <button onClick={() => navigate('/feed')} className="p-1">
+            <img src="/Icons/power-button.png" alt="Back" className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-bold">Saved Videos</h1>
         </div>
@@ -25,7 +25,7 @@ export default function SavedVideos() {
       {/* Grid */}
       <div className="grid grid-cols-3 gap-0.5 p-0.5">
         {SAVED_VIDEOS.map((video) => (
-          <div key={video.id} className="aspect-[3/4] bg-gray-900 relative cursor-pointer" onClick={() => navigate('/')}>
+          <div key={video.id} className="aspect-[3/4] bg-gray-900 relative cursor-pointer" onClick={() => navigate('/feed')}>
              <video 
                src={video.url} 
                className="w-full h-full object-cover" 
