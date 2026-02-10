@@ -1,14 +1,27 @@
 import { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Lazy Supabase initialization — avoids crash when env vars are missing
+let _supabaseAdmin: any = null;
+let _supabase: any = null;
 
-// Admin client for privileged operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
-// Regular client if needed (though admin is usually fine for server-side if careful)
-const supabase = createClient(supabaseUrl, supabaseServiceRole); 
+function getSupabaseAdmin() {
+  if (_supabaseAdmin) return _supabaseAdmin;
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase not configured');
+  _supabaseAdmin = createClient(url, key);
+  return _supabaseAdmin;
+}
+
+function getSupabase() {
+  if (_supabase) return _supabase;
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase not configured');
+  _supabase = createClient(url, key);
+  return _supabase;
+}
 
 // Rate limiting helper (simplified)
 const rateLimits = new Map<string, { count: number; timestamp: number }>();
@@ -41,7 +54,7 @@ export async function handleAnalytics(req: Request, res: Response) {
       return res.status(400).send('Missing required fields');
     }
 
-    const { error } = await supabase.from('analytics_events').insert({
+    const { error } = await getSupabase().from('analytics_events').insert({
       event: body.event,
       properties: body.properties,
       user_id: body.user_id,
@@ -70,7 +83,7 @@ export async function handleBlockUser(req: Request, res: Response) {
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
   if (!token) return res.status(401).json({ error: 'Missing auth token' });
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await getSupabaseAdmin().auth.getUser(token);
   if (error || !data.user) return res.status(401).json({ error: 'Invalid auth token' });
 
   const body = req.body;
@@ -81,7 +94,7 @@ export async function handleBlockUser(req: Request, res: Response) {
   if (blockedUserId === data.user.id) return res.status(400).json({ error: 'Cannot block yourself' });
 
   if (action === 'unblock') {
-    const del = await supabaseAdmin
+    const del = await getSupabaseAdmin()
       .from('user_blocks')
       .delete()
       .eq('blocker_id', data.user.id)
@@ -90,7 +103,7 @@ export async function handleBlockUser(req: Request, res: Response) {
     return res.json({ success: true, action });
   }
 
-  const ins = await supabaseAdmin.from('user_blocks').insert({
+  const ins = await getSupabaseAdmin().from('user_blocks').insert({
     blocker_id: data.user.id,
     blocked_id: blockedUserId,
   });
@@ -109,7 +122,7 @@ export async function handleDeleteAccount(req: Request, res: Response) {
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
   if (!token) return res.status(401).json({ error: 'Missing auth token' });
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await getSupabaseAdmin().auth.getUser(token);
   if (error || !data.user) return res.status(401).json({ error: 'Invalid auth token' });
 
   // Rate limit
@@ -117,7 +130,7 @@ export async function handleDeleteAccount(req: Request, res: Response) {
   if (!rateCheck.allowed) return res.status(429).json({ error: 'Too many requests' });
 
   const userId = data.user.id;
-  const del = await supabaseAdmin.auth.admin.deleteUser(userId);
+  const del = await getSupabaseAdmin().auth.admin.deleteUser(userId);
   if (del.error) return res.status(500).json({ error: del.error.message });
 
   return res.json({ success: true });
@@ -131,7 +144,7 @@ export async function handleReport(req: Request, res: Response) {
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
   if (!token) return res.status(401).json({ error: 'Missing auth token' });
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await getSupabaseAdmin().auth.getUser(token);
   if (error || !data.user) return res.status(401).json({ error: 'Invalid auth token' });
 
   // Rate limit: 10 reports per hour
@@ -143,7 +156,7 @@ export async function handleReport(req: Request, res: Response) {
 
   if (!targetType || !targetId || !reason) return res.status(400).json({ error: 'Missing report fields' });
 
-  const insert = await supabaseAdmin.from('reports').insert({
+  const insert = await getSupabaseAdmin().from('reports').insert({
     reporter_id: data.user.id,
     target_type: targetType,
     target_id: targetId,
@@ -171,7 +184,7 @@ export async function handleSendNotification(req: Request, res: Response) {
     const { userId, title, body, data, imageUrl } = req.body;
     if (!userId || !title || !body) return res.status(400).json({ error: 'Missing required fields' });
 
-    const { data: tokens, error } = await supabase
+    const { data: tokens, error } = await getSupabase()
       .from('device_tokens')
       .select('token, platform')
       .eq('user_id', userId)
@@ -199,7 +212,7 @@ export async function handleVerifyPurchase(req: Request, res: Response) {
   if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   
   const token = authHeader.slice(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  const { data: { user }, error: authError } = await getSupabase().auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
@@ -217,7 +230,7 @@ export async function handleVerifyPurchase(req: Request, res: Response) {
 
     if (!isValid) return res.status(400).json({ error: 'Invalid receipt' });
 
-    const { data, error } = await supabase.rpc('verify_purchase', {
+    const { data, error } = await getSupabase().rpc('verify_purchase', {
       p_user_id: userId,
       p_package_id: packageId,
       p_provider: provider,
