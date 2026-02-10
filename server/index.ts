@@ -33,6 +33,11 @@ app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }), handle
 // Other routes use JSON
 app.use(express.json());
 
+// Health check endpoint (must be before static files)
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // API Routes
 app.post('/api/create-checkout-session', createCheckoutSession);
 app.post('/api/create-payment-intent', createPaymentIntent);
