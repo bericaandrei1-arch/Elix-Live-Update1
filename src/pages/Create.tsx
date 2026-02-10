@@ -219,15 +219,36 @@ export default function Create() {
     const start = async () => {
       try {
         setCameraError(null);
+
+        // Check HTTPS requirement first
+        const isInsecure =
+          typeof window !== 'undefined' &&
+          window.location.protocol !== 'https:' &&
+          window.location.hostname !== 'localhost';
+        if (isInsecure) {
+          setCameraError('Camera requires HTTPS. Open this page with https:// to use the camera.');
+          return;
+        }
+
         if (!navigator.mediaDevices?.getUserMedia) {
           setCameraError('Camera not supported on this device.');
           return;
         }
 
+        // Check permission state BEFORE calling getUserMedia
+        try {
+          const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          if (permStatus.state === 'denied') {
+            setCameraError('Camera is blocked by your browser. Click the 🔒 lock icon in your address bar, set Camera to "Allow", then tap Try Again.');
+            return;
+          }
+        } catch {
+          // permissions.query not supported on this browser — proceed to getUserMedia
+        }
+
         stopStream();
 
         // No resolution constraints = camera uses its widest native field of view
-        // This prevents the browser from cropping/zooming the camera feed
         const nextStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: isFrontCamera ? 'user' : 'environment',
@@ -277,37 +298,17 @@ export default function Create() {
 
         const err = e as { name?: string };
 
-        const isInsecure =
-          typeof window !== 'undefined' &&
-          window.location.protocol !== 'https:' &&
-          window.location.hostname !== 'localhost';
-
-        if (isInsecure) {
-          setCameraError('Camera requires HTTPS.');
-          return;
-        }
-
         if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') {
-          // Check if permission is permanently denied
-          try {
-            const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-            if (permStatus.state === 'denied') {
-              setCameraError('Camera blocked. Tap the lock icon in your address bar → Allow camera, then try again.');
-              return;
-            }
-          } catch {
-            // permissions.query not supported
-          }
-          setCameraError('Allow camera permissions to continue.');
+          setCameraError('Camera is blocked by your browser. Click the 🔒 lock icon in your address bar, set Camera to "Allow", then tap Try Again.');
           return;
         }
 
         if (err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
-          setCameraError('No camera found.');
+          setCameraError('No camera found on this device.');
           return;
         }
 
-        setCameraError('Camera unavailable.');
+        setCameraError('Camera unavailable. Make sure no other app is using it.');
       }
     };
 
@@ -661,16 +662,16 @@ export default function Create() {
 
               {cameraError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black z-[100]">
-                  <div className="text-center p-4 max-w-[260px]">
-                    <CameraOff className="w-10 h-10 text-[#E6B36A]/60 mx-auto mb-3" strokeWidth={1.5} />
-                    <p className="text-white/80 text-sm font-medium mb-1">Camera Access Needed</p>
-                    <p className="text-white/50 text-xs mb-4 leading-relaxed">{cameraError}</p>
+                  <div className="text-center p-5 max-w-[280px]">
+                    <CameraOff className="w-12 h-12 text-[#E6B36A]/70 mx-auto mb-4" strokeWidth={1.5} />
+                    <p className="text-white text-sm font-semibold mb-2">Camera Access Needed</p>
+                    <p className="text-white/60 text-xs mb-5 leading-relaxed">{cameraError}</p>
                     <button
                       onClick={() => {
                         setCameraError(null);
                         setRetryCamera((c) => c + 1);
                       }}
-                      className="px-5 py-2.5 rounded-full bg-[#E6B36A] text-black text-xs font-semibold active:scale-95 transition-transform"
+                      className="px-6 py-2.5 rounded-full bg-[#E6B36A] text-black text-sm font-semibold active:scale-95 transition-transform"
                     >
                       Try Again
                     </button>
