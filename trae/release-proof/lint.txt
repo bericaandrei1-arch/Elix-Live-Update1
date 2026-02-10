@@ -1,4 +1,0 @@
-﻿ESLint strict check (--max-warnings 0)
-Exit code: 0
-
-
