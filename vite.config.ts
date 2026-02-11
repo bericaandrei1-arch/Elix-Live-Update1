@@ -5,7 +5,7 @@ import path from 'node:path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -28,7 +28,8 @@ export default defineConfig({
     react({
       babel: {
         plugins: [
-          'react-dev-locator',
+          // Only include Trae dev locator in development mode
+          ...(mode === 'development' ? ['react-dev-locator'] : []),
         ],
       },
     }),
@@ -65,4 +66,4 @@ export default defineConfig({
     }),
     tsconfigPaths()
   ],
-})
+}))
