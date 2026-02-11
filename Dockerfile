@@ -36,7 +36,8 @@ COPY --from=builder /app/tsconfig.json ./
 # Copy .env if it exists (Railway injects env vars, but .env is a fallback)
 COPY --from=builder /app/.env* ./
 
-ENV PORT=8080
+# Railway sets PORT dynamically — default to 8080 if not set
+ENV PORT=${PORT:-8080}
 EXPOSE 8080
 
 CMD ["npm", "start"]
