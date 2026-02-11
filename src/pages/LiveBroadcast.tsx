@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
 import { getCachedCameraStream } from '../lib/cameraStream';
 import { websocket } from '../lib/websocket';
+import { useLivePromoStore } from '../store/useLivePromoStore';
 
 type BroadcastState = 'setup' | 'live' | 'ending';
 
@@ -158,6 +159,14 @@ export default function LiveBroadcast() {
       setStreamKey(key);
       setBroadcastState('live');
 
+      // Auto-promote to FYP so viewers see it immediately
+      useLivePromoStore.getState().setPromo({
+        type: 'live',
+        streamId: data.id,
+        likes: 0,
+        createdAt: Date.now(),
+      });
+
       if (session?.access_token) {
         websocket.connect(data.id, session.access_token);
       }
@@ -169,6 +178,9 @@ export default function LiveBroadcast() {
 
   const endStream = async () => {
     setBroadcastState('ending');
+
+    // Remove FYP promo card when stream ends
+    useLivePromoStore.getState().clearPromo('live');
 
     try {
       if (streamId) {

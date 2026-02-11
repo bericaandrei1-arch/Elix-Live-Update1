@@ -25,7 +25,7 @@ const WEIGHT_VIEW    = 1;
 export const FYP_THRESHOLD = 50;
 
 /** Boost given to every newly-uploaded video so it gets initial exposure */
-export const NEW_VIDEO_BOOST = 30;
+export const NEW_VIDEO_BOOST = 50;
 
 // ── Public helpers ───────────────────────────────────────────────
 

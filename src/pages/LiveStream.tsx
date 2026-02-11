@@ -387,8 +387,8 @@ export default function LiveStream() {
   const setPromo = useLivePromoStore((s) => s.setPromo);
   const updateUser = useAuthStore((s) => s.updateUser);
   const effectiveStreamId = streamId || 'broadcast';
-  const PROMOTE_LIKES_THRESHOLD_LIVE = 10_000;
-  const _PROMOTE_LIKES_THRESHOLD_BATTLE = 5_000;
+  const PROMOTE_LIKES_THRESHOLD_LIVE = 100;
+  const _PROMOTE_LIKES_THRESHOLD_BATTLE = 50;
   
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const giftPanelOpenedAtRef = useRef(0);
