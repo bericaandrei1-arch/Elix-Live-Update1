@@ -33,8 +33,8 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/tsconfig.json ./
 
-# Copy .env if it exists (Railway injects env vars, but .env is a fallback)
-COPY --from=builder /app/.env* ./
+# Do NOT copy .env — Railway injects env vars; .env would override PORT
+# COPY --from=builder /app/.env* ./
 
 # Railway sets PORT dynamically — default to 8080 if not set
 ENV PORT=${PORT:-8080}
