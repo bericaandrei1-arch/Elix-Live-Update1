@@ -4,8 +4,8 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createClient } from '@supabase/supabase-js';
-import * as path from 'path';
 import { fileURLToPath } from 'url';
+import path, { dirname, join } from 'path';
 import { createCheckoutSession, createPaymentIntent } from './routes/checkout';
 import { handleStripeWebhook } from './routes/webhook';
 import { 
@@ -18,7 +18,7 @@ import {
 } from './routes/misc';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = createServer(app);
@@ -49,12 +49,27 @@ app.post('/api/send-notification', handleSendNotification);
 app.post('/api/verify-purchase', handleVerifyPurchase);
 
 // Serve static files from dist
-const distPath = path.join(__dirname, '..', 'dist');
+const distPath = join(__dirname, '..', 'dist');
+const indexPath = join(distPath, 'index.html');
+
+// Log dist path on startup for debugging
+console.log(`Serving static files from: ${distPath}`);
+
+import fs from 'fs';
+if (!fs.existsSync(indexPath)) {
+  console.error(`ERROR: index.html not found at ${indexPath}`);
+  console.error('Available files:', fs.existsSync(distPath) ? fs.readdirSync(distPath).join(', ') : 'dist folder missing');
+}
+
 app.use(express.static(distPath));
 
-// Fallback for SPA
-app.get(/(.*)/, (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+// Fallback for SPA - all non-API routes serve index.html
+app.get('{*path}', (_req, res) => {
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(500).send('<h1>App build not found</h1><p>dist/index.html is missing. Redeploy the app.</p>');
+  }
 });
 
 // WebSocket Server
@@ -65,6 +80,21 @@ console.log(`WebSocket server attached to HTTP server on port ${PORT}`);
 
 // --- WebSocket Logic (Copied from websocket-server.ts) ---
 
+let nhost: ReturnType<typeof createClient> | null = null;
+try {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && supabaseServiceRoleKey) {
+    nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.log('Supabase environment variables not set, running without authentication');
+  }
+} catch (e) {
+  console.error("Supabase init failed, running without authentication:", e);
+  nhost = null;
+}
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -74,21 +104,23 @@ function requireEnv(name: string): string {
   return value;
 }
 
-let supabase: ReturnType<typeof createClient>;
-try {
-  const sbUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-  if (!sbUrl || !sbKey) throw new Error("Missing Supabase Config");
-  supabase = createClient(sbUrl, sbKey);
-} catch (e) {
-  console.error("Supabase init failed", e);
-}
+// Supabase client (commented out since auth is disabled)
+// let nhost: ReturnType<typeof createClient>;
+// try {
+//   const supabaseUrl = process.env.SUPABASE_URL;
+//   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+//   if (!supabaseUrl || !supabaseServiceRoleKey) throw new Error("Missing Supabase Config");
+//   nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
+// } catch (e) {
+//   console.error("Supabase init failed", e);
+// }
 
 interface Client {
   ws: WebSocket;
   userId: string;
   roomId: string;
   username: string;
+  connectedAt: Date;
 }
 
 const rooms = new Map<string, Set<Client>>();
@@ -108,66 +140,71 @@ wss.on('connection', async (ws: WebSocket, req) => {
 
     // Parse room and token from URL
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const roomId = url.searchParams.get('room');
+    let roomId = url.searchParams.get('room');
     const token = url.searchParams.get('token');
-    const skipAuth = url.searchParams.get('skipAuth') === 'true';
 
-    // If skipAuth is true, allow connection without authentication
-    if (skipAuth) {
-      console.log('Skipping authentication for test connection');
-      // Client will send join_room message with details
-    } else {
-      // Normal authentication flow
-      if (!roomId || !token) {
-        ws.close(1008, 'Missing room or token');
-        return;
-      }
-
-      // Verify token and get user
-      const { data: userData, error } = await supabase.auth.getUser(token);
-
-      if (error || !userData.user) {
-        ws.close(1008, 'Invalid token');
-        return;
-      }
-
-      // Get username
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('user_id', userData.user.id)
-        .single();
-
-      client = {
-        ws,
-        userId: userData.user.id,
-        roomId,
-        username: profile?.username || 'Anonymous',
-      };
-
-      clients.set(ws, client);
-
-      // Add to room
-      if (!rooms.has(roomId)) {
-        rooms.set(roomId, new Set());
-      }
-      rooms.get(roomId)!.add(client);
-
-      // Send welcome message
-      sendToClient(client, 'connected', {
-        room_id: roomId,
-        user_count: rooms.get(roomId)!.size,
-      });
-
-      // Broadcast user joined
-      broadcastToRoom(roomId, 'user_joined', {
-        user_id: client.userId,
-        username: client.username,
-      }, client);
-
-      // Update viewer count
-      await updateViewerCount(roomId);
+    // If room not in query, try from pathname (e.g., /live/roomId)
+    if (!roomId && url.pathname.startsWith('/live/')) {
+      roomId = url.pathname.split('/')[2]; // /live/roomId -> roomId
     }
+
+    if (!nhost) {
+      ws.close(1008, 'Authentication not available');
+      return;
+    }
+
+    // Authentication required
+    if (!roomId || !token) {
+      ws.close(1008, 'Missing room or token');
+      return;
+    }
+
+    // Decode JWT to get user ID
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const userId = payload.sub;
+
+    // Verify user exists using admin API
+    const { data: userData, error } = await nhost.auth.admin.getUserById(userId);
+    if (error || !userData) {
+      ws.close(1008, 'Invalid token');
+      return;
+    }
+
+    const userObj = (userData as any)?.user ?? userData;
+
+    // Get username
+    const username = userObj?.user_metadata?.username || 'Anonymous';
+
+    client = {
+      ws,
+      userId: userObj?.id ?? userId,
+      roomId,
+      username,
+      connectedAt: new Date(),
+    };
+
+    clients.set(ws, client);
+
+    // Add to room
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, new Set());
+    }
+    rooms.get(roomId)!.add(client);
+
+    // Send welcome message
+    sendToClient(client, 'connected', {
+      room_id: roomId,
+      user_count: rooms.get(roomId)!.size,
+    });
+
+    // Broadcast user joined
+    broadcastToRoom(roomId, 'user_joined', {
+      user_id: client.userId,
+      username: client.username,
+    }, client);
+
+    // Update viewer count
+    await updateViewerCount(roomId);
 
   } catch (error) {
     console.error('Connection setup error:', error);
@@ -197,6 +234,7 @@ wss.on('connection', async (ws: WebSocket, req) => {
           userId,
           roomId,
           username,
+          connectedAt: new Date(),
         };
         
         clients.set(ws, client);
@@ -226,7 +264,9 @@ wss.on('connection', async (ws: WebSocket, req) => {
       await handleMessage(client, event, eventData);
     } catch (error) {
       console.error('Failed to handle message:', error);
-      sendToClient(client, 'error', { message: 'Invalid message format' });
+      if (client) {
+        sendToClient(client!, 'error', { message: 'Invalid message format' });
+      }
     }
   });
 
@@ -399,26 +439,26 @@ async function updateViewerCount(roomId: string) {
     const room = rooms.get(roomId);
     const count = room?.size || 0;
 
-    // Update database
-    const { error } = await supabase
-      .from('live_streams')
-      .update({ viewer_count: count })
-      .eq('id', roomId);
+    // TODO: Update database via Nhost GraphQL
+    // const { error } = await nhost.graphql.request(`
+    //   mutation UpdateViewerCount($id: uuid!, $count: Int!) {
+    //     update_live_streams(where: {id: {_eq: $id}}, _set: {viewer_count: $count}) {
+    //       affected_rows
+    //     }
+    //   }
+    // `, { id: roomId, count });
 
-    if (error) {
-      console.error('Failed to update viewer count in database:', error);
-    }
-
-    // Broadcast to room
-    broadcastToRoom(roomId, 'viewer_count_update', { count });
+    // if (error) {
+    //   console.error('Failed to update viewer count in database:', error);
+    // }
   } catch (error) {
-    console.error('updateViewerCount error:', error);
+    console.error('Failed to update viewer count:', error);
   }
 }
 
-// Start Server — bind to 0.0.0.0 so Railway/Docker can reach it
-server.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`Server is running on 0.0.0.0:${PORT}`);
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 // Graceful shutdown

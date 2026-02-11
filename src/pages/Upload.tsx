@@ -7,7 +7,7 @@ import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
 import { trackEvent } from '../lib/analytics';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { videoUploadService } from '../lib/videoUpload';
-import { supabase, checkSupabaseConnection } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -28,43 +28,12 @@ export default function Upload() {
   const [isPosting, setIsPosting] = useState(false);
   const [postProgress, setPostProgress] = useState(0);
   const [postError, setPostError] = useState<string | null>(null);
-  const [setupStatus, setSetupStatus] = useState<string | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<number | null>(null); // Track currently playing preview
   const previewAudioRef = useRef<HTMLAudioElement | null>(null); // For list preview
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null); // For video background
   const [customTracks, setCustomTracks] = useState<SoundTrack[]>([]);
 
   const { addVideo, fetchVideos } = useVideoStore();
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const conn = await checkSupabaseConnection();
-      if (!conn.ok) {
-        if (!cancelled) setSetupStatus('Supabase: ' + conn.message);
-        return;
-      }
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        if (!cancelled) setSetupStatus('Sign in first to upload.');
-        return;
-      }
-      const { error: tableErr } = await supabase.from('videos').select('id').limit(1);
-      if (tableErr) {
-        if (!cancelled) setSetupStatus('Videos: ' + (tableErr.message || String(tableErr)) + ' — Run supabase-upload-setup.sql.');
-        return;
-      }
-      const testPath = `videos/${user.id}/_test_${Date.now()}.txt`;
-      const { error: storageErr } = await supabase.storage.from('user-content').upload(testPath, new Blob(['x']), { upsert: true });
-      if (storageErr) {
-        if (!cancelled) setSetupStatus('Storage: ' + (storageErr.message || String(storageErr)) + ' — Create bucket user-content + run supabase-upload-setup.sql.');
-        return;
-      }
-      await supabase.storage.from('user-content').remove([testPath]);
-      if (!cancelled) setSetupStatus('Upload ready');
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   const mapRowToVideo = (row: any, profile: any) => ({
     id: row.id,
@@ -482,15 +451,7 @@ export default function Upload() {
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full bg-black overflow-hidden flex items-end justify-center">
-      {setupStatus ? (
-        <div
-          className={`absolute top-0 left-0 right-0 z-[200] px-3 py-2 text-center text-sm ${
-            setupStatus === 'Upload ready' ? 'bg-green-800/90 text-white' : 'bg-red-900/95 text-white'
-          }`}
-        >
-          {setupStatus}
-        </div>
-      ) : null}
+      
       {/* PREVIEW MODE */}
        {recordedVideoUrl ? (
            <div className="relative z-10 w-full mx-auto h-[100dvh] bg-black flex flex-col items-center justify-center">

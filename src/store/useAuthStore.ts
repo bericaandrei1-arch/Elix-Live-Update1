@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Session } from '@supabase/supabase-js';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase, supabaseConfig } from '../lib/supabase';
 
 interface User {
@@ -22,8 +22,9 @@ type AuthMode = 'supabase' | 'local' | 'guest';
 
 interface AuthStore {
   user: User | null;
-  isAuthenticated: boolean;
   session: Session | null;
+  isAuthenticated: boolean;
+  supabaseUser: SupabaseUser | null;
   isLoading: boolean;
   authMode: AuthMode;
   
@@ -44,11 +45,10 @@ interface AuthStore {
 
 let authUnsubscribe: (() => void) | null = null;
 
-function mapSessionToUser(session: Session | null): User | null {
-  const sbUser = session?.user;
-  if (!sbUser) return null;
-  const meta = (sbUser.user_metadata ?? {}) as Record<string, unknown>;
-  const email = sbUser.email ?? '';
+function mapUserToUser(supabaseUser: SupabaseUser | null): User | null {
+  if (!supabaseUser) return null;
+  const meta = supabaseUser.user_metadata || {};
+  const email = supabaseUser.email || '';
   const usernameFromMeta = typeof meta.username === 'string' ? meta.username : undefined;
   const fullNameFromMeta = typeof meta.full_name === 'string' ? meta.full_name : undefined;
   const avatarFromMeta = typeof meta.avatar_url === 'string' ? meta.avatar_url : undefined;
@@ -63,16 +63,16 @@ function mapSessionToUser(session: Session | null): User | null {
   const level = Number.isFinite(levelFromMeta) && levelFromMeta > 0 ? Math.floor(levelFromMeta) : 1;
 
   return {
-    id: sbUser.id,
+    id: supabaseUser.id,
     username: usernameFromMeta ?? fallbackUsername,
     name: fullNameFromMeta ?? usernameFromMeta ?? fallbackUsername,
     email,
     avatar: avatarFromMeta ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(usernameFromMeta ?? fallbackUsername)}&background=random`,
     level,
-    isVerified: false,
+    isVerified: !!supabaseUser.email_confirmed_at,
     followers: 0,
     following: 0,
-    joinedDate: sbUser.created_at ?? new Date().toISOString()
+    joinedDate: supabaseUser.created_at
   };
 }
 
@@ -286,8 +286,9 @@ const isInfraAuthError = (message: string) => {
 export const useAuthStore = create<AuthStore>()(
   (set, get) => ({
     user: null,
-    isAuthenticated: false,
     session: null,
+    isAuthenticated: false,
+    supabaseUser: null,
     isLoading: true,
     authMode: supabaseConfig.hasValidConfig && !FORCE_LOCAL_AUTH ? 'supabase' : ALLOW_LOCAL_AUTH ? 'local' : 'supabase',
 
@@ -307,23 +308,17 @@ export const useAuthStore = create<AuthStore>()(
           }
           return { error: error.message };
         }
-        const session = data.session ?? null;
-        if (!session) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const recoveredSession = sessionData.session ?? null;
-          if (recoveredSession) {
-            clearLocalSession();
-            set({ session: recoveredSession, user: mapSessionToUser(recoveredSession), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
-            return { error: null };
-          }
+        const user = data.user;
+        const session = data.session;
+        if (!user) {
           if (ALLOW_LOCAL_AUTH) {
             const localRes = await localAuthSignIn(set, email, password);
             if (!localRes.error) return localRes;
           }
-          return { error: 'No active session returned from Supabase.' };
+          return { error: 'No user returned from Supabase.' };
         }
         clearLocalSession();
-        set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+        set({ supabaseUser: user, session, user: mapUserToUser(user), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
         return { error: null };
       } catch (error) {
         const msg = getAuthErrorMessage(error);
@@ -367,7 +362,7 @@ export const useAuthStore = create<AuthStore>()(
         }
         if (data.user && data.session) {
           clearLocalSession();
-          set({ session: data.session, user: mapSessionToUser(data.session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+          set({ supabaseUser: data.user, session: data.session, user: mapUserToUser(data.user), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
           return { error: null, needsEmailConfirmation: false };
         }
         
@@ -405,16 +400,8 @@ export const useAuthStore = create<AuthStore>()(
         if (ALLOW_LOCAL_AUTH) return { error: null };
         return { error: 'Authentication is not configured.' };
       }
-      const emailRedirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/callback`
-          : undefined;
       try {
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email,
-          options: { emailRedirectTo }
-        });
+        const { error } = await supabase.auth.resend({ type: 'signup', email });
         if (error) return { error: error.message };
         return { error: null };
       } catch (error) {
@@ -430,6 +417,7 @@ export const useAuthStore = create<AuthStore>()(
       set({
         session: null,
         user: null,
+        supabaseUser: null,
         isAuthenticated: false,
         isLoading: false,
         authMode: supabaseConfig.hasValidConfig && !FORCE_LOCAL_AUTH ? 'supabase' : ALLOW_LOCAL_AUTH ? 'local' : 'supabase'
@@ -448,62 +436,34 @@ export const useAuthStore = create<AuthStore>()(
         if (ALLOW_LOCAL_AUTH) {
           const found = readLocalSessionUser();
           if (found) {
-            set({ session: null, user: mapLocalUserToUser(found), isAuthenticated: true, isLoading: false, authMode: 'local' });
+            set({ supabaseUser: null, session: null, user: mapLocalUserToUser(found), isAuthenticated: true, isLoading: false, authMode: 'local' });
             return;
           }
-          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'local' });
+          set({ supabaseUser: null, session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'local' });
           return;
         }
-        set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
+        set({ supabaseUser: null, session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
         return;
       }
       if (!authUnsubscribe) {
-        const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-          if (session) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          const user = session?.user;
+          if (user) {
             clearLocalSession();
-            set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
+            set({ supabaseUser: user, session, user: mapUserToUser(user), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
             return;
           }
           if (ALLOW_LOCAL_AUTH) {
             const localFound = readLocalSessionUser();
             if (localFound) {
-              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
+              set({ supabaseUser: null, session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
               return;
             }
           }
-          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
+          set({ supabaseUser: null, session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
         });
-        authUnsubscribe = () => data.subscription.unsubscribe();
+        authUnsubscribe = subscription.unsubscribe;
       }
-
-      supabase.auth
-        .getSession()
-        .then(({ data }) => {
-          const session = data.session ?? null;
-          if (session) {
-            clearLocalSession();
-            set({ session, user: mapSessionToUser(session), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
-            return;
-          }
-          if (ALLOW_LOCAL_AUTH) {
-            const localFound = readLocalSessionUser();
-            if (localFound) {
-              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
-              return;
-            }
-          }
-          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
-        })
-        .catch(() => {
-          if (ALLOW_LOCAL_AUTH) {
-            const localFound = readLocalSessionUser();
-            if (localFound) {
-              set({ session: null, user: mapLocalUserToUser(localFound), isAuthenticated: true, isLoading: false, authMode: 'local' });
-              return;
-            }
-          }
-          set({ session: null, user: null, isAuthenticated: false, isLoading: false, authMode: 'supabase' });
-        });
     },
 
     loginAsGuest: () => {
@@ -519,7 +479,7 @@ export const useAuthStore = create<AuthStore>()(
         following: 0,
         joinedDate: new Date().toISOString()
       };
-      set({ user: guestUser, isAuthenticated: true, isLoading: false, session: null, authMode: 'guest' });
+      set({ user: guestUser, supabaseUser: null, isAuthenticated: true, isLoading: false, session: null, authMode: 'guest' });
     }
   })
 );

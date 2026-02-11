@@ -1,7 +1,9 @@
+# cSpell:ignore Elix Vite
+
 # AI Coding Agent Instructions for Elix Star
 
 ## Architecture Overview
-This is a real-time social video platform with live streaming, battles, and virtual gifts. Built with React 18 + TypeScript + Vite frontend, Supabase (PostgreSQL) backend, Agora RTC for streaming, and Stripe for payments. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
+This is a real-time social video platform with live streaming, battles, and virtual gifts. Built with React 18 + TypeScript + Vite frontend, Supabase (PostgreSQL) backend, Agora RTC for streaming, and Stripe for payments. See [ARCHITECTURE.md](../ARCHITECTURE.md) for full details.
 
 ## Critical Rules
 - **NEVER remove working code or mock data** - Mock fallbacks in [src/lib/mockApi.ts](src/lib/mockApi.ts) are intentional for offline/dev states
@@ -12,7 +14,7 @@ This is a real-time social video platform with live streaming, battles, and virt
 
 ## State Management
 Use Zustand exclusively for global state. Examples:
-- Auth: [src/store/useAuthStore.ts](src/store/useAuthStore.ts)
+- Auth: [../src/store/useAuthStore.ts](../src/store/useAuthStore.ts)
 - Wallet: [src/store/useWalletStore.ts](src/store/useWalletStore.ts)
 
 ## API Patterns
@@ -45,7 +47,7 @@ Use Zustand exclusively for global state. Examples:
 - Frontend: Vercel/Netlify
 - Backend: Railway/DigitalOcean App Platform
 - Mobile: App Store/Play Store via Capacitor
-- See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete steps
+- See [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) for complete steps
 
 ## Security & Compliance
 - JWT auth via Supabase

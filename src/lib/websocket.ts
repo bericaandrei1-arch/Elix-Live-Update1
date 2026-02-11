@@ -113,10 +113,48 @@ class WebSocketService {
   }
 
   private handleMessage(message: WebSocketMessage) {
+    // Special handling for gift videos
+    if (message.event === 'gift_sent' && message.data.videoUrl) {
+      this.playGiftVideo(message.data.videoUrl);
+    }
+
     const listeners = this.listeners.get(message.event);
     if (listeners) {
       listeners.forEach(callback => callback(message.data));
     }
+  }
+
+  private playGiftVideo(videoUrl: string) {
+    // Create a temporary video element for gift animation
+    const video = document.createElement('video');
+    video.src = videoUrl;
+    video.muted = true; // Allow autoplay
+    video.playsInline = true;
+    video.style.position = 'fixed';
+    video.style.top = '50%';
+    video.style.left = '50%';
+    video.style.transform = 'translate(-50%, -50%)';
+    video.style.zIndex = '9999';
+    video.style.maxWidth = '80vw';
+    video.style.maxHeight = '80vh';
+    video.style.borderRadius = '10px';
+    video.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+
+    document.body.appendChild(video);
+
+    video.play().catch(console.error);
+
+    // Remove after playing
+    video.onended = () => {
+      document.body.removeChild(video);
+    };
+
+    // Fallback: remove after 10 seconds
+    setTimeout(() => {
+      if (document.body.contains(video)) {
+        document.body.removeChild(video);
+      }
+    }, 10000);
   }
 
   private attemptReconnect() {
