@@ -18,6 +18,7 @@ export default function Upload() {
   const [isPaused, setIsPaused] = useState(false);
   const [chunks, setChunks] = useState<Blob[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraRetry, setCameraRetry] = useState(0);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [showMusicModal, setShowMusicModal] = useState(false);
   const [selectedAudioId, setSelectedAudioId] = useState<string>('original');
@@ -138,6 +139,7 @@ export default function Upload() {
 
    // Start Camera
   useEffect(() => {
+    let cancelled = false;
     async function startCamera() {
       try {
         if (!navigator.mediaDevices?.getUserMedia) {
@@ -149,37 +151,36 @@ export default function Upload() {
         try {
           const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
           if (permStatus.state === 'denied') {
-            setCameraError('Camera blocked. Tap the lock icon in your address bar → Allow camera, then try again.');
+            setCameraError('Camera is blocked. Go to your browser settings → Site Settings → Camera → Allow for this site, then tap Try Again.');
             return;
           }
         } catch {
           // permissions.query not supported — proceed directly
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        if (videoRef.current) {
+        // Try video + audio first, fall back to video-only
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        }
+        if (!cancelled && videoRef.current) {
           videoRef.current.srcObject = stream;
+          setCachedCameraStream(stream);
         }
         setCameraError(null);
       } catch (err: unknown) {
         console.error("Error accessing camera:", err);
         const error = err as { name?: string };
         if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
-          // Check if permanently denied
-          try {
-            const permStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-            if (permStatus.state === 'denied') {
-              setCameraError('Camera blocked. Tap the lock icon in your address bar → Allow camera, then try again.');
-              return;
-            }
-          } catch {
-            // ignore
-          }
-          setCameraError('Allow camera permissions to continue.');
-        } else if (error?.name === 'NotFoundError') {
-          setCameraError('No camera found.');
+          setCameraError('Camera permission denied. Please allow camera access in your browser and tap Try Again.');
+        } else if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') {
+          setCameraError('No camera found on this device.');
+        } else if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') {
+          setCameraError('Camera is in use by another app. Close other apps using the camera and tap Try Again.');
         } else {
-          setCameraError('Camera access denied or not available.');
+          setCameraError(`Camera error: ${(err as Error)?.message || 'Unknown error'}. Tap Try Again.`);
         }
       }
     }
@@ -191,12 +192,13 @@ export default function Upload() {
 
     const videoEl = videoRef.current;
     return () => {
+      cancelled = true;
       if (videoEl && videoEl.srcObject) {
         const stream = videoEl.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [recordedVideoUrl]);
+  }, [recordedVideoUrl, cameraRetry]);
 
   const startRecording = () => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -541,13 +543,15 @@ export default function Upload() {
                   <button
                     onClick={() => {
                       setCameraError(null);
-                      // Force re-trigger by clearing and restarting
+                      // Stop any existing stream
                       if (videoRef.current && videoRef.current.srcObject) {
                         const stream = videoRef.current.srcObject as MediaStream;
                         stream.getTracks().forEach(track => track.stop());
                         videoRef.current.srcObject = null;
                       }
                       setRecordedVideoUrl(null);
+                      // Increment retry counter to force useEffect re-run
+                      setCameraRetry(prev => prev + 1);
                     }}
                     className="px-5 py-2.5 rounded-full bg-[#E6B36A] text-black text-sm font-semibold active:scale-95 transition-transform pointer-events-auto"
                   >
