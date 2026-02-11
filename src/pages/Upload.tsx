@@ -7,7 +7,7 @@ import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
 import { trackEvent } from '../lib/analytics';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { videoUploadService } from '../lib/videoUpload';
-import { supabase } from '../lib/supabase';
+import { supabase, checkSupabaseConnection } from '../lib/supabase';
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -27,12 +27,73 @@ export default function Upload() {
   const [hashtagsText, setHashtagsText] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [postProgress, setPostProgress] = useState(0);
+  const [postError, setPostError] = useState<string | null>(null);
+  const [setupStatus, setSetupStatus] = useState<string | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<number | null>(null); // Track currently playing preview
   const previewAudioRef = useRef<HTMLAudioElement | null>(null); // For list preview
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null); // For video background
   const [customTracks, setCustomTracks] = useState<SoundTrack[]>([]);
 
   const { addVideo, fetchVideos } = useVideoStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const conn = await checkSupabaseConnection();
+      if (!conn.ok) {
+        if (!cancelled) setSetupStatus('Supabase: ' + conn.message);
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (!cancelled) setSetupStatus('Sign in first to upload.');
+        return;
+      }
+      const { error: tableErr } = await supabase.from('videos').select('id').limit(1);
+      if (tableErr) {
+        if (!cancelled) setSetupStatus('Videos: ' + (tableErr.message || String(tableErr)) + ' — Run supabase-upload-setup.sql.');
+        return;
+      }
+      const testPath = `videos/${user.id}/_test_${Date.now()}.txt`;
+      const { error: storageErr } = await supabase.storage.from('user-content').upload(testPath, new Blob(['x']), { upsert: true });
+      if (storageErr) {
+        if (!cancelled) setSetupStatus('Storage: ' + (storageErr.message || String(storageErr)) + ' — Create bucket user-content + run supabase-upload-setup.sql.');
+        return;
+      }
+      await supabase.storage.from('user-content').remove([testPath]);
+      if (!cancelled) setSetupStatus('Upload ready');
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const mapRowToVideo = (row: any, profile: any) => ({
+    id: row.id,
+    url: row.url,
+    thumbnail: row.thumbnail_url || 'https://picsum.photos/400/600',
+    duration: '0:15',
+    user: {
+      id: profile?.user_id ?? profile?.id ?? row.user_id ?? 'unknown',
+      username: profile?.username ?? 'user',
+      name: profile?.display_name ?? profile?.username ?? 'User',
+      avatar: profile?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.username ?? 'U')}`,
+      level: 1,
+      isVerified: !!profile?.is_creator,
+      followers: 0,
+      following: 0
+    },
+    description: row.caption ?? '',
+    hashtags: [],
+    music: { id: 'original', title: 'Original Sound', artist: profile?.display_name ?? 'User', duration: '0:15' },
+    stats: { views: row.views ?? 0, likes: row.likes ?? 0, comments: 0, shares: 0, saves: 0 },
+    createdAt: row.created_at,
+    location: 'For You',
+    isLiked: false,
+    isSaved: false,
+    isFollowing: false,
+    comments: [],
+    quality: 'auto',
+    privacy: 'public'
+  });
 
   type UploadMusic = {
     id: string;
@@ -324,8 +385,22 @@ export default function Upload() {
         return;
       }
 
-      setIsPosting(true);
+      // Must have video data to upload
+      if (!chunks.length) {
+        alert("No video to upload. Record or choose a video first.");
+        return;
+      }
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      if (blob.size === 0) {
+        alert("Video is empty. Record or choose a valid video.");
+        return;
+      }
+      const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+
+      videoUploadService.onProgress(({ progress }) => setPostProgress(progress));
       setPostProgress(0);
+      setPostError(null);
+      setIsPosting(true);
 
       try {
         const normalizedCaption = caption.trim();
@@ -338,25 +413,30 @@ export default function Upload() {
 
         const hashtags = Array.from(new Set([...captionHashtags, ...manualHashtags].map((h) => h.toLowerCase()))).slice(0, 20);
 
-        // Prepare file for upload
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
-
-        // Subscribe to progress
-        videoUploadService.onProgress(({ progress, message }) => {
-          setPostProgress(progress);
-          console.log(message);
-        });
-
-        // Upload
         const videoId = await videoUploadService.uploadVideo(file, user.id, {
           description: normalizedCaption,
           hashtags: hashtags,
-          isPrivate: false // Default public
+          isPrivate: false
         });
 
-        // Refresh feed
-        await fetchVideos();
+        // Put new video directly at top of For You so it shows immediately (video already in DB = stays forever)
+        const { data: row } = await supabase
+          .from('videos')
+          .select('id, url, thumbnail_url, caption, created_at, views, likes, user_id')
+          .eq('id', videoId)
+          .single();
+        if (row) {
+          let profile: any = null;
+          try {
+            const res = await supabase.from('profiles').select('user_id, username, display_name, avatar_url, is_creator').eq('user_id', row.user_id).single();
+            profile = res.data;
+          } catch {
+            profile = { user_id: user.id, username: user.user_metadata?.username ?? user.email?.split('@')[0], display_name: user.user_metadata?.full_name ?? user.email?.split('@')[0], avatar_url: user.user_metadata?.avatar_url, is_creator: false };
+          }
+          addVideo(mapRowToVideo(row, profile));
+        } else {
+          await fetchVideos();
+        }
 
         trackEvent('upload_post_success', { videoId });
         setRecordedVideoUrl(null);
@@ -364,11 +444,12 @@ export default function Upload() {
         setIsPosting(false);
         setPostProgress(0);
         alert("Video Posted to For You Feed! ✅");
-        navigate('/feed'); // Go to feed
+        navigate('/feed');
         
-      } catch (error) {
-        console.error("Post failed:", error);
-        alert("Failed to post video. Please try again.");
+      } catch (error: any) {
+        const msg = error?.message || error?.error_description || String(error) || 'Unknown error';
+        console.error('Post failed:', error);
+        setPostError(msg);
         setIsPosting(false);
         setPostProgress(0);
       }
@@ -401,7 +482,15 @@ export default function Upload() {
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full bg-black overflow-hidden flex items-end justify-center">
-      
+      {setupStatus ? (
+        <div
+          className={`absolute top-0 left-0 right-0 z-[200] px-3 py-2 text-center text-sm ${
+            setupStatus === 'Upload ready' ? 'bg-green-800/90 text-white' : 'bg-red-900/95 text-white'
+          }`}
+        >
+          {setupStatus}
+        </div>
+      ) : null}
       {/* PREVIEW MODE */}
        {recordedVideoUrl ? (
            <div className="relative z-10 w-full mx-auto h-[100dvh] bg-black flex flex-col items-center justify-center">
@@ -476,6 +565,12 @@ export default function Upload() {
                        />
                      </button>
                    </div>
+                   {postError ? (
+                     <div className="w-full mb-2 px-3 py-2 rounded bg-red-900/80 text-white text-sm">
+                       {postError}
+                       <button type="button" onClick={() => setPostError(null)} className="ml-2 underline">Dismiss</button>
+                     </div>
+                   ) : null}
                    {isPosting ? (
                      <div className="w-full">
                        <div className="flex items-center justify-between text-xs text-white/70 mb-1">

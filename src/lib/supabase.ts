@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { Preferences } from '@capacitor/preferences';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -16,10 +15,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase URL or Anon Key. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
 }
 
+// Prefer localStorage so app works in browser; Capacitor apps can switch to Preferences if needed
 const storage = {
-  getItem: async (key: string) => (await Preferences.get({ key })).value ?? null,
-  setItem: async (key: string, value: string) => { await Preferences.set({ key, value }); },
-  removeItem: async (key: string) => { await Preferences.remove({ key }); },
+  getItem: async (key: string) => (typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null),
+  setItem: async (key: string, value: string) => { if (typeof localStorage !== 'undefined') localStorage.setItem(key, value); },
+  removeItem: async (key: string) => { if (typeof localStorage !== 'undefined') localStorage.removeItem(key); },
 };
 
 export const supabase = createClient(
@@ -38,5 +38,31 @@ export const supabase = createClient(
 export const supabaseConfig = {
   url: supabaseUrl,
   anonKey: supabaseAnonKey,
-  hasValidConfig: isValidSupabaseConfig(supabaseUrl, supabaseAnonKey)
+  hasValidConfig: isValidSupabaseConfig(supabaseUrl, supabaseAnonKey),
 };
+
+/**
+ * Check Supabase connection: env vars + reachability.
+ * Returns { ok: true } or { ok: false, message: string }.
+ */
+export async function checkSupabaseConnection(): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { ok: false, message: 'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env' };
+  }
+  if (!isValidSupabaseConfig(supabaseUrl, supabaseAnonKey)) {
+    return { ok: false, message: 'Supabase URL or key look like placeholders. Update .env with real values.' };
+  }
+  try {
+    const { error } = await supabase.auth.getSession();
+    if (error) {
+      return { ok: false, message: 'Supabase reachable but auth error: ' + (error.message || String(error)) };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
+      return { ok: false, message: 'Network error: cannot reach Supabase. Check URL and internet.' };
+    }
+    return { ok: false, message: 'Connection failed: ' + msg };
+  }
+}

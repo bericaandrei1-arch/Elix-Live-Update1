@@ -1,6 +1,7 @@
 // For You Feed Algorithm Configuration
 
 import { supabase } from './supabase';
+import { FYP_THRESHOLD } from './fypEligibility';
 
 export interface FeedVideo {
   id: string;
@@ -58,16 +59,42 @@ export async function generatePersonalizedFeed(
 }
 
 /**
- * Get trending videos based on trending_scores
+ * Get trending videos — prefer FYP-eligible, fall back to all public
  */
 async function getTrendingVideos(limit: number): Promise<string[]> {
-  const { data } = await supabase
-    .from('trending_scores')
-    .select('video_id')
-    .order('score', { ascending: false })
+  // First try: FYP-eligible videos sorted by engagement
+  let res = await supabase
+    .from('videos')
+    .select('id')
+    .eq('is_private', false)
+    .eq('is_eligible_for_fyp', true)
+    .order('engagement_score', { ascending: false })
     .limit(limit);
 
-  return data?.map(row => row.video_id) || [];
+  // Fallback if the columns don't exist yet (migration not run)
+  if (res.error) {
+    res = await supabase
+      .from('videos')
+      .select('id')
+      .eq('is_private', false)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+  }
+
+  // If we got fewer than requested, backfill with recent non-eligible videos
+  const ids = res.data?.map(row => row.id) || [];
+  if (ids.length < limit) {
+    const { data: extra } = await supabase
+      .from('videos')
+      .select('id')
+      .eq('is_private', false)
+      .not('id', 'in', `(${ids.join(',')})`)
+      .order('created_at', { ascending: false })
+      .limit(limit - ids.length);
+    if (extra) ids.push(...extra.map(r => r.id));
+  }
+
+  return ids;
 }
 
 /**

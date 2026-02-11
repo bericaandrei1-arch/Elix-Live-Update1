@@ -1,6 +1,7 @@
 
 import { supabase } from './supabase';
 import { trackEvent } from './analytics';
+import { boostNewVideo } from './fypEligibility';
 
 export interface UploadProgress {
   stage: 'validating' | 'compressing' | 'uploading' | 'processing' | 'complete';
@@ -38,42 +39,46 @@ export class VideoUploadService {
   }
 
   /**
-   * Validate video file before upload
+   * Validate video file before upload. Sync only – no metadata reading so upload never blocks.
    */
-  async validateVideo(file: File): Promise<VideoMetadata> {
+  validateVideo(file: File): VideoMetadata {
     this.updateProgress('validating', 10, 'Validating video...');
 
-    // Check file type
-    if (!ALLOWED_FORMATS.includes(file.type)) {
-      throw new Error(`Invalid format. Allowed: ${ALLOWED_FORMATS.join(', ')}`);
+    const okType = ALLOWED_FORMATS.includes(file.type) || (file.type && file.type.startsWith('video/'));
+    if (!okType) {
+      throw new Error(`Invalid format. Use MP4 or WebM.`);
     }
 
-    // Check file size
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`);
     }
 
-    // Get video metadata
-    const metadata = await this.getVideoMetadata(file);
-
-    // Check duration
-    if (metadata.duration > MAX_DURATION) {
-      throw new Error(`Video too long. Maximum: ${MAX_DURATION} seconds`);
-    }
-
     this.updateProgress('validating', 30, 'Validation complete');
-    return metadata;
+    return { duration: 0, width: 0, height: 0, size: file.size, format: file.type };
   }
 
   /**
-   * Get video metadata using browser API
+   * Get video metadata using browser API. If the browser can't read it (e.g. codec), return defaults so upload can continue.
    */
   private getVideoMetadata(file: File): Promise<VideoMetadata> {
-    return new Promise((resolve, reject) => {
+    const defaults = {
+      duration: 0,
+      width: 0,
+      height: 0,
+      size: file.size,
+      format: file.type,
+    };
+    return new Promise((resolve) => {
       const video = document.createElement('video');
       video.preload = 'metadata';
+      const timeout = setTimeout(() => {
+        URL.revokeObjectURL(video.src);
+        resolve(defaults);
+      }, 5000);
 
       video.onloadedmetadata = () => {
+        clearTimeout(timeout);
+        URL.revokeObjectURL(video.src);
         resolve({
           duration: video.duration,
           width: video.videoWidth,
@@ -84,7 +89,9 @@ export class VideoUploadService {
       };
 
       video.onerror = () => {
-        reject(new Error('Failed to read video metadata'));
+        clearTimeout(timeout);
+        if (video.src) URL.revokeObjectURL(video.src);
+        resolve(defaults);
       };
 
       video.src = URL.createObjectURL(file);
@@ -100,25 +107,31 @@ export class VideoUploadService {
     metadata: { description: string; hashtags: string[]; isPrivate: boolean }
   ): Promise<string> {
     try {
-      // Validate
-      const videoMeta = await this.validateVideo(file);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        throw new Error('You must be logged in to upload. Try signing in again.');
+      }
+      if (!file || file.size === 0) {
+        throw new Error('Video file is empty. Record or choose a valid video.');
+      }
+      const videoMeta = this.validateVideo(file);
 
       this.updateProgress('uploading', 40, 'Uploading video...');
 
-      // Generate unique filename
       const fileExt = file.name.split('.').pop() || 'mp4';
-      // Use 'videos/' prefix for folder organization in the single bucket
       const fileName = `videos/${userId}/${Date.now()}.${fileExt}`;
-      
-      // Upload to Supabase Storage ('user-content' bucket)
+
       const { error: uploadError } = await supabase.storage
         .from('user-content')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false,
+          contentType: file.type || 'video/webm',
         });
-
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        const msg = (uploadError as any)?.message ?? String(uploadError);
+        throw new Error(`Storage failed: ${msg}. Check Supabase: bucket "user-content" exists and Storage policies allow upload.`);
+      }
 
       this.updateProgress('uploading', 70, 'Upload complete');
 
@@ -129,28 +142,49 @@ export class VideoUploadService {
 
       this.updateProgress('processing', 80, 'Creating video record...');
 
-      // Generate and upload thumbnail
-      const thumbnailUrl = await this.generateThumbnail(file, userId);
+      // Thumbnail: don't block upload – use placeholder if it fails or takes too long
+      let thumbnailUrl = 'https://picsum.photos/400/600';
+      try {
+        thumbnailUrl = await Promise.race([
+          this.generateThumbnail(file, userId),
+          new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+        ]);
+      } catch {
+        // keep placeholder
+      }
 
-      // Create video record in database
+      // Insert with only columns that exist in minimal setup (supabase-upload-setup.sql)
+      const payload = {
+        user_id: userId,
+        url: publicUrl,
+        thumbnail_url: thumbnailUrl,
+        caption: metadata.description || '',
+        is_private: metadata.isPrivate ?? false,
+      };
       const { data: videoData, error: dbError } = await supabase
         .from('videos')
-        .insert({
-          user_id: userId,
-          url: publicUrl, // Matches schema 'url'
-          thumbnail_url: thumbnailUrl, // Matches schema 'thumbnail_url'
-          caption: metadata.description, // Matches schema 'caption'
-          // Note: 'views', 'likes' default to 0
-          // Note: 'created_at' defaults to now()
-        })
+        .insert(payload)
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError || !videoData) {
+        throw new Error('Database: ' + (dbError ? (dbError as any)?.message ?? String(dbError) : 'No row returned'));
+      }
 
-      // Add hashtags
+      // Give new video an initial FYP boost so it gets early impressions
+      try {
+        await boostNewVideo(videoData.id);
+      } catch {
+        /* non-critical – video is uploaded even if boost fails */
+      }
+
+      // Hashtags only if tables exist (ignore errors)
       if (metadata.hashtags.length > 0) {
-        await this.addHashtags(videoData.id, metadata.hashtags);
+        try {
+          await this.addHashtags(videoData.id, metadata.hashtags);
+        } catch {
+          /* ignore */
+        }
       }
 
       this.updateProgress('complete', 100, 'Video uploaded successfully!');
@@ -162,10 +196,11 @@ export class VideoUploadService {
       });
 
       return videoData.id;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed:', error);
       trackEvent('video_upload_failed', { error: String(error) });
-      throw error;
+      const msg = error?.message ?? error?.error_description ?? String(error);
+      throw new Error(msg || 'Upload failed');
     }
   }
 

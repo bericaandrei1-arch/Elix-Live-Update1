@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import { useVideoStore } from '../store/useVideoStore';
 import { LivePromo, useLivePromoStore } from '../store/useLivePromoStore';
 import { useSafetyStore } from '../store/useSafetyStore';
-import { useNavigate } from 'react-router-dom';
 
 type HomeTopTab = 'live' | 'stem' | 'explore' | 'following' | 'shop' | 'foryou';
 
@@ -58,6 +58,7 @@ function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) 
 }
 
 export default function VideoFeed() {
+  const location = useLocation();
   const { videos, fetchVideos } = useVideoStore();
   const blockedUserIds = useSafetyStore((s) => s.blockedUserIds);
   const promoBattle = useLivePromoStore((s) => s.promoBattle);
@@ -66,6 +67,19 @@ export default function VideoFeed() {
   const [activeTab, setActiveTab] = useState<HomeTopTab>('foryou');
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // When you open app or go to feed → For You tab, refresh videos, scroll to first video
+  useEffect(() => {
+    if (location.pathname === '/feed') {
+      setActiveTab('foryou');
+      fetchVideos();
+      setActiveIndex(0);
+      const t = setTimeout(() => {
+        containerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [location.pathname, fetchVideos]);
   const promos: FeedItem[] =
     activeTab === 'foryou'
       ? [
@@ -75,10 +89,6 @@ export default function VideoFeed() {
       : [];
   const promoCount = promos.length;
   const [loopCount, setLoopCount] = useState(1);
-
-  useEffect(() => {
-    fetchVideos();
-  }, [fetchVideos]);
 
   const visibleVideos = blockedUserIds.length
     ? videos.filter((v) => !blockedUserIds.includes(v.user.id))

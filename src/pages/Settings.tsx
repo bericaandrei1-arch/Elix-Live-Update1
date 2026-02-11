@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, checkSupabaseConnection } from '../lib/supabase';
 import {
   ChevronRight,
   User,
@@ -145,6 +145,17 @@ export default function Settings() {
           <SettingItem label="Terms of Service" onClick={() => navigate('/terms')} />
           <SettingItem label="Privacy Policy" onClick={() => navigate('/privacy')} />
           <SettingItem label="Community Guidelines" onClick={() => navigate('/guidelines')} />
+        </Section>
+
+        {/* Developer */}
+        <Section title="Developer">
+          <SettingItem
+            label="Check Supabase connection"
+            onClick={async () => {
+              const result = await checkSupabaseConnection();
+              alert(result.ok ? 'Supabase connection OK.' : 'Supabase: ' + result.message);
+            }}
+          />
         </Section>
 
         {/* Actions */}

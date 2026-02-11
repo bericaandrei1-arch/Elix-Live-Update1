@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import {
+  calculateEngagementScore,
+  isEligibleForFyp,
+  refreshVideoFypStatus,
+  FYP_THRESHOLD,
+} from '../lib/fypEligibility';
 
 interface User {
   id: string;
@@ -78,7 +84,7 @@ interface VideoStore {
   updateVideo: (videoId: string, updates: Partial<Video>) => void;
   
   // Like actions
-  toggleLike: (videoId: string) => void;
+  toggleLike: (videoId: string) => void | Promise<void>;
   getLikedVideos: () => Video[];
   
   // Save actions
@@ -89,13 +95,16 @@ interface VideoStore {
   toggleFollow: (userId: string) => void;
   getFollowingUsers: () => User[];
   
+  // Share actions
+  shareVideo: (videoId: string) => void | Promise<void>;
+
   // Comment actions
-  addComment: (videoId: string, comment: Omit<Comment, 'id' | 'time'>) => void;
+  addComment: (videoId: string, comment: Omit<Comment, 'id' | 'time'>) => void | Promise<void>;
   deleteComment: (videoId: string, commentId: string) => void;
   toggleCommentLike: (videoId: string, commentId: string) => void;
   
   // Analytics
-  incrementViews: (videoId: string) => void;
+  incrementViews: (videoId: string) => void | Promise<void>;
   getTrendingVideos: () => Video[];
   getRecommendedVideos: (userId: string) => Video[];
 }
@@ -112,64 +121,90 @@ export const useVideoStore = create<VideoStore>()(
       fetchVideos: async () => {
         set({ loading: true });
         try {
-          const { data, error } = await supabase
+          let data: any[] = [];
+          let err: any = null;
+          const baseSelect = `*, user:users ( id, username, display_name, avatar_url, is_creator )`;
+          const profileSelect = `*, user:profiles!user_id ( user_id, username, display_name, avatar_url, is_creator )`;
+
+          // Try FYP feed first: only eligible videos, by engagement
+          let res = await supabase
             .from('videos')
-            .select(`
-              *,
-              user:users (
-                id,
-                username,
-                display_name,
-                avatar_url,
-                is_creator
-              )
-            `)
+            .select(baseSelect)
+            .eq('is_private', false)
+            .eq('is_eligible_for_fyp', true)
+            .order('engagement_score', { ascending: false })
             .order('created_at', { ascending: false });
 
-          if (error) throw error;
+          if (res.error && (res.error.message?.includes('is_eligible_for_fyp') || res.error.message?.includes('engagement_score'))) {
+            res = await supabase.from('videos').select(baseSelect).eq('is_private', false).order('created_at', { ascending: false });
+          }
+          if (res.error && (res.error.message?.includes('users') || res.error.message?.includes('relation'))) {
+            let r2 = await supabase.from('videos').select(profileSelect).eq('is_private', false).eq('is_eligible_for_fyp', true).order('engagement_score', { ascending: false }).order('created_at', { ascending: false });
+            if (r2.error && (r2.error.message?.includes('is_eligible_for_fyp') || r2.error.message?.includes('engagement_score'))) {
+              r2 = await supabase.from('videos').select(profileSelect).eq('is_private', false).order('created_at', { ascending: false });
+            }
+            data = r2.data || [];
+            err = r2.error;
+          } else {
+            data = res.data || [];
+            err = res.error;
+          }
 
-          // Map Supabase data to Video interface
-          const mappedVideos: Video[] = data.map((v: any) => ({
-            id: v.id,
-            url: v.url,
-            thumbnail: v.thumbnail_url || 'https://picsum.photos/400/600',
-            duration: '0:15', // Default as DB doesn't store duration yet
-            user: {
-              id: v.user?.id || 'unknown',
-              username: v.user?.username || 'user',
-              name: v.user?.display_name || 'User',
-              avatar: v.user?.avatar_url || `https://ui-avatars.com/api/?name=${v.user?.username || 'U'}`,
-              level: 1,
-              isVerified: v.user?.is_creator || false,
-              followers: 0, // Need separate query for real count
-              following: 0
-            },
-            description: v.caption || '',
-            hashtags: [], // Need to join video_hashtags -> hashtags
-            music: {
-              id: 'original',
-              title: 'Original Sound',
-              artist: v.user?.display_name || 'User',
-              duration: '0:15'
-            },
-            stats: {
-              views: v.views || 0,
-              likes: v.likes || 0,
-              comments: 0,
-              shares: 0,
-              saves: 0
-            },
-            createdAt: v.created_at,
-            location: 'For You',
-            isLiked: false, // Should check if current user liked
-            isSaved: false,
-            isFollowing: false,
-            comments: [],
-            quality: 'auto',
-            privacy: 'public'
-          }));
+          if (err) throw err;
 
-          set({ videos: mappedVideos, loading: false });
+          let likedIds: string[] = [];
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: likes } = await supabase.from('likes').select('video_id').eq('user_id', user.id);
+              likedIds = likes?.map((r: { video_id: string }) => r.video_id) ?? [];
+            }
+          } catch {
+            // ignore
+          }
+          const likedSet = new Set(likedIds);
+
+          const mappedVideos: Video[] = data.map((v: any) => {
+            const u = v.user;
+            const uid = u?.user_id ?? u?.id ?? v.user_id ?? 'unknown';
+            const uname = u?.username ?? 'user';
+            return {
+              id: v.id,
+              url: v.url,
+              thumbnail: v.thumbnail_url || 'https://picsum.photos/400/600',
+              duration: '0:15',
+              user: {
+                id: uid,
+                username: uname,
+                name: u?.display_name ?? uname,
+                avatar: u?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(uname)}`,
+                level: 1,
+                isVerified: !!u?.is_creator,
+                followers: 0,
+                following: 0
+              },
+              description: v.caption || '',
+              hashtags: [],
+              music: { id: 'original', title: 'Original Sound', artist: u?.display_name ?? uname, duration: '0:15' },
+              stats: { views: v.views || 0, likes: v.likes || 0, comments: 0, shares: 0, saves: 0 },
+              createdAt: v.created_at,
+              location: 'For You',
+              isLiked: likedSet.has(v.id),
+              isSaved: false,
+              isFollowing: false,
+              comments: [],
+              quality: 'auto',
+              privacy: 'public'
+            };
+          });
+
+          // Keep videos already in store that aren't in this fetch (e.g. your new post) so they still show at top
+          const fetchedIds = new Set(mappedVideos.map((v) => v.id));
+          const existing = get().videos;
+          const toPrepend = existing.filter((v) => !fetchedIds.has(v.id));
+          const merged = toPrepend.length ? [...toPrepend, ...mappedVideos] : mappedVideos;
+
+          set({ videos: merged, likedVideos: likedIds, loading: false });
         } catch (err) {
           console.error('Error fetching videos:', err);
           set({ loading: false });
@@ -191,34 +226,52 @@ export const useVideoStore = create<VideoStore>()(
         )
       })),
 
-      // Like actions
-      toggleLike: (videoId) => set((state) => {
+      // Like actions (persist to likes table + update video engagement / FYP eligibility)
+      toggleLike: async (videoId) => {
+        const state = get();
         const video = state.videos.find(v => v.id === videoId);
-        if (!video) return state;
+        if (!video) return;
 
-        const isLiked = video.isLiked;
-        const newLikedVideos = isLiked 
+        const wasLiked = video.isLiked;
+        const newLikes = wasLiked ? video.stats.likes - 1 : video.stats.likes + 1;
+        const updatedStats = { ...video.stats, likes: newLikes };
+        const score = calculateEngagementScore(updatedStats);
+        const eligible = isEligibleForFyp(score);
+
+        const newLikedVideos = wasLiked
           ? state.likedVideos.filter(id => id !== videoId)
           : [...state.likedVideos, videoId];
 
-        // Optimistic update
-        // In real app, call Supabase rpc/insert here
-        return {
-          videos: state.videos.map(v => 
-            v.id === videoId 
-              ? { 
-                  ...v, 
-                  isLiked: !isLiked,
-                  stats: {
-                    ...v.stats,
-                    likes: isLiked ? v.stats.likes - 1 : v.stats.likes + 1
-                  }
-                }
+        set({
+          videos: state.videos.map(v =>
+            v.id === videoId
+              ? { ...v, isLiked: !wasLiked, stats: updatedStats }
               : v
           ),
           likedVideos: newLikedVideos
-        };
-      }),
+        });
+
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          if (wasLiked) {
+            await supabase.from('likes').delete().eq('video_id', videoId).eq('user_id', user.id);
+          } else {
+            await supabase.from('likes').insert({ video_id: videoId, user_id: user.id });
+          }
+          await supabase
+            .from('videos')
+            .update({
+              likes: newLikes,
+              engagement_score: score,
+              is_eligible_for_fyp: eligible
+            })
+            .eq('id', videoId);
+        } catch (err) {
+          console.error('toggleLike persist failed:', err);
+          set({ videos: state.videos, likedVideos: state.likedVideos });
+        }
+      },
 
       getLikedVideos: () => {
         const { videos, likedVideos } = get();
@@ -289,29 +342,58 @@ export const useVideoStore = create<VideoStore>()(
           .filter(user => followingUsers.includes(user.id));
       },
 
-      // Comment actions
-      addComment: (videoId, commentData) => set((state) => {
+      // Share actions – increment share count + refresh FYP eligibility
+      shareVideo: async (videoId) => {
+        const state = get();
+        const video = state.videos.find(v => v.id === videoId);
+        if (!video) return;
+
+        const newShares = video.stats.shares + 1;
+        const updatedStats = { ...video.stats, shares: newShares };
+
+        set({
+          videos: state.videos.map(v =>
+            v.id === videoId
+              ? { ...v, stats: updatedStats }
+              : v
+          )
+        });
+
+        try {
+          await refreshVideoFypStatus(videoId, updatedStats);
+        } catch (err) {
+          console.error('shareVideo FYP refresh failed:', err);
+        }
+      },
+
+      // Comment actions – also refresh FYP eligibility
+      addComment: async (videoId, commentData) => {
+        const state = get();
+        const video = state.videos.find(v => v.id === videoId);
+        if (!video) return;
+
         const newComment: Comment = {
           ...commentData,
           id: `comment_${Date.now()}_${Math.random()}`,
           time: 'now'
         };
+        const newComments = video.stats.comments + 1;
+        const updatedStats = { ...video.stats, comments: newComments };
 
-        return {
-          videos: state.videos.map(video => 
-            video.id === videoId 
-              ? { 
-                  ...video, 
-                  comments: [...video.comments, newComment],
-                  stats: {
-                    ...video.stats,
-                    comments: video.stats.comments + 1
-                  }
-                }
-              : video
+        set({
+          videos: state.videos.map(v =>
+            v.id === videoId
+              ? { ...v, comments: [...v.comments, newComment], stats: updatedStats }
+              : v
           )
-        };
-      }),
+        });
+
+        try {
+          await refreshVideoFypStatus(videoId, updatedStats);
+        } catch (err) {
+          console.error('addComment FYP refresh failed:', err);
+        }
+      },
 
       deleteComment: (videoId, commentId) => set((state) => ({
         videos: state.videos.map(video => 
@@ -350,19 +432,34 @@ export const useVideoStore = create<VideoStore>()(
       })),
 
       // Analytics
-      incrementViews: (videoId) => set((state) => ({
-        videos: state.videos.map(video => 
-          video.id === videoId 
-            ? { 
-                ...video, 
-                stats: {
-                  ...video.stats,
-                  views: video.stats.views + 1
-                }
-              }
-            : video
-        )
-      })),
+      incrementViews: async (videoId) => {
+        const state = get();
+        const video = state.videos.find(v => v.id === videoId);
+        if (!video) return;
+
+        const newViews = video.stats.views + 1;
+        const updatedStats = { ...video.stats, views: newViews };
+
+        set({
+          videos: state.videos.map(v =>
+            v.id === videoId
+              ? { ...v, stats: updatedStats }
+              : v
+          )
+        });
+
+        try {
+          // Persist view count to DB
+          await supabase
+            .from('videos')
+            .update({ views: newViews })
+            .eq('id', videoId);
+          // Refresh FYP eligibility with new view count
+          await refreshVideoFypStatus(videoId, updatedStats);
+        } catch (err) {
+          console.error('incrementViews persist failed:', err);
+        }
+      },
 
       getTrendingVideos: () => {
         const { videos } = get();
