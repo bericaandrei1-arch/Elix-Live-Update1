@@ -528,7 +528,7 @@ export default function Upload() {
                </div>
 
                <div className="absolute bottom-[22%] left-0 right-0 z-20 px-4 pointer-events-auto flex justify-center">
-                 <div className="bg-black/80 border border-transparent rounded-xl p-1.5 space-y-1.5 w-[60%] max-w-[200px]">
+                 <div className="bg-black border border-transparent rounded-xl p-1.5 space-y-1.5 w-[60%] max-w-[200px]">
                    <textarea
                      value={caption}
                      onChange={(e) => setCaption(e.target.value)}
