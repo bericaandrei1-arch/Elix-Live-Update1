@@ -6,7 +6,7 @@ import { Eye, EyeOff, Lock, Mail, Check } from 'lucide-react';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInWithPassword, loginAsGuest } = useAuthStore();
+  const { signInWithPassword } = useAuthStore();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -144,17 +144,6 @@ export default function Login() {
             className="w-full bg-[#E6B36A] text-black font-bold rounded-xl py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              loginAsGuest();
-              navigate(from, { replace: true });
-            }}
-            className="w-full bg-white/10 text-white font-bold rounded-xl py-3 text-sm hover:bg-white/20"
-          >
-            Continue as Guest
           </button>
         </form>
 

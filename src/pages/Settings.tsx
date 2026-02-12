@@ -76,12 +76,12 @@ export default function Settings() {
           <SettingItem
             icon={<Lock className="w-5 h-5" />}
             label="Privacy"
-            onClick={() => navigate('/settings/privacy')}
+            onClick={() => alert('Coming soon')}
           />
           <SettingItem
             icon={<Shield className="w-5 h-5" />}
             label="Security"
-            onClick={() => navigate('/settings/security')}
+            onClick={() => alert('Coming soon')}
           />
         </Section>
 
@@ -90,7 +90,7 @@ export default function Settings() {
           <SettingItem
             icon={<Bell className="w-5 h-5" />}
             label="Notifications"
-            onClick={() => navigate('/settings/notifications')}
+            onClick={() => alert('Coming soon')}
           />
           <SettingItem
             icon={<Moon className="w-5 h-5" />}
@@ -102,7 +102,7 @@ export default function Settings() {
             icon={<Globe className="w-5 h-5" />}
             label="Language"
             value="English"
-            onClick={() => navigate('/settings/language')}
+            onClick={() => alert('Coming soon')}
           />
         </Section>
 
@@ -112,7 +112,7 @@ export default function Settings() {
             icon={<Video className="w-5 h-5" />}
             label="Video Quality"
             value="Auto"
-            onClick={() => navigate('/settings/video-quality')}
+            onClick={() => alert('Coming soon')}
           />
           <SettingItem
             icon={<Heart className="w-5 h-5" />}
@@ -153,7 +153,7 @@ export default function Settings() {
             label="Check Supabase connection"
             onClick={async () => {
               const result = await checkSupabaseConnection();
-              alert(result.ok ? 'Supabase connection OK.' : 'Supabase: ' + result.message);
+              alert(result.ok ? 'Supabase connection OK.' : 'Supabase: ' + ('message' in result ? result.message : 'Error'));
             }}
           />
         </Section>

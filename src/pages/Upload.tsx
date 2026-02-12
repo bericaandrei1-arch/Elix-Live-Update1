@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setCachedCameraStream } from '../lib/cameraStream';
-import { RefreshCw, Zap, Clock, Music, Check, Play, Square, RotateCcw } from 'lucide-react';
+import { RefreshCw, Zap, Clock, Music, Check, Play, Square, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { useVideoStore } from '../store/useVideoStore';
 import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
 import { trackEvent } from '../lib/analytics';
@@ -32,8 +32,15 @@ export default function Upload() {
   const previewAudioRef = useRef<HTMLAudioElement | null>(null); // For list preview
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null); // For video background
   const [customTracks, setCustomTracks] = useState<SoundTrack[]>([]);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const { addVideo, fetchVideos } = useVideoStore();
+
+  const ZOOM_MIN = 0.5;
+  const ZOOM_MAX = 3;
+  const ZOOM_STEP = 0.25;
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP));
+  const handleZoomOut = () => setZoomLevel((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP));
 
   const mapRowToVideo = (row: any, profile: any) => ({
     id: row.id,
@@ -60,8 +67,8 @@ export default function Upload() {
     isSaved: false,
     isFollowing: false,
     comments: [],
-    quality: 'auto',
-    privacy: 'public'
+    quality: 'auto' as const,
+    privacy: 'public' as const
   });
 
   type UploadMusic = {
@@ -350,7 +357,7 @@ export default function Upload() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        alert("You must be logged in to post videos.");
+        navigate('/login', { state: { from: '/upload' } });
         return;
       }
 
@@ -359,12 +366,22 @@ export default function Upload() {
         alert("No video to upload. Record or choose a video first.");
         return;
       }
-      const blob = new Blob(chunks, { type: 'video/webm' });
+
+      // Use the MIME type from the first chunk (which we set correctly in handleFileUpload or recording)
+      const mimeType = chunks[0].type || 'video/webm';
+      const blob = new Blob(chunks, { type: mimeType });
+
       if (blob.size === 0) {
         alert("Video is empty. Record or choose a valid video.");
         return;
       }
-      const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+
+      // Use correct extension based on MIME type
+      let ext = 'webm';
+      if (mimeType.includes('mp4')) ext = 'mp4';
+      if (mimeType.includes('quicktime')) ext = 'mov';
+
+      const file = new File([blob], `upload-${Date.now()}.${ext}`, { type: mimeType });
 
       videoUploadService.onProgress(({ progress }) => setPostProgress(progress));
       setPostProgress(0);
@@ -382,10 +399,26 @@ export default function Upload() {
 
         const hashtags = Array.from(new Set([...captionHashtags, ...manualHashtags].map((h) => h.toLowerCase()))).slice(0, 20);
 
+        let musicMeta;
+        if (selectedAudioId.startsWith('track_')) {
+            const id = Number(selectedAudioId.replace('track_', ''));
+            const track = musicTracks.find(t => t.id === id);
+            if (track) {
+                musicMeta = {
+                    id: String(track.id),
+                    title: track.title,
+                    artist: track.artist,
+                    duration: formatClip(track.clipStartSeconds, track.clipEndSeconds),
+                    url: track.url
+                };
+            }
+        }
+
         const videoId = await videoUploadService.uploadVideo(file, user.id, {
           description: normalizedCaption,
           hashtags: hashtags,
-          isPrivate: false
+          isPrivate: false,
+          music: musicMeta
         });
 
         // Put new video directly at top of For You so it shows immediately (video already in DB = stays forever)
@@ -402,7 +435,12 @@ export default function Upload() {
           } catch {
             profile = { user_id: user.id, username: user.user_metadata?.username ?? user.email?.split('@')[0], display_name: user.user_metadata?.full_name ?? user.email?.split('@')[0], avatar_url: user.user_metadata?.avatar_url, is_creator: false };
           }
-          addVideo(mapRowToVideo(row, profile));
+          
+          const newVideo = mapRowToVideo(row, profile);
+          if (musicMeta) {
+             newVideo.music = musicMeta;
+          }
+          addVideo(newVideo);
         } else {
           await fetchVideos();
         }
@@ -454,6 +492,7 @@ export default function Upload() {
       
       {/* PREVIEW MODE */}
        {recordedVideoUrl ? (
+         <>
            <div className="relative z-10 w-full mx-auto h-[100dvh] bg-black flex flex-col items-center justify-center">
                <video 
                    src={recordedVideoUrl} 
@@ -526,6 +565,7 @@ export default function Upload() {
                        />
                      </button>
                    </div>
+                   {/* Removed the 'Post' button from inside here to avoid confusion. It is at the bottom. */}
                    {postError ? (
                      <div className="w-full mb-2 px-3 py-2 rounded bg-red-900/80 text-white text-sm">
                        {postError}
@@ -546,37 +586,53 @@ export default function Upload() {
                  </div>
                </div>
 
-               {/* Preview Controls - Custom Buttons Over Overlay */}
-               <div className="absolute bottom-[10%] left-0 right-0 flex justify-center gap-20 z-20 pointer-events-auto">
+                   {/* 10. Upload (Inside Post - Restored) */}
                    <button 
-                       onClick={handleDiscard}
-                       className="flex flex-col items-center gap-2 group"
-                       title="Retake"
+                       onClick={handleFileUpload}
+                       className="absolute bottom-[10%] left-[5%] flex flex-col items-center gap-1 group z-30 pointer-events-auto"
+                       title="Upload"
                    >
-                       <div className="w-16 h-16 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
-                           <RotateCcw size={32} />
+                       <div className="w-10 h-10 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                           {/* Simple Upload Icon */}
+                           <div className="w-4 h-4 border-2 border-white rounded-sm relative overflow-hidden">
+                               <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                           </div>
                        </div>
-                       <span className="text-white font-bold text-sm shadow-black drop-shadow-md">Retake</span>
+                       <span className="text-white font-bold text-[10px] shadow-black drop-shadow-md">Upload</span>
                    </button>
+                   
+                   {/* Preview Controls - Custom Buttons Over Overlay */}
+                   <div className="absolute bottom-[10%] left-0 right-0 flex justify-center gap-20 z-20 pointer-events-auto">
+                       <button 
+                           onClick={handleDiscard}
+                           className="flex flex-col items-center gap-2 group"
+                           title="Retake"
+                       >
+                           <div className="w-16 h-16 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                               <RotateCcw size={32} />
+                           </div>
+                           <span className="text-white font-bold text-sm shadow-black drop-shadow-md">Retake</span>
+                       </button>
 
-                   <button 
-                       onClick={handlePost}
-                       className="flex flex-col items-center gap-2 group disabled:opacity-60"
-                       title="Post"
-                       disabled={isPosting}
-                   >
-                       <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
-                           <Check size={32} />
-                       </div>
-                       <span className="text-white font-bold text-sm shadow-black drop-shadow-md">{isPosting ? 'Posting' : 'Post'}</span>
-                   </button>
+                       <button 
+                           onClick={handlePost}
+                           className="flex flex-col items-center gap-2 group disabled:opacity-60"
+                           title="Post"
+                           disabled={isPosting}
+                       >
+                           <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
+                               <Check size={32} />
+                           </div>
+                           <span className="text-white font-bold text-sm shadow-black drop-shadow-md">{isPosting ? 'Posting' : 'Post'}</span>
+                       </button>
+                   </div>
                </div>
-           </div>
+         </>
        ) : (
         /* CAMERA MODE */
         <>
           {/* Container Principal - Limitat la mărimea unui telefon (500px) */}
-          <div className="relative z-10 w-full mx-auto h-[100dvh] mb-0 pointer-events-none bg-black shadow-2xl overflow-hidden">
+          <div className="relative z-10 w-full max-w-[500px] mx-auto h-[100dvh] mb-0 pointer-events-none bg-black shadow-2xl overflow-hidden">
               
               {/* Camera Preview Layer */}
               <video 
@@ -585,6 +641,7 @@ export default function Upload() {
                 playsInline 
                 muted
                 className={`absolute inset-0 w-full h-full object-cover z-0 ${cameraError ? 'hidden' : ''}`}
+                style={{ transform: `scale(${zoomLevel}) scaleX(-1)`, transformOrigin: 'center center' }}
               />
 
               {cameraError && (
@@ -645,9 +702,27 @@ export default function Upload() {
                     </span>
                   </button>
 
+                  {/* Zoom Out */}
+                  <button 
+                    className="absolute top-[18%] right-[5%] w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white"
+                    onClick={handleZoomOut}
+                    title="Zoom out"
+                    aria-label="Zoom out"
+                  >
+                    <ZoomOut size={20} />
+                  </button>
+                  {/* Zoom In */}
+                  <button 
+                    className="absolute top-[26%] right-[5%] w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white"
+                    onClick={handleZoomIn}
+                    title="Zoom in"
+                    aria-label="Zoom in"
+                  >
+                    <ZoomIn size={20} />
+                  </button>
                   {/* 3. Flip Camera */}
                   <button 
-                    className="absolute top-[18%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
+                    className="absolute top-[34%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Flip Camera')}
                     title="Flip Camera"
                   >
@@ -656,7 +731,7 @@ export default function Upload() {
 
                   {/* 4. Speed */}
                   <button 
-                    className="absolute top-[26%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
+                    className="absolute top-[42%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Speed')}
                     title="Speed"
                   >
@@ -665,7 +740,7 @@ export default function Upload() {
 
                   {/* 5. Beauty */}
                   <button 
-                    className="absolute top-[34%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
+                    className="absolute top-[50%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Beauty')}
                     title="Beauty"
                   >
@@ -674,7 +749,7 @@ export default function Upload() {
 
                   {/* 6. Timer */}
                   <button 
-                    className="absolute top-[42%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
+                    className="absolute top-[58%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Timer')}
                     title="Timer"
                   >
@@ -683,7 +758,7 @@ export default function Upload() {
 
                   {/* 7. Flash */}
                   <button 
-                    className="absolute top-[50%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
+                    className="absolute top-[66%] right-[5%] w-8 h-8 flex items-center justify-center opacity-0 hover:opacity-100 hover:brightness-125 rounded-full"
                     onClick={() => alert('Flash')}
                     title="Flash"
                   >
@@ -727,151 +802,134 @@ export default function Upload() {
                       </button>
                   </div>
 
-                  {/* 11. Go Live Hitbox (Right Side - Invisible) */}
+                  {/* 10. Upload (Left Side - VISIBLE NOW) */}
                   <button 
-                     className="absolute bottom-[2.5%] right-[30%] w-12 h-8 flex items-center justify-center pointer-events-auto z-[100] opacity-0 hover:brightness-125 cursor-pointer"
-                     onClick={async () => {
-                         try {
-                           const stream = await navigator.mediaDevices.getUserMedia({
-                             video: {
-                               width: { ideal: 1080 },
-                               height: { ideal: 1920 },
-                               facingMode: 'user',
-                             },
-                             audio: true,
-                           });
-                           setCachedCameraStream(stream);
-                           navigate('/live/broadcast');
-                         } catch {
-                           alert('Camera access denied');
-                         }
-                     }}
-                     title="Go Live"
-                  >
-                      <span className="sr-only">Go Live</span>
-                  </button>
-
-                  {/* 10. Upload (Left Side - Invisible) */}
-                  <button 
-                    className="absolute bottom-[7%] left-[4%] w-16 h-16 flex items-center justify-center opacity-0 hover:brightness-125 rounded-lg cursor-pointer z-[100]"
+                    className="absolute bottom-8 left-6 flex flex-col items-center gap-1 z-[1000] pointer-events-auto group"
                     onClick={handleFileUpload}
                     title="Upload from Gallery"
                   >
-                    <span className="sr-only">Upload</span>
+                    <div className="w-10 h-10 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                        {/* Gallery Icon */}
+                        <div className="w-4 h-4 border-2 border-white rounded-sm relative overflow-hidden">
+                            <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    <span className="text-white text-[10px] font-bold shadow-black drop-shadow-md">Upload</span>
                   </button>
+
               </div>
+          </div>
 
-              {/* Music Selection Modal */}
-              {showMusicModal && (
-                  <div className="absolute inset-0 z-[200] bg-black flex flex-col pt-10 px-4 animate-in slide-in-from-bottom duration-300">
-                      <div className="flex items-center justify-between mb-6">
-                          <h2 className="text-white text-xl font-bold">Select Sound</h2>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                const url = window.prompt('Paste audio URL (mp3/ogg):');
-                                if (!url) return;
-                                const title = window.prompt('Sound name:') ?? 'Custom sound';
-                                const next: SoundTrack = {
-                                  id: Date.now(),
-                                  title: title.trim() || 'Custom sound',
-                                  artist: 'You',
-                                  duration: 'custom',
-                                  url: url.trim(),
-                                  license: 'Custom (you must own rights)',
-                                  source: 'Custom URL',
-                                  clipStartSeconds: 0,
-                                  clipEndSeconds: 180,
-                                };
-                                setCustomTracks((prev) => [next, ...prev]);
-                              }}
-                              className="px-3 py-1.5 rounded-full border border-transparent text-white/80 text-xs font-semibold hover:brightness-125"
-                            >
-                              Add URL
-                            </button>
-                            <button 
-                              onClick={() => setShowMusicModal(false)}
-                              className="p-2"
-                            >
-                                <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5" />
-                            </button>
-                          </div>
-                      </div>
-
-                      <div className="flex-1 overflow-y-auto space-y-2 pb-10">
-                          <div className="grid grid-cols-2 gap-2 pb-2">
-                            <button
-                              type="button"
-                              className={`px-3 py-3 rounded-xl border text-left ${
-                                selectedAudioId === 'original' && !postWithoutAudio
-                                  ? 'bg-[#E6B36A] border-[#E6B36A] text-black'
-                                  : 'bg-white border-transparent text-white'
-                              }`}
-                              onClick={() => {
-                                setSelectedAudioId('original');
-                                setPostWithoutAudio(false);
-                                trackEvent('upload_select_audio', { type: 'original' });
-                                setShowMusicModal(false);
-                              }}
-                            >
-                              <div className="text-sm font-bold">Original Sound</div>
-                              <div className={`text-[11px] ${selectedAudioId === 'original' && !postWithoutAudio ? 'text-black/70' : 'text-white/60'}`}>
-                                Use the captured audio
-                              </div>
-                            </button>
-                            <button
-                              type="button"
-                              className={`px-3 py-3 rounded-xl border text-left ${
-                                postWithoutAudio || selectedAudioId === 'none'
-                                  ? 'bg-[#E6B36A] border-[#E6B36A] text-black'
-                                  : 'bg-white border-transparent text-white'
-                              }`}
-                              onClick={() => {
-                                setSelectedAudioId('none');
-                                setPostWithoutAudio(true);
-                                trackEvent('upload_select_audio', { type: 'none' });
-                                setShowMusicModal(false);
-                              }}
-                            >
-                              <div className="text-sm font-bold">No audio</div>
-                              <div className={`text-[11px] ${postWithoutAudio || selectedAudioId === 'none' ? 'text-black/70' : 'text-white/60'}`}>
-                                Publish muted audio
-                              </div>
-                            </button>
-                          </div>
-
-                          {musicTracks.map((track) => (
-                              <div 
-                                key={track.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white hover:brightness-125 cursor-pointer border border-transparent"
-                                onClick={() => handleSelectMusic(track)}
-                              >
-                                  <div className="flex items-center gap-3">
-                                      <button 
-                                        className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 rounded flex items-center justify-center hover:scale-105 transition-transform"
-                                        onClick={(e) => togglePreview(e, track)}
-                                      >
-                                          {playingTrackId === track.id ? (
-                                              <Square size={16} className="text-white fill-white" />
-                                          ) : (
-                                              <Play size={16} className="text-white fill-white" />
-                                          )}
-                                      </button>
-                                      <div>
-                                          <h3 className="text-white font-bold text-sm">{track.title}</h3>
-                                          <p className="text-white/60 text-xs">{track.artist} • {formatClip(track.clipStartSeconds, track.clipEndSeconds)}</p>
-                                          <p className="text-white/40 text-[11px]">{track.license}</p>
-                                      </div>
-                                  </div>
-                                  {selectedAudioId === `track_${track.id}` && !postWithoutAudio && (
-                                    <Check className="text-green-400" size={20} />
-                                  )}
-                              </div>
-                          ))}
+          {/* Music Selection Modal */}
+          {showMusicModal && (
+              <div className="absolute inset-0 z-[200] bg-black flex flex-col pt-10 px-4 animate-in slide-in-from-bottom duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-white text-xl font-bold">Select Sound</h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const url = window.prompt('Paste audio URL (mp3/ogg):');
+                            if (!url) return;
+                            const title = window.prompt('Sound name:') ?? 'Custom sound';
+                            const next: SoundTrack = {
+                              id: Date.now(),
+                              title: title.trim() || 'Custom sound',
+                              artist: 'You',
+                              duration: 'custom',
+                              url: url.trim(),
+                              license: 'Custom (you must own rights)',
+                              source: 'Custom URL',
+                              clipStartSeconds: 0,
+                              clipEndSeconds: 180,
+                            };
+                            setCustomTracks((prev) => [next, ...prev]);
+                          }}
+                          className="px-3 py-1.5 rounded-full border border-transparent text-white/80 text-xs font-semibold hover:brightness-125"
+                        >
+                          Add URL
+                        </button>
+                        <button 
+                          onClick={() => setShowMusicModal(false)}
+                          className="p-2"
+                        >
+                            <img src="/Icons/power-button.png" alt="Close" className="w-5 h-5" />
+                        </button>
                       </div>
                   </div>
-              )}
-          </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-2 pb-10">
+                      <div className="grid grid-cols-2 gap-2 pb-2">
+                        <button
+                          type="button"
+                          className={`px-3 py-3 rounded-xl border text-left ${
+                            selectedAudioId === 'original' && !postWithoutAudio
+                              ? 'bg-[#E6B36A] border-[#E6B36A] text-black'
+                              : 'bg-white border-transparent text-white'
+                          }`}
+                          onClick={() => {
+                            setSelectedAudioId('original');
+                            setPostWithoutAudio(false);
+                            trackEvent('upload_select_audio', { type: 'original' });
+                            setShowMusicModal(false);
+                          }}
+                        >
+                          <div className="text-sm font-bold">Original Sound</div>
+                          <div className={`text-[11px] ${selectedAudioId === 'original' && !postWithoutAudio ? 'text-black/70' : 'text-white/60'}`}>
+                            Use the captured audio
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          className={`px-3 py-3 rounded-xl border text-left ${
+                            postWithoutAudio || selectedAudioId === 'none'
+                              ? 'bg-[#E6B36A] border-[#E6B36A] text-black'
+                              : 'bg-white border-transparent text-white'
+                          }`}
+                          onClick={() => {
+                            setSelectedAudioId('none');
+                            setPostWithoutAudio(true);
+                            trackEvent('upload_select_audio', { type: 'none' });
+                            setShowMusicModal(false);
+                          }}
+                        >
+                          <div className="text-sm font-bold">No audio</div>
+                          <div className={`text-[11px] ${postWithoutAudio || selectedAudioId === 'none' ? 'text-black/70' : 'text-white/60'}`}>
+                            Publish muted audio
+                          </div>
+                        </button>
+                      </div>
+
+                      {musicTracks.map((track) => (
+                          <div 
+                            key={track.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-white hover:brightness-125 cursor-pointer border border-transparent"
+                            onClick={() => handleSelectMusic(track)}
+                          >
+                              <div className="flex items-center gap-3">
+                                  <button 
+                                    className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 rounded flex items-center justify-center hover:scale-105 transition-transform"
+                                    onClick={(e) => togglePreview(e, track)}
+                                  >
+                                      {playingTrackId === track.id ? (
+                                          <Square size={16} className="text-white fill-white" />
+                                      ) : (
+                                          <Play size={16} className="text-white fill-white" />
+                                      )}
+                                  </button>
+                                  <div>
+                                      <h3 className="text-white font-bold text-sm">{track.title}</h3>
+                                      <p className="text-white/60 text-xs">{track.artist} • {formatClip(track.clipStartSeconds, track.clipEndSeconds)}</p>
+                                      <p className="text-white/40 text-[11px]">{track.license}</p>
+                                  </div>
+                              </div>
+                              {selectedAudioId === `track_${track.id}` && !postWithoutAudio && (
+                                <Check className="text-green-400" size={20} />
+                              )}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          )}
         </>
       )}
     </div>

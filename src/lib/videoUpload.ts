@@ -104,7 +104,7 @@ export class VideoUploadService {
   async uploadVideo(
     file: File,
     userId: string,
-    metadata: { description: string; hashtags: string[]; isPrivate: boolean }
+    metadata: { description: string; hashtags: string[]; isPrivate: boolean; music?: any }
   ): Promise<string> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -114,6 +114,9 @@ export class VideoUploadService {
       if (!file || file.size === 0) {
         throw new Error('Video file is empty. Record or choose a valid video.');
       }
+      // Note: "new row violates row-level security policy" usually means Storage policies are missing or too strict.
+      // Ensure 'user-content' bucket is Public and has policies for authenticated users to INSERT.
+
       const videoMeta = this.validateVideo(file);
 
       this.updateProgress('uploading', 40, 'Uploading video...');
@@ -125,7 +128,7 @@ export class VideoUploadService {
         .from('user-content')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false,
+          upsert: true,
           contentType: file.type || 'video/webm',
         });
       if (uploadError) {
@@ -154,22 +157,69 @@ export class VideoUploadService {
       }
 
       // Insert with only columns that exist in minimal setup (supabase-upload-setup.sql)
-      const payload = {
+      // NOTE: 'is_private' might be missing in some schemas. We check for errors.
+      const payload: any = {
         user_id: userId,
         url: publicUrl,
         thumbnail_url: thumbnailUrl,
         caption: metadata.description || '',
-        is_private: metadata.isPrivate ?? false,
       };
-      const { data: videoData, error: dbError } = await supabase
-        .from('videos')
-        .insert(payload)
-        .select()
-        .single();
-
-      if (dbError || !videoData) {
-        throw new Error('Database: ' + (dbError ? (dbError as any)?.message ?? String(dbError) : 'No row returned'));
+      
+      // Try to insert with is_private first
+      let data, error;
+      
+      try {
+        // NOTE: If user_id is missing in auth.users, this will fail with FK constraint.
+        // We assume auth.getUser() check passed, but maybe the user was deleted?
+        // Or maybe RLS is blocking it?
+        
+        const res = await supabase
+          .from('videos')
+          .insert({ ...payload, is_private: metadata.isPrivate ?? false })
+          .select()
+          .single();
+        data = res.data;
+        error = res.error;
+      } catch (e) {
+        // Ignored
       }
+
+      // If failed due to column missing, try without it
+      if (error && (error.message?.includes('is_private') || error.code === '42703')) {
+         console.warn('is_private column missing, inserting without it');
+         const res = await supabase
+          .from('videos')
+          .insert(payload)
+          .select()
+          .single();
+         data = res.data;
+         error = res.error;
+      }
+
+      // If failed due to FK constraint (videos_user_id_fkey), it means the user ID in 'videos' table
+      // does not match any ID in 'auth.users'.
+      // However, we just got the ID from auth.getUser().
+      // This usually happens if the trigger 'handle_new_user' failed to run or if there's a weird mismatch.
+      // BUT 'videos' references 'auth.users', not 'public.profiles'.
+      // So if auth.getUser() returns a user, that user DEFINITELY exists in auth.users.
+      // The only other possibility is RLS blocking the INSERT because auth.uid() != user_id
+      // OR the trigger that checks something failed.
+      
+      if (error) {
+          console.error('Video insert error details:', error);
+          // If foreign key violation, it might be due to user deletion or sync issue.
+          // In a real app we might try to recover or logout.
+          if (error.code === '23503') { // foreign_key_violation
+             throw new Error(`User ID mismatch (Code: 23503). Try logging out and back in.`);
+          }
+          throw new Error(`Database error: ${error.message} (Code: ${error.code})`);
+      }
+
+      if (!data) {
+        throw new Error('Database: No row returned');
+      }
+      
+      const videoData = data;
 
       // Give new video an initial FYP boost so it gets early impressions
       try {

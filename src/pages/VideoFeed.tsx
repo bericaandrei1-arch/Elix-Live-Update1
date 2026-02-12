@@ -4,12 +4,77 @@ import EnhancedVideoPlayer from '../components/EnhancedVideoPlayer';
 import { useVideoStore } from '../store/useVideoStore';
 import { LivePromo, useLivePromoStore } from '../store/useLivePromoStore';
 import { useSafetyStore } from '../store/useSafetyStore';
+import { supabase } from '../lib/supabase';
+import {
+  startVideoView,
+  stopVideoView,
+  cleanupAllViews,
+  } from '../lib/interactionTracker';
+import { startRealtimeSync, stopRealtimeSync } from '../lib/realtimeSync';
 
 type HomeTopTab = 'live' | 'stem' | 'explore' | 'following' | 'shop' | 'foryou';
 
+type LiveStreamData = {
+  id: string;
+  stream_key: string;
+  title: string;
+  viewer_count: number;
+  user_id: string;
+  username?: string;
+};
+
 type FeedItem =
   | { kind: 'promo'; promo: LivePromo }
-  | { kind: 'video'; videoId: string };
+  | { kind: 'video'; videoId: string }
+  | { kind: 'live'; stream: LiveStreamData };
+
+function LiveStreamCard({ stream, onOpen }: { stream: LiveStreamData; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full h-full relative bg-black"
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/60 via-black/40 to-black/80">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full bg-[#E6B36A]/20 flex items-center justify-center animate-pulse">
+            <div className="w-16 h-16 rounded-full bg-[#E6B36A]/30 flex items-center justify-center">
+              <span className="text-[#E6B36A] text-3xl font-black">
+                {(stream.title || stream.username || 'L').slice(0, 1).toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute left-4 top-16 z-10 flex items-center gap-2">
+        <div className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-black tracking-widest animate-pulse">
+          LIVE
+        </div>
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 text-white text-[11px] font-bold">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+          </svg>
+          {stream.viewer_count?.toLocaleString() || 0}
+        </div>
+      </div>
+
+      <div className="absolute left-4 bottom-28 z-10 text-left">
+        <p className="text-white text-xl font-black">
+          {stream.title || 'Live Stream'}
+        </p>
+        <p className="text-white/70 text-sm font-semibold">@{stream.username || 'creator'}</p>
+      </div>
+
+      <div className="absolute left-4 bottom-12 z-10">
+        <div className="px-5 py-2 rounded-full bg-[#E6B36A] text-black text-sm font-black">
+          Watch Live
+        </div>
+      </div>
+    </button>
+  );
+}
 
 function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) {
   const previewSrc =
@@ -59,7 +124,7 @@ function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) 
 
 export default function VideoFeed() {
   const location = useLocation();
-  const { videos, fetchVideos } = useVideoStore();
+  const { videos, fetchVideos, loading } = useVideoStore();
   const blockedUserIds = useSafetyStore((s) => s.blockedUserIds);
   const promoBattle = useLivePromoStore((s) => s.promoBattle);
   const promoLive = useLivePromoStore((s) => s.promoLive);
@@ -80,6 +145,11 @@ export default function VideoFeed() {
       return () => clearTimeout(t);
     }
   }, [location.pathname, fetchVideos]);
+
+  useEffect(() => {
+    startRealtimeSync();
+    return () => stopRealtimeSync();
+  }, []);
   const promos: FeedItem[] =
     activeTab === 'foryou'
       ? [
@@ -96,17 +166,58 @@ export default function VideoFeed() {
 
   const videoIds = Array.from({ length: loopCount }).flatMap(() => visibleVideos.map((v) => v.id));
 
-  const feedItems: FeedItem[] = [...promos, ...videoIds.map((id) => ({ kind: 'video' as const, videoId: id }))];
+  const [liveStreams, setLiveStreams] = useState<LiveStreamData[]>([]);
+
+  useEffect(() => {
+    const fetchLiveStreams = async () => {
+      if (activeTab !== 'foryou') return;
+
+      try {
+        const { data, error } = await supabase
+          .from('live_streams')
+          .select('id, stream_key, title, viewer_count, user_id')
+          .eq('is_live', true)
+          .order('viewer_count', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          console.error('Error fetching live streams:', error);
+          setLiveStreams([]);
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setLiveStreams((data || []).map((d: any) => ({
+            id: d.id,
+            stream_key: d.stream_key,
+            title: d.title || 'Live Stream',
+            viewer_count: d.viewer_count || 0,
+            user_id: d.user_id,
+            username: d.title || 'creator'
+          })));
+        }
+      } catch (err) {
+        console.error('Error fetching live streams:', err);
+        setLiveStreams([]);
+      }
+    };
+
+    fetchLiveStreams();
+  }, [activeTab]);
+
+  const feedItemsWithLive: FeedItem[] = [
+    ...promos,
+    ...liveStreams.map((stream): FeedItem => ({ kind: 'live', stream })),
+    ...videoIds.map((id): FeedItem => ({ kind: 'video', videoId: id })),
+  ];
 
   useEffect(() => {
     if (visibleVideos.length === 0) return;
     setActiveIndex(0);
-  }, [visibleVideos.length, promoCount]);
+  }, [visibleVideos.length, promoCount, liveStreams.length]);
 
   const handleVideoEnd = (feedIndex: number) => {
     const container = containerRef.current;
     if (!container) return;
-    if (feedIndex < feedItems.length - 1) {
+    if (feedIndex < feedItemsWithLive.length - 1) {
       container.scrollTo({
         top: (feedIndex + 1) * container.clientHeight,
         behavior: 'smooth'
@@ -116,21 +227,21 @@ export default function VideoFeed() {
 
   const handleScroll = () => {
     if (!containerRef.current) return;
-    
+
     const container = containerRef.current;
     const scrollPosition = container.scrollTop;
     const height = container.clientHeight;
-    
+
     const index = Math.round(scrollPosition / height);
-    if (index < 0 || index >= feedItems.length) return;
+    if (index < 0 || index >= feedItemsWithLive.length) return;
     setActiveIndex(index);
 
-    if (scrollPosition + height >= (feedItems.length - 2) * height) {
+    if (scrollPosition + height >= (feedItemsWithLive.length - 2) * height) {
       setLoopCount((c) => Math.min(20, c + 1));
     }
   };
 
-  const nextItem = feedItems[activeIndex + 1];
+  const nextItem = feedItemsWithLive[activeIndex + 1];
   const nextVideoUrl =
     nextItem && nextItem.kind === 'video'
       ? visibleVideos.find((v) => v.id === nextItem.videoId)?.url
@@ -148,6 +259,27 @@ export default function VideoFeed() {
     };
   }, [nextVideoUrl]);
 
+
+  useEffect(() => {
+    const currentItem = feedItemsWithLive[activeIndex];
+    if (!currentItem || currentItem.kind !== 'video') return;
+
+    const videoId = currentItem.videoId;
+    const video = visibleVideos.find(v => v.id === videoId);
+    const duration = video ? parseFloat(video.duration) || 15 : 15;
+
+    startVideoView(videoId, duration);
+
+    return () => {
+      stopVideoView(videoId);
+    };
+  }, [activeIndex]);
+
+  useEffect(() => {
+    return () => {
+      cleanupAllViews();
+    };
+  }, []);
 
   return (
     <div 
@@ -241,15 +373,15 @@ export default function VideoFeed() {
         </div>
       </div>
 
-      {feedItems.map((item, index) => {
+      {feedItemsWithLive.map((item, index) => {
         if (item.kind === 'promo') {
           return (
             <div
               key={`promo-${index}`}
               className="h-full w-full snap-start relative flex justify-center bg-black"
-              style={{ 
-                margin: 0, 
-                padding: 0, 
+              style={{
+                margin: 0,
+                padding: 0,
                 paddingTop: 'max(var(--safe-top), clamp(16px, 3vh, 32px))',
                 scrollSnapAlign: 'start',
                 scrollSnapStop: 'always'
@@ -267,25 +399,48 @@ export default function VideoFeed() {
           );
         }
 
+        if (item.kind === 'live') {
+          return (
+            <div
+              key={`live-${item.stream.id}-${index}`}
+              className="h-[100dvh] w-full snap-start relative flex justify-center bg-black"
+              style={{
+                margin: 0,
+                padding: 0,
+                paddingTop: 'max(var(--safe-top), clamp(16px, 3vh, 32px))',
+                scrollSnapAlign: 'start',
+                scrollSnapStop: 'always'
+              }}
+            >
+              <div className="w-full h-full relative">
+                <LiveStreamCard
+                  stream={item.stream}
+                  onOpen={() => navigate(`/live/${item.stream.stream_key}`)}
+                />
+              </div>
+            </div>
+          );
+        }
+
         return (
-          <div 
-            key={`video-${index}`} 
-            className="h-[100dvh] w-full snap-start relative flex justify-center" 
-            style={{ 
-              margin: 0, 
-              padding: 0, 
+          <div
+            key={`video-${item.videoId}-${index}`}
+            className="h-[100dvh] w-full snap-start relative flex justify-center"
+            style={{
+              margin: 0,
+              padding: 0,
               paddingTop: 'max(var(--safe-top), clamp(16px, 3vh, 32px))',
               gap: 0,
               scrollSnapAlign: 'start',
               scrollSnapStop: 'always'
             }}
           >
-            <div 
-              className="w-full h-[100dvh] relative" 
-              style={{ 
-                paddingBottom: 'clamp(40px, 5vh, 52px)', 
-                margin: 0, 
-                gap: 0 
+            <div
+              className="w-full h-[100dvh] relative"
+              style={{
+                paddingBottom: 'clamp(40px, 5vh, 52px)',
+                margin: 0,
+                gap: 0
               }}
             >
               <EnhancedVideoPlayer
@@ -299,13 +454,25 @@ export default function VideoFeed() {
       })}
 
       {nextVideoUrl && (
-        <video
-          src={nextVideoUrl}
-          preload="auto"
-          muted
-          playsInline
-          className="hidden"
-        />
+        <link rel="preload" as="video" href={nextVideoUrl} />
+      )}
+
+      {loading && feedItemsWithLive.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-8 h-8 border-2 border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {!loading && feedItemsWithLive.length === 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/50 pointer-events-none">
+          <p>No videos found</p>
+          <button 
+            onClick={() => fetchVideos()} 
+            className="mt-4 px-4 py-2 bg-white/10 rounded-full text-sm font-semibold pointer-events-auto hover:bg-white/20"
+          >
+            Refresh
+          </button>
+        </div>
       )}
     </div>
   );

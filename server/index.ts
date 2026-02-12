@@ -5,17 +5,23 @@ import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
-import path, { dirname, join } from 'path';
+import { dirname, join } from 'path';
 import { createCheckoutSession, createPaymentIntent } from './routes/checkout';
 import { handleStripeWebhook } from './routes/webhook';
-import { 
-  handleAnalytics, 
-  handleBlockUser, 
-  handleDeleteAccount, 
-  handleReport, 
-  handleSendNotification, 
-  handleVerifyPurchase 
+import {
+  handleAnalytics,
+  handleBlockUser,
+  handleDeleteAccount,
+  handleReport,
+  handleSendNotification,
+  handleVerifyPurchase
 } from './routes/misc';
+import {
+  handleForYouFeed,
+  handleTrackView,
+  handleTrackInteraction,
+  handleGetVideoScore,
+} from './routes/feed';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,6 +53,12 @@ app.post('/api/delete-account', handleDeleteAccount);
 app.post('/api/report', handleReport);
 app.post('/api/send-notification', handleSendNotification);
 app.post('/api/verify-purchase', handleVerifyPurchase);
+
+// Feed & Recommendation API
+app.get('/api/feed/foryou', handleForYouFeed);
+app.post('/api/feed/track-view', handleTrackView);
+app.post('/api/feed/track-interaction', handleTrackInteraction);
+app.get('/api/feed/score/:videoId', handleGetVideoScore);
 
 // Serve static files from dist
 const distPath = join(__dirname, '..', 'dist');
@@ -80,7 +92,7 @@ console.log(`WebSocket server attached to HTTP server on port ${PORT}`);
 
 // --- WebSocket Logic (Copied from websocket-server.ts) ---
 
-let nhost: ReturnType<typeof createClient> | null = null;
+const supabaseAdmin: ReturnType<typeof createClient> | null = null;
 try {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -88,32 +100,12 @@ try {
     nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
     console.log('Supabase client initialized successfully');
   } else {
-    console.log('Supabase environment variables not set, running without authentication');
+    console.log('npm run dev environment variables not set, running without authentication');
   }
 } catch (e) {
   console.error("Supabase init failed, running without authentication:", e);
   nhost = null;
 }
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    console.warn(`Missing optional environment variable: ${name}`);
-    return '';
-  }
-  return value;
-}
-
-// Supabase client (commented out since auth is disabled)
-// let nhost: ReturnType<typeof createClient>;
-// try {
-//   const supabaseUrl = process.env.SUPABASE_URL;
-//   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-//   if (!supabaseUrl || !supabaseServiceRoleKey) throw new Error("Missing Supabase Config");
-//   nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
-// } catch (e) {
-//   console.error("Supabase init failed", e);
-// }
 
 interface Client {
   ws: WebSocket;
@@ -148,7 +140,7 @@ wss.on('connection', async (ws: WebSocket, req) => {
       roomId = url.pathname.split('/')[2]; // /live/roomId -> roomId
     }
 
-    if (!nhost) {
+    if (!supabaseAdmin) {
       ws.close(1008, 'Authentication not available');
       return;
     }
@@ -164,12 +156,13 @@ wss.on('connection', async (ws: WebSocket, req) => {
     const userId = payload.sub;
 
     // Verify user exists using admin API
-    const { data: userData, error } = await nhost.auth.admin.getUserById(userId);
+    const { data: userData, error } = await supabaseAdmin.auth.admin.getUserById(userId);
     if (error || !userData) {
       ws.close(1008, 'Invalid token');
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userObj = (userData as any)?.user ?? userData;
 
     // Get username
@@ -436,21 +429,7 @@ function broadcastToRoom(roomId: string, event: string, data: any, exclude?: Cli
 
 async function updateViewerCount(roomId: string) {
   try {
-    const room = rooms.get(roomId);
-    const count = room?.size || 0;
-
-    // TODO: Update database via Nhost GraphQL
-    // const { error } = await nhost.graphql.request(`
-    //   mutation UpdateViewerCount($id: uuid!, $count: Int!) {
-    //     update_live_streams(where: {id: {_eq: $id}}, _set: {viewer_count: $count}) {
-    //       affected_rows
-    //     }
-    //   }
-    // `, { id: roomId, count });
-
-    // if (error) {
-    //   console.error('Failed to update viewer count in database:', error);
-    // }
+    // TODO: Update database with viewer count
   } catch (error) {
     console.error('Failed to update viewer count:', error);
   }

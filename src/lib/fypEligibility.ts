@@ -16,9 +16,11 @@
 import { supabase } from './supabase';
 
 // ── Weights ──────────────────────────────────────────────────────
-const WEIGHT_LIKE    = 10;
-const WEIGHT_COMMENT = 8;
-const WEIGHT_SHARE   = 15;
+const WEIGHT_WATCH_TIME = 2;
+const WEIGHT_LIKE    = 5;
+const WEIGHT_COMMENT = 6;
+const WEIGHT_SHARE   = 8;
+const WEIGHT_COMPLETION = 10;
 const WEIGHT_VIEW    = 1;
 
 /** Score a video must reach before the algorithm shows it on FYP */
@@ -35,11 +37,15 @@ export function calculateEngagementScore(stats: {
   comments: number;
   shares: number;
   views: number;
+  watch_time?: number;
+  completions?: number;
 }): number {
   return (
+    (stats.watch_time || 0) * WEIGHT_WATCH_TIME +
     stats.likes    * WEIGHT_LIKE +
     stats.comments * WEIGHT_COMMENT +
     stats.shares   * WEIGHT_SHARE +
+    (stats.completions || 0) * WEIGHT_COMPLETION +
     stats.views    * WEIGHT_VIEW
   );
 }

@@ -201,6 +201,7 @@ function App() {
               <Route path="/admin/economy" element={<AdminEconomy />} />
             </Route>
           </Route>
+          <Route path="*" element={<Navigate to="/feed" replace />} />
         </Routes>
         </Suspense>
         </ErrorBoundary>

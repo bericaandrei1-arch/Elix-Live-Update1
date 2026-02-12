@@ -5,7 +5,7 @@ import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUpWithPassword } = useAuthStore();
+  const signUpWithPassword = useAuthStore((state) => state.signUpWithPassword);
   
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');

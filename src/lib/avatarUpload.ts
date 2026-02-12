@@ -26,11 +26,15 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
 
   try {
     // 1. Upload to 'user-content' bucket
+    // Note: The bucket MUST be public and have RLS policies allowing uploads by authenticated users.
+    // If you see "new row violates row-level security policy", check your Storage policies in Supabase Dashboard.
+    // For now, we try to upload.
     const { error: uploadError } = await supabase.storage
       .from('user-content')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type
       });
 
     if (uploadError) {

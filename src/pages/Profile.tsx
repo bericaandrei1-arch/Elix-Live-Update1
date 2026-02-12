@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Share2, Menu, Lock, Play, Heart, EyeOff, Camera, Sparkles, Sword, LogOut, UserPlus, X } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -363,8 +363,8 @@ export default function Profile() {
                     >
                       {isFollowing ? 'Following' : 'Follow'}
                     </button>
-                    <button 
-                      onClick={() => navigate(`/messages/new?userId=${displayUserId}`)}
+                    <button
+                      onClick={() => navigate(`/inbox`)}
                       className="px-6 py-2 bg-gray-800 rounded text-sm font-semibold hover:bg-gray-700 transition"
                     >
                       Message
