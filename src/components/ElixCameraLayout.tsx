@@ -829,10 +829,8 @@ export default function ElixCameraLayout({
           )}
 
           {/* Bottom Tabs + Gallery */}
-          <div className="flex items-center justify-between px-4 pb-0.5">
-
-
-            <div className="flex items-center gap-5">
+          <div className="flex items-center justify-center px-4 pb-0.5 w-full absolute bottom-4">
+            <div className="flex items-center gap-8">
               <button 
                 onClick={onPostTab}
                 className={`text-sm font-bold hover:scale-105 active:scale-95 transition-transform ${
@@ -858,8 +856,6 @@ export default function ElixCameraLayout({
                 LIVE
               </button>
             </div>
-
-            <div className="w-8"></div>
           </div>
         </div>
       )}
