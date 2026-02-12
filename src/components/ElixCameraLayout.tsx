@@ -829,7 +829,7 @@ export default function ElixCameraLayout({
           )}
 
           {/* Bottom Tabs + Gallery */}
-          <div className="flex items-center justify-center px-4 pb-0.5 w-full absolute bottom-10">
+          <div className="flex items-center justify-center px-4 pb-0.5 w-full absolute bottom-4">
             <div className="flex items-center gap-8">
               <button 
                 onClick={onPostTab}
