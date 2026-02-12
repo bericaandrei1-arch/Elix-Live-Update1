@@ -646,7 +646,7 @@ export default function Create() {
             >
               <video
                 ref={videoRef}
-                className={`w-full h-full ${isLandscapeStream ? 'object-contain' : 'object-cover'}`}
+                className="w-full h-full object-cover"
                 autoPlay
                 muted
                 playsInline
@@ -679,7 +679,7 @@ export default function Create() {
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70 pointer-events-none" />
+
             </div>
           )}
         </div>
