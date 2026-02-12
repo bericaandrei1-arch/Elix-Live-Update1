@@ -605,25 +605,25 @@ export default function Upload() {
                    <div className="absolute bottom-[10%] left-0 right-0 flex justify-center gap-20 z-20 pointer-events-auto">
                        <button 
                            onClick={handleDiscard}
-                           className="flex flex-col items-center gap-2 group"
+                           className="flex flex-col items-center gap-1 group"
                            title="Retake"
                        >
-                           <div className="w-16 h-16 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
-                               <RotateCcw size={32} />
+                           <div className="w-10 h-10 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                               <RotateCcw size={18} />
                            </div>
-                           <span className="text-white font-bold text-sm shadow-black drop-shadow-md">Retake</span>
+                           <span className="text-white font-bold text-[10px] shadow-black drop-shadow-md">Retake</span>
                        </button>
 
                        <button 
                            onClick={handlePost}
-                           className="flex flex-col items-center gap-2 group disabled:opacity-60"
+                           className="flex flex-col items-center gap-1 group disabled:opacity-60"
                            title="Post"
                            disabled={isPosting}
                        >
-                           <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
-                               <Check size={32} />
+                           <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
+                               <Check size={18} />
                            </div>
-                           <span className="text-white font-bold text-sm shadow-black drop-shadow-md">{isPosting ? 'Posting' : 'Post'}</span>
+                           <span className="text-white font-bold text-[10px] shadow-black drop-shadow-md">{isPosting ? 'Posting' : 'Post'}</span>
                        </button>
                    </div>
                </div>
