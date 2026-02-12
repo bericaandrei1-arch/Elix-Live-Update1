@@ -296,7 +296,6 @@ export default function CreatorLoginDetails() {
             <div className="space-y-1.5">
               <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Email</label>
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type="email"
@@ -310,7 +309,6 @@ export default function CreatorLoginDetails() {
             <div className="space-y-1.5">
               <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Password</label>
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type={showPassword ? 'text' : 'password'}
