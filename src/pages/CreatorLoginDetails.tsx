@@ -325,13 +325,82 @@ export default function CreatorLoginDetails() {
             >
               {isSubmitting ? 'Signing in...' : 'Log in'}
             </button>
-          </form>
-        )}
+          )}
+        </div>
 
-        <div className="space-y-1.5 max-w-[90%] mx-auto">
-          {user && (
+        {user && (
+          <div className="space-y-4 mb-6 max-w-[90%] mx-auto">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Email</label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
+                <input
+                  type="email"
+                  value={user.email}
+                  readOnly
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white/60 placeholder-white/20 outline-none cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-[#E6B36A]/50 transition-all"
+                  placeholder="Enter password to save"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Save login details checkbox */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  id="save-login-user"
+                  checked={saveDetails}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setSaveDetails(next);
+                    window.localStorage.setItem('creator_save_login_details', next ? 'true' : 'false');
+                    if (next) {
+                        saveCurrentAccount(user.email, user.username, user.avatar);
+                        if (password) {
+                            // Only if user explicitly typed it
+                             window.localStorage.setItem('creator_saved_password', password);
+                        }
+                    } else {
+                        // Clear
+                        window.localStorage.removeItem('creator_saved_identifier');
+                        window.localStorage.removeItem('creator_saved_username');
+                        window.localStorage.removeItem('creator_saved_password');
+                    }
+                  }}
+                  className="peer h-4 w-4 rounded-full border border-white/30 bg-transparent appearance-none checked:border-[#E6B36A] checked:bg-[#E6B36A] transition-all cursor-pointer"
+                />
+                <svg className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 text-black pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <label htmlFor="save-login-user" className="text-xs text-white/60 cursor-pointer select-none">Save login info</label>
+            </div>
+
             <button
-              className="w-full bg-transparent10 border border-white/10 rounded-md py-1 text-[9px]"
+              className="w-full bg-transparent10 border border-white/10 rounded-xl py-3 text-sm font-semibold hover:bg-white/5 transition-colors"
               onClick={async () => {
                 await signOut();
                 setPassword('');
@@ -339,9 +408,11 @@ export default function CreatorLoginDetails() {
                 setMode('signin');
                 navigate('/creator/login-details', { replace: true });
               }}
-            >Sign out</button>
-          )}
-        </div>
+            >
+              Sign out
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
