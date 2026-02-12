@@ -528,19 +528,19 @@ export default function Upload() {
                </div>
 
                <div className="absolute bottom-[22%] left-0 right-0 z-20 px-4 pointer-events-auto flex justify-center">
-                 <div className="bg-black border border-transparent rounded-2xl p-2 space-y-2 w-[70%] max-w-[250px]">
+                 <div className="bg-black/80 border border-transparent rounded-xl p-1.5 space-y-1.5 w-[60%] max-w-[200px]">
                    <textarea
                      value={caption}
                      onChange={(e) => setCaption(e.target.value)}
                      placeholder="Write a caption…"
-                     className="w-full bg-white border border-transparent rounded-lg px-2 py-1.5 text-xs outline-none resize-none h-8 focus:h-16 transition-all duration-300"
+                     className="w-full bg-white/90 border border-transparent rounded-md px-2 py-1 text-[10px] outline-none resize-none h-6 focus:h-12 transition-all duration-300"
                      aria-label="Caption"
                    />
                    <input
                      value={hashtagsText}
                      onChange={(e) => setHashtagsText(e.target.value)}
                      placeholder="Hashtags..."
-                     className="w-full bg-white border border-transparent rounded-lg px-2 py-1.5 text-xs outline-none h-7 focus:h-9 transition-all duration-300"
+                     className="w-full bg-white/90 border border-transparent rounded-md px-2 py-1 text-[10px] outline-none h-6 focus:h-8 transition-all duration-300"
                      aria-label="Hashtags"
                    />
                    <div className="flex items-center justify-between">
