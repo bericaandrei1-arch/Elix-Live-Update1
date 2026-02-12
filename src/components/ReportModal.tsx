@@ -246,9 +246,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
               </div>
               <div>
                 <h5 className="text-white font-medium mb-1">Your privacy matters</h5>
-                <p className="text-white/60 text-sm">
-                  The person you're reporting won't know who reported them. We review reports to keep our community safe.
-                </p>
+                <p className="text-white/50 text-[10px] leading-tight">The person you're reporting won't know who reported them. We review reports to keep our community safe.</p>
               </div>
             </div>
           </div>
