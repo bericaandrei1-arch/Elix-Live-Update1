@@ -174,9 +174,11 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-          <div className="mb-3">
-            <h4 className="text-white text-xs font-medium mb-0.5">Why are you reporting this {getContentTypeLabel()}?</h4>
-            <p className="text-white/50 text-[10px]">Your report helps us understand what violates our community guidelines.</p>
+          <div className="mb-3 bg-transparent5 rounded-md p-2 border border-white/5">
+            <p className="text-white/50 text-[10px] leading-tight">
+              <span className="text-white font-medium block mb-0.5">Why are you reporting this {getContentTypeLabel()}?</span>
+              Your report helps us understand what violates our community guidelines.
+            </p>
           </div>
 
           {/* Report Reasons */}
