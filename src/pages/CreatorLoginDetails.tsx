@@ -237,7 +237,7 @@ export default function CreatorLoginDetails() {
         )}
 
         {!user && (
-          <form onSubmit={onSubmit} className="space-y-4 mb-6">
+          <form onSubmit={onSubmit} className="space-y-4 mb-6 max-w-[90%] mx-auto">
             <div className="space-y-1.5">
               <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Email</label>
               <div className="relative group">
@@ -283,7 +283,26 @@ export default function CreatorLoginDetails() {
               </div>
             </div>
 
-
+            {/* Save login details checkbox */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  id="save-login"
+                  checked={saveDetails}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setSaveDetails(next);
+                    window.localStorage.setItem('creator_save_login_details', next ? 'true' : 'false');
+                  }}
+                  className="peer h-4 w-4 rounded-full border border-white/30 bg-transparent appearance-none checked:border-[#E6B36A] checked:bg-[#E6B36A] transition-all cursor-pointer"
+                />
+                <svg className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 text-black pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <label htmlFor="save-login" className="text-xs text-white/60 cursor-pointer select-none">Save login info</label>
+            </div>
 
             {error && <div className="text-xs text-rose-300">{error}</div>}
             {info && <div className="text-xs text-white/70">{info}</div>}
@@ -299,22 +318,12 @@ export default function CreatorLoginDetails() {
               </button>
             )}
 
-          <div className="text-[10px] text-white/40 text-center">
-            Auth: {authMode}
-          </div>
-
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-secondary text-black font-bold rounded-xl py-2 text-sm disabled:opacity-60"
+              className="w-full bg-[#E6B36A] text-black font-bold rounded-xl py-3 text-sm disabled:opacity-60 shadow-[0_0_15px_rgba(230,179,106,0.3)] hover:shadow-[0_0_20px_rgba(230,179,106,0.5)] transition-all active:scale-[0.98]"
             >
-              {mode === 'signup'
-                ? isSubmitting
-                  ? 'Creating...'
-                  : 'Create account'
-                : isSubmitting
-                  ? 'Signing in...'
-                  : 'Sign in'}
+              {isSubmitting ? 'Signing in...' : 'Log in'}
             </button>
           </form>
         )}
