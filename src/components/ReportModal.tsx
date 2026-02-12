@@ -227,7 +227,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
               placeholder="Provide more context..."
-              className="w-full bg-black border border-white/10 text-white rounded-md p-1.5 text-[9px] focus:outline-none focus:border-white/20 resize-none leading-tight"
+              className="w-full bg-[#121212] border border-white/10 text-white rounded-md p-1.5 text-[9px] focus:outline-none focus:border-white/20 resize-none leading-tight"
               rows={2}
               maxLength={500}
             />
