@@ -159,16 +159,16 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
   }
 
   return (
-    <div className="fixed inset-0 z-[600] bg-black flex items-center justify-center p-4">
-      <div className="bg-[#121212] rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[600] bg-black/80 flex items-center justify-center p-4">
+      <div className="bg-[#121212] rounded-xl w-full max-w-[280px] max-h-[70vh] overflow-hidden flex flex-col border border-white/10">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <Flag className="w-5 h-5 text-red-400" />
-            <h3 className="text-white font-semibold">Report {getContentTypeLabel()}</h3>
+        <div className="flex items-center justify-between p-3 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <Flag className="w-4 h-4 text-red-400" />
+            <h3 className="text-white text-xs font-semibold">Report {getContentTypeLabel()}</h3>
           </div>
           <button onClick={onClose} className="p-1 text-white/70 hover:text-white">
-            <X size={20} />
+            <X size={16} />
           </button>
         </div>
 
@@ -254,19 +254,19 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-white/10">
-          <div className="flex gap-3">
+          {/* Footer */}
+        <div className="p-3 border-t border-white/10">
+          <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-transparent10 text-white rounded-lg hover:bg-transparent20 transition-colors"
+              className="flex-1 px-3 py-1.5 bg-transparent10 text-white text-xs font-medium rounded-md hover:bg-transparent20 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !selectedReason}
-              className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Report'}
             </button>
