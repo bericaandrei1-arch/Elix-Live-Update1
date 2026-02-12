@@ -182,7 +182,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
           </div>
 
           {/* Report Reasons */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-1.5 mb-6">
             {reportReasons.map((reason) => {
               const IconComponent = reason.icon;
               return (
