@@ -29,30 +29,78 @@ export default function CreatorLoginDetails() {
   const [showResend, setShowResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
+  const [savedAccounts, setSavedAccounts] = useState<Array<{
+    identifier: string;
+    username: string;
+    avatar?: string;
+  }>>([]);
+
   useEffect(() => {
     const storedRemember = window.localStorage.getItem('auth_remember_me');
     setRememberMe(storedRemember === null ? true : storedRemember === 'true');
     const storedSave = window.localStorage.getItem('creator_save_login_details') === 'true';
     setSaveDetails(storedSave);
-    const identifier = window.localStorage.getItem('creator_saved_identifier') ?? '';
-    const savedName = window.localStorage.getItem('creator_saved_username') ?? '';
-    setSavedIdentifier(identifier);
-    setSavedUsername(savedName);
-    setEmail(identifier);
-    setUsername(savedName);
+
+    // Load multiple saved accounts
+    try {
+      const storedAccounts = window.localStorage.getItem('creator_saved_accounts');
+      if (storedAccounts) {
+        setSavedAccounts(JSON.parse(storedAccounts));
+      } else {
+        // Fallback to legacy single saved account
+        const identifier = window.localStorage.getItem('creator_saved_identifier');
+        const savedName = window.localStorage.getItem('creator_saved_username');
+        if (identifier) {
+          setSavedAccounts([{ identifier, username: savedName || identifier.split('@')[0] }]);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load saved accounts", e);
+    }
+    
     // Always clean up any previously stored password (legacy)
     window.localStorage.removeItem('creator_saved_password');
     window.localStorage.removeItem('creator_save_password');
   }, []);
 
-  const persistSavedDetails = (nextEmail: string, nextUsername: string) => {
-    const shouldSave = window.localStorage.getItem('creator_save_login_details') === 'true';
-    if (!shouldSave) return;
-    window.localStorage.setItem('creator_saved_identifier', nextEmail);
-    window.localStorage.setItem('creator_saved_username', nextUsername);
-    setSavedIdentifier(nextEmail);
-    setSavedUsername(nextUsername);
+  const saveCurrentAccount = (nextEmail: string, nextUsername: string, nextAvatar?: string) => {
+    // 1. Enable save preference
+    window.localStorage.setItem('creator_save_login_details', 'true');
+    setSaveDetails(true);
+
+    // 2. Add to saved accounts list (avoid duplicates)
+    setSavedAccounts(prev => {
+      // Remove existing entry for this email if present
+      const filtered = prev.filter(acc => acc.identifier !== nextEmail);
+      // Add new entry to the top
+      const newAccounts = [{ identifier: nextEmail, username: nextUsername, avatar: nextAvatar }, ...filtered];
+      // Limit to 5 accounts
+      const limited = newAccounts.slice(0, 5);
+      
+      window.localStorage.setItem('creator_saved_accounts', JSON.stringify(limited));
+      
+      // Also update legacy single fields for backward compat
+      window.localStorage.setItem('creator_saved_identifier', nextEmail);
+      window.localStorage.setItem('creator_saved_username', nextUsername);
+      
+      return limited;
+    });
   };
+
+  const removeAccount = (identifierToRemove: string) => {
+    setSavedAccounts(prev => {
+      const newAccounts = prev.filter(acc => acc.identifier !== identifierToRemove);
+      window.localStorage.setItem('creator_saved_accounts', JSON.stringify(newAccounts));
+      
+      // If we removed the "legacy" one, clear legacy fields
+      if (window.localStorage.getItem('creator_saved_identifier') === identifierToRemove) {
+         window.localStorage.removeItem('creator_saved_identifier');
+         window.localStorage.removeItem('creator_saved_username');
+      }
+      return newAccounts;
+    });
+  };
+
 
   const persistSavedPassword = (_nextPassword: string) => {
     // SECURITY: Never persist passwords to localStorage
@@ -89,10 +137,10 @@ export default function CreatorLoginDetails() {
         if (res.needsEmailConfirmation) {
           setInfo('Check your inbox and confirm your email to finish creating your account.');
           setShowResend(true);
-          persistSavedDetails(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
+          saveCurrentAccount(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
           return;
         }
-        persistSavedDetails(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
+        saveCurrentAccount(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
         persistSavedPassword(password);
         navigate('/profile', { replace: true });
         return;
@@ -112,7 +160,7 @@ export default function CreatorLoginDetails() {
         }
         return;
       }
-      persistSavedDetails(trimmedEmail, trimmedUsername || savedUsername || trimmedEmail.split('@')[0]);
+      saveCurrentAccount(trimmedEmail, trimmedUsername || savedUsername || trimmedEmail.split('@')[0]);
       persistSavedPassword(password);
       navigate('/profile', { replace: true });
     } finally {
@@ -309,36 +357,71 @@ export default function CreatorLoginDetails() {
           {/* Password saving disabled for security — rely on browser autofill */}
 
           <div className="p-1.5 bg-transparent5 border border-white/10 rounded-md">
-            <div className="text-[8px] text-white/60">Saved email</div>
-            <div className="text-[9px] break-all">{savedIdentifier || '-'}</div>
-            <div className="mt-1 text-[8px] text-white/60">Saved username</div>
-            <div className="text-[9px] break-all">{savedUsername || '-'}</div>
-
-            <button
-              className="mt-1.5 w-full bg-transparent10 border border-white/10 rounded-md py-0.5 text-[9px]"
-              onClick={() => {
-                window.localStorage.removeItem('creator_saved_identifier');
-                window.localStorage.removeItem('creator_saved_username');
-                window.localStorage.removeItem('creator_saved_password');
-                setSavedIdentifier('');
-                setSavedUsername('');
-              }}
-            >Clear</button>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-[8px] text-white/60">Saved Accounts</div>
+              {savedAccounts.length > 0 && (
+                <button 
+                  onClick={() => {
+                    setSavedAccounts([]);
+                    window.localStorage.removeItem('creator_saved_accounts');
+                    window.localStorage.removeItem('creator_saved_identifier');
+                    window.localStorage.removeItem('creator_saved_username');
+                  }}
+                  className="text-[8px] text-red-400 hover:text-red-300"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+            
+            {savedAccounts.length === 0 ? (
+              <div className="text-[9px] text-white/40 text-center py-2">No saved accounts</div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
+                {savedAccounts.map((acc) => (
+                  <div 
+                    key={acc.identifier}
+                    className="flex-shrink-0 w-20 bg-black/40 border border-white/10 rounded-lg p-2 flex flex-col items-center gap-1.5 relative group cursor-pointer hover:border-[#E6B36A]/50 transition-colors"
+                    onClick={() => {
+                      setEmail(acc.identifier);
+                      setUsername(acc.username);
+                      // In a real app, this would also auto-fill password if secure storage was available,
+                      // or trigger a token-based login. For now, it prefills the form.
+                    }}
+                  >
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeAccount(acc.identifier);
+                      }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                      <span className="text-white text-[8px] font-bold">×</span>
+                    </button>
+                    
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#E6B36A] to-yellow-600 p-[1px]">
+                      <img 
+                        src={acc.avatar || `https://ui-avatars.com/api/?name=${acc.username}&background=random`} 
+                        alt={acc.username}
+                        className="w-full h-full rounded-full object-cover bg-black"
+                      />
+                    </div>
+                    <div className="text-center w-full">
+                      <div className="text-[9px] font-bold truncate w-full">{acc.username}</div>
+                      <div className="text-[7px] text-white/50 truncate w-full">{acc.identifier}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {user && (
               <button
                 className="mt-1.5 w-full bg-[#E6B36A] text-black rounded-md py-0.5 text-[9px] font-semibold"
                 onClick={() => {
-                  const nextEmail = user.email;
-                  const nextUsername = user.username;
-                  window.localStorage.setItem('creator_saved_identifier', nextEmail);
-                  window.localStorage.setItem('creator_saved_username', nextUsername);
-                  setSavedIdentifier(nextEmail);
-                  setSavedUsername(nextUsername);
-                  window.localStorage.setItem('creator_save_login_details', 'true');
-                  setSaveDetails(true);
+                  saveCurrentAccount(user.email, user.username, user.avatar);
                 }}
-              >Save</button>
+              >Save current account</button>
             )}
           </div>
 
