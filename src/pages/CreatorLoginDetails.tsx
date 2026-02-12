@@ -19,7 +19,7 @@ export default function CreatorLoginDetails() {
 
   const [email, setEmail] = useState(() => window.localStorage.getItem('creator_saved_identifier') || '');
   const [username, setUsername] = useState(() => window.localStorage.getItem('creator_saved_username') || '');
-  const [password, setPassword] = useState(() => window.localStorage.getItem('creator_saved_password') || '');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -59,8 +59,8 @@ export default function CreatorLoginDetails() {
     }
     
     // Always clean up any previously stored password (legacy)
-    // window.localStorage.removeItem('creator_saved_password');
-    // window.localStorage.removeItem('creator_save_password');
+    window.localStorage.removeItem('creator_saved_password');
+    window.localStorage.removeItem('creator_save_password');
   }, []);
 
   const saveCurrentAccount = (nextEmail: string, nextUsername: string, nextAvatar?: string) => {
