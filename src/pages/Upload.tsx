@@ -533,14 +533,14 @@ export default function Upload() {
                      value={caption}
                      onChange={(e) => setCaption(e.target.value)}
                      placeholder="Write a caption…"
-                     className="w-full bg-black/50 text-white placeholder-white/50 border border-white/20 rounded-md px-2 py-1 text-[10px] outline-none resize-none h-6 focus:h-12 transition-all duration-300"
+                     className="w-full bg-black/50 text-white placeholder-white/50 border border-white/20 rounded-md px-2 py-1.5 text-sm outline-none resize-none h-8 focus:h-24 transition-all duration-300"
                      aria-label="Caption"
                    />
                    <input
                      value={hashtagsText}
                      onChange={(e) => setHashtagsText(e.target.value)}
                      placeholder="Hashtags..."
-                     className="w-full bg-black/50 text-white placeholder-white/50 border border-white/20 rounded-md px-2 py-1 text-[10px] outline-none h-6 focus:h-8 transition-all duration-300"
+                     className="w-full bg-black/50 text-white placeholder-white/50 border border-white/20 rounded-md px-2 py-1.5 text-sm outline-none h-8 focus:h-10 transition-all duration-300"
                      aria-label="Hashtags"
                    />
                    <div className="flex items-center justify-between">
