@@ -325,8 +325,8 @@ export default function CreatorLoginDetails() {
             >
               {isSubmitting ? 'Signing in...' : 'Log in'}
             </button>
-          )}
-        </div>
+          </form>
+        )}
 
         {user && (
           <div className="space-y-4 mb-6 max-w-[90%] mx-auto">
