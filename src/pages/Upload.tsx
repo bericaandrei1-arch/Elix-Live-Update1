@@ -808,7 +808,7 @@ export default function Upload() {
                     onClick={handleFileUpload}
                     title="Upload from Gallery"
                   >
-                    <div className="w-10 h-10 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                    <div className="w-10 h-10 bg-[#1a1a1a] rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
                         {/* Gallery Icon */}
                         <div className="w-4 h-4 border-2 border-white rounded-sm relative overflow-hidden">
                             <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
