@@ -160,7 +160,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
 
   return (
     <div className="fixed inset-0 z-[600] bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#121212] rounded-xl w-full max-w-[200px] max-h-[50vh] overflow-hidden flex flex-col border border-white/10">
+      <div className="bg-[#121212] rounded-xl w-full max-w-[160px] max-h-[40vh] overflow-hidden flex flex-col border border-white/10">
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-white/10">
           <div className="flex items-center gap-2">
