@@ -829,16 +829,14 @@ export default function ElixCameraLayout({
           )}
 
           {/* Bottom Tabs + Gallery */}
-          <div className="flex items-center justify-center px-4 pb-0.5 w-full absolute bottom-4">
+          <div className="flex items-center justify-center px-4 pb-0.5 w-full absolute bottom-7">
             <div className="flex items-center gap-8">
               <button 
                 onClick={onPostTab}
                 className={`text-sm font-bold hover:scale-105 active:scale-95 transition-transform ${
                   selectedTab === 'post' ? 'text-[#D6A088]' : 'text-gray-400 hover:text-[#D6A088]'
                 }`}
-              >
-                POST
-              </button>
+              >POST</button>
               <button 
                 onClick={onCreateTab}
                 className={`text-sm font-semibold hover:scale-105 active:scale-95 transition-transform ${
