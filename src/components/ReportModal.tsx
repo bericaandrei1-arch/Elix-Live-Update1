@@ -221,19 +221,19 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
           </div>
 
           {/* Additional Details */}
-          <div className="mb-6">
-            <label className="text-white font-medium mb-2 block">
+          <div className="mb-3">
+            <label className="text-white text-xs font-medium mb-1 block">
               Additional details (optional)
             </label>
             <textarea
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
-              placeholder="Provide more context about why you're reporting this content..."
-              className="w-full bg-transparent10 text-white rounded-lg p-3 text-sm focus:outline-none focus:bg-transparent20 resize-none"
-              rows={4}
+              placeholder="Provide more context..."
+              className="w-full bg-transparent10 text-white rounded-md p-2 text-[10px] focus:outline-none focus:bg-transparent20 resize-none leading-tight"
+              rows={2}
               maxLength={500}
             />
-            <div className="text-right text-white/40 text-xs mt-1">
+            <div className="text-right text-white/40 text-[9px] mt-0.5">
               {additionalDetails.length}/500
             </div>
           </div>
