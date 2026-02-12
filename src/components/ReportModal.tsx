@@ -176,9 +176,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
         <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
           <div className="mb-3">
             <h4 className="text-white text-xs font-medium mb-0.5">Why are you reporting this {getContentTypeLabel()}?</h4>
-            <p className="text-white/50 text-[10px]">
-              Your report helps us understand what violates our community guidelines.
-            </p>
+            <p className="text-white/50 text-[10px]">Your report helps us understand what violates our community guidelines.</p>
           </div>
 
           {/* Report Reasons */}
@@ -222,9 +220,7 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
 
           {/* Additional Details */}
           <div className="mb-3">
-            <label className="text-white text-xs font-medium mb-1 block">
-              Additional details (optional)
-            </label>
+            <label className="text-white text-[10px] font-medium mb-0.5 block">Additional details (optional)</label>
             <textarea
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
