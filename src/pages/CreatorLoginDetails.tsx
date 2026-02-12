@@ -329,42 +329,7 @@ export default function CreatorLoginDetails() {
         )}
 
         <div className="space-y-1.5 max-w-[90%] mx-auto">
-          <label className="flex items-center justify-between p-1.5 bg-transparent5 border border-white/10 rounded-md">
-            <span className="text-[9px]">Remember me</span>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setRememberMe(next);
-                window.localStorage.setItem('auth_remember_me', next ? 'true' : 'false');
-              }}
-              className="scale-[0.6]"
-            />
-          </label>
-
-          <label className="flex items-center justify-between p-1.5 bg-transparent5 border border-white/10 rounded-md">
-            <span className="text-[9px]">Save login details</span>
-            <input
-              type="checkbox"
-              checked={saveDetails}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setSaveDetails(next);
-                window.localStorage.setItem('creator_save_login_details', next ? 'true' : 'false');
-                if (!next) {
-                  window.localStorage.removeItem('creator_saved_identifier');
-                  window.localStorage.removeItem('creator_saved_username');
-                  setSavedIdentifier('');
-                  setSavedUsername('');
-                }
-              }}
-              className="scale-[0.6]"
-            />
-          </label>
-
-          {/* Password saving disabled for security — rely on browser autofill */}
-
+          {/* Saved Accounts Section */}
           <div className="p-1.5 bg-transparent5 border border-white/10 rounded-md">
             <div className="flex items-center justify-between mb-1">
               <div className="text-[8px] text-white/60">Saved Accounts</div>
