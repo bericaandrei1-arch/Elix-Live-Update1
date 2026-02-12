@@ -12,6 +12,11 @@ export default function CreatorLoginDetails() {
   const [savedUsername, setSavedUsername] = useState('');
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  // Force signin mode if users shouldn't create accounts here
+  useEffect(() => {
+    setMode('signin');
+  }, []);
+
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -146,7 +151,8 @@ export default function CreatorLoginDetails() {
         </header>
 
         {!user && (
-          <div className="mb-4 flex gap-2">
+          // Hidden mode switcher - forcing "Sign in" only
+          <div className="mb-4 hidden">
             <button
               type="button"
               onClick={() => {
@@ -183,86 +189,53 @@ export default function CreatorLoginDetails() {
         )}
 
         {!user && (
-          <form onSubmit={onSubmit} className="space-y-3 mb-6">
-            {mode === 'signup' && (
-              <div className="space-y-1">
-                <label className="text-xs text-white/70">Username</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-                  <input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-black40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-secondary/50"
-                    placeholder="creator_name"
-                    autoComplete="username"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-xs text-white/70">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+          <form onSubmit={onSubmit} className="space-y-4 mb-6">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Email</label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-black40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-secondary/50"
-                  placeholder="you@email.com"
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-[#E6B36A]/50 transition-all"
+                  placeholder="name@example.com"
                   autoComplete="email"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-white/70">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-white/50 font-medium uppercase tracking-wider pl-1">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#E6B36A]/20 to-[#E6B36A]/5 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black40 border border-white/10 rounded-xl pl-9 pr-9 py-2 text-sm outline-none focus:border-secondary/50"
-                  placeholder="••••••••"
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    // Ensure we are in signin mode if user types here
+                    if (mode !== 'signin') setMode('signin');
+                  }}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-[#E6B36A]/50 transition-all"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {mode === 'signup' && (
-              <div className="space-y-1">
-                <label className="text-xs text-white/70">Confirm password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-black40 border border-white/10 rounded-xl pl-9 pr-9 py-2 text-sm outline-none focus:border-secondary/50"
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             {error && <div className="text-xs text-rose-300">{error}</div>}
             {info && <div className="text-xs text-white/70">{info}</div>}
@@ -350,9 +323,7 @@ export default function CreatorLoginDetails() {
                 setSavedIdentifier('');
                 setSavedUsername('');
               }}
-            >
-              Clear
-            </button>
+            >Clear</button>
 
             {user && (
               <button
