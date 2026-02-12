@@ -395,11 +395,7 @@ export default function EnhancedVideoPlayer({
           }}
         />
 
-        {videoSize && (
-          <div className="absolute top-16 right-4 px-2 py-1 rounded-full text-[10px] text-white/80">
-            {videoSize.w}×{videoSize.h}
-          </div>
-        )}
+
 
             <div className="absolute bottom-3 left-3 right-3 h-1.5 rounded-full overflow-hidden shadow-lg">
           <div
