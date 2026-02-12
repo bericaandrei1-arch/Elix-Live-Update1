@@ -308,6 +308,12 @@ export default function Profile() {
             {isUploadingAvatar && <div className="text-xs text-white/70">Uploading...</div>}
             {avatarError && <div className="text-xs text-rose-300 mt-1">{avatarError}</div>}
             <h2 className="text-xl font-extrabold mt-2 text-white/80">@{displayUsername}</h2>
+
+            {/* Creator Login Details (moved here) */}
+            <div className="flex items-center gap-1 mt-1 text-[#E6B36A] cursor-pointer" onClick={() => navigate('/creator/login-details')}>
+                <Sparkles size={12} />
+                <span className="text-xs font-semibold">Creator login details</span>
+            </div>
             
             <div className="flex space-x-8 mt-4">
                 <div className="flex flex-col items-center">
@@ -384,23 +390,7 @@ export default function Profile() {
           </div>
         )}
 
-        <div className="px-4 mb-6">
-          <button
-            onClick={() => navigate('/creator/login-details')}
-            className="w-full flex items-center justify-between p-4 bg-transparent5 border border-transparent rounded-xl hover:bg-transparent10 transition"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#E6B36A]/15 border border-[#E6B36A]/25 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-[#E6B36A]" />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-semibold">Creator login details</div>
-                <div className="text-xs text-white/60">Create account, sign in, and save details</div>
-              </div>
-            </div>
-            <div className="text-xs text-[#E6B36A] font-semibold">Open</div>
-          </button>
-        </div>
+
 
         {/* Tabs */}
         <div className="border-b border-gray-800 flex justify-around text-gray-500">
