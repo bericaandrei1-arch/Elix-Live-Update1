@@ -301,7 +301,7 @@ export default function CreatorLoginDetails() {
                   type="email"
                   value={user.email}
                   disabled
-                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white/60 placeholder-white/20 outline-none cursor-not-allowed"
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white/60 placeholder-white/20 outline-none cursor-not-allowed opacity-50"
                 />
               </div>
             </div>
