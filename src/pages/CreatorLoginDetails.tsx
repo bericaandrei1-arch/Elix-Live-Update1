@@ -27,7 +27,14 @@ export default function CreatorLoginDetails() {
   const [info, setInfo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResend, setShowResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
+
+  const [savedAccounts, setSavedAccounts] = useState<Array<{
+    identifier: string;
+    username: string;
+    avatar?: string;
+  }>>([]);
 
   useEffect(() => {
     // ... existing effect ...
