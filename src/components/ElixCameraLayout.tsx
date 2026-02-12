@@ -329,18 +329,18 @@ export default function ElixCameraLayout({
         {/* Flip Camera */}
         <button
           onClick={onFlipCamera}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
           title="Flip Camera"
         >
-          <RefreshCw size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <RefreshCw size={22} strokeWidth={1.5} className="text-[#D6A088]" />
         </button>
 
         {/* Flash */}
         <button 
           onClick={onFlashToggle}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
         >
-          <Zap size={18} strokeWidth={1.5} className="text-[#D6A088]" fill={flashActive ? "#D6A088" : "none"} />
+          <Zap size={22} strokeWidth={1.5} className="text-[#D6A088]" fill={flashActive ? "#D6A088" : "none"} />
           {flashActive && (
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#D6A088] rounded-full flex items-center justify-center">
               <Check size={8} className="text-white" strokeWidth={2.5} />
@@ -351,10 +351,10 @@ export default function ElixCameraLayout({
         {/* Focus Lock */}
         <button 
           onClick={toggleFocusLock}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
           title="Focus Lock"
         >
-          <Crosshair size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <Crosshair size={22} strokeWidth={1.5} className="text-[#D6A088]" />
           {focusLocked && (
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#D6A088] rounded-full flex items-center justify-center">
               <Check size={8} className="text-white" strokeWidth={2.5} />
@@ -365,9 +365,9 @@ export default function ElixCameraLayout({
         <div className="w-6 h-[1px] bg-[#D6A088]/25 rounded-full"></div>
         <button 
           onClick={onTimerCycle}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
         >
-          <Clock size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <Clock size={22} strokeWidth={1.5} className="text-[#D6A088]" />
           {timerDelay > 0 && (
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#D6A088] rounded-full flex items-center justify-center">
               <span className="text-[7px] text-white font-bold">{timerDelay}s</span>
@@ -378,19 +378,19 @@ export default function ElixCameraLayout({
         {/* Effects / Filters */}
         <button 
           onClick={toggleEffectsPanel}
-          className={`w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showEffectsPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
+          className={`w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showEffectsPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
           title="Filters & Effects"
         >
-          <Palette size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <Palette size={22} strokeWidth={1.5} className="text-[#D6A088]" />
         </button>
 
         {/* Beauty */}
         <button
           onClick={toggleBeautySlider}
           onDoubleClick={openBeautySlider}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform relative"
         >
-          <User size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <User size={22} strokeWidth={1.5} className="text-[#D6A088]" />
           {beautyEnabled && (
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#D6A088] rounded-full flex items-center justify-center">
               <Check size={8} className="text-white" strokeWidth={2.5} />
@@ -426,10 +426,10 @@ export default function ElixCameraLayout({
             const el = document.querySelector('.scrollbar-hide');
             if (el) el.scrollBy({ top: 100, behavior: 'smooth' });
           }}
-          className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+          className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
           title="More options"
         >
-          <ChevronDown size={18} strokeWidth={1.5} className="text-[#D6A088]" />
+          <ChevronDown size={22} strokeWidth={1.5} className="text-[#D6A088]" />
         </button>
 
         {/* ── AI FEATURES SECTION ── */}
@@ -439,10 +439,10 @@ export default function ElixCameraLayout({
         {onZoomIn && (
           <button 
             onClick={onZoomIn}
-            className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+            className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
             title="Zoom In"
           >
-            <Plus size={18} className="text-[#D6A088]" strokeWidth={1.5} />
+            <Plus size={22} className="text-[#D6A088]" strokeWidth={1.5} />
           </button>
         )}
 
@@ -450,10 +450,10 @@ export default function ElixCameraLayout({
         {onZoomOut && (
           <button 
             onClick={onZoomOut}
-            className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+            className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
             title="Zoom Out"
           >
-            <Minus size={18} className="text-[#D6A088]" strokeWidth={1.5} />
+            <Minus size={22} className="text-[#D6A088]" strokeWidth={1.5} />
           </button>
         )}
 
@@ -461,7 +461,7 @@ export default function ElixCameraLayout({
         {(onZoomIn || onZoomOut) && (
           <button
             onClick={onZoomReset}
-            className={`text-[#D6A088] text-[10px] font-bold bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full border transition-all active:scale-90 ${
+            className={`text-[#D6A088] text-xs font-bold bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border transition-all active:scale-90 ${
               zoomLevel !== 1 ? 'border-[#D6A088]/40 shadow-[0_0_6px_rgba(214,160,136,0.3)]' : 'border-[#D6A088]/15'
             }`}
             title="Tap to reset zoom"
@@ -474,29 +474,29 @@ export default function ElixCameraLayout({
         {onAIMusicGenerator && (
           <button 
             onClick={onAIMusicGenerator}
-            className="w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
+            className="w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
             title="AI Music"
           >
-            <Music size={18} className="text-[#D6A088]" strokeWidth={1.5} />
+            <Music size={22} className="text-[#D6A088]" strokeWidth={1.5} />
           </button>
         )}
 
         {/* AI Effects (Wand) */}
         <button 
           onClick={toggleEffectsPanel}
-          className={`w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showEffectsPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
+          className={`w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showEffectsPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
           title="AI Effects"
         >
-          <Wand2 size={18} className="text-[#D6A088]" strokeWidth={1.5} />
+          <Wand2 size={22} className="text-[#D6A088]" strokeWidth={1.5} />
         </button>
 
         {/* CapCut AI Editor */}
         <button 
           onClick={toggleCapCutPanel}
-          className={`w-8 h-8 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showCapCutPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
+          className={`w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform ${showCapCutPanel ? 'bg-[#D6A088]/20 rounded-full' : ''}`}
           title="CapCut AI"
         >
-          <Sparkles size={18} className="text-[#D6A088]" strokeWidth={1.5} />
+          <Sparkles size={22} className="text-[#D6A088]" strokeWidth={1.5} />
         </button>
       </div>
 
