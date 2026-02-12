@@ -89,6 +89,10 @@ interface ElixCameraLayoutProps {
   onTimerCycle?: () => void;
   onSpeedChange?: (speed: number) => void;
   currentSpeed?: number;
+  hasRecordedVideo?: boolean;
+  onRetake?: () => void;
+  onPost?: () => void;
+  isPosting?: boolean;
 }
 
 export default function ElixCameraLayout({
@@ -117,6 +121,10 @@ export default function ElixCameraLayout({
   onTimerCycle,
   onSpeedChange,
   currentSpeed = 1,
+  hasRecordedVideo = false,
+  onRetake,
+  onPost,
+  isPosting = false,
 }: ElixCameraLayoutProps) {
   const [selectedDuration, setSelectedDuration] = useState('60s');
   const [focusLocked, setFocusLocked] = useState(false);
@@ -786,23 +794,50 @@ export default function ElixCameraLayout({
             </button>
           </div>
 
-          {/* Record Button */}
+          {/* Record Button or Post/Retake Actions */}
           <div className="flex items-center justify-center mb-4 px-4">
-            <button
-              onClick={onRecord}
-              title={isRecording ? 'Stop recording' : 'Start recording'}
-              className={`w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all flex-shrink-0 shadow-xl active:scale-90 ${
-                isRecording
-                  ? 'bg-red-600 border-[4px] border-white'
-                  : 'bg-white border-[4px] border-white hover:bg-red-50'
-              }`}
-            >
-              {isRecording ? (
-                  <div className="w-8 h-8 bg-white rounded-sm" />
-              ) : (
-                  <div className="w-[64px] h-[64px] bg-red-600 rounded-full shadow-inner" />
-              )}
-            </button>
+            {hasRecordedVideo ? (
+              <div className="flex items-center gap-12">
+                <button 
+                    onClick={onRetake}
+                    className="flex flex-col items-center gap-1 group"
+                    title="Retake"
+                >
+                    <div className="w-10 h-10 bg-gray-800/80 rounded-full flex items-center justify-center text-white border-2 border-white group-hover:bg-gray-700">
+                        <RotateCcw size={18} />
+                    </div>
+                    <span className="text-white font-bold text-[10px] shadow-black drop-shadow-md">Retake</span>
+                </button>
+
+                <button 
+                    onClick={onPost}
+                    className="flex flex-col items-center gap-1 group disabled:opacity-60"
+                    title="Post"
+                    disabled={isPosting}
+                >
+                    <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
+                        <Check size={18} />
+                    </div>
+                    <span className="text-white font-bold text-[10px] shadow-black drop-shadow-md">{isPosting ? 'Posting' : 'Post'}</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onRecord}
+                title={isRecording ? 'Stop recording' : 'Start recording'}
+                className={`w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all flex-shrink-0 shadow-xl active:scale-90 ${
+                  isRecording
+                    ? 'bg-red-600 border-[4px] border-white'
+                    : 'bg-white border-[4px] border-white hover:bg-red-50'
+                }`}
+              >
+                {isRecording ? (
+                    <div className="w-8 h-8 bg-white rounded-sm" />
+                ) : (
+                    <div className="w-[64px] h-[64px] bg-red-600 rounded-full shadow-inner" />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Speed indicator when not 1x */}
