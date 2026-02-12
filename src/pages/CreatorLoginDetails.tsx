@@ -298,9 +298,9 @@ export default function CreatorLoginDetails() {
           </form>
         )}
 
-        <div className="space-y-4">
-          <label className="flex items-center justify-between p-4 bg-transparent5 border border-white/10 rounded-xl">
-            <span className="text-sm">Remember me</span>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between p-3 bg-transparent5 border border-white/10 rounded-xl">
+            <span className="text-xs">Remember me</span>
             <input
               type="checkbox"
               checked={rememberMe}
@@ -309,11 +309,12 @@ export default function CreatorLoginDetails() {
                 setRememberMe(next);
                 window.localStorage.setItem('auth_remember_me', next ? 'true' : 'false');
               }}
+              className="scale-90"
             />
           </label>
 
-          <label className="flex items-center justify-between p-4 bg-transparent5 border border-white/10 rounded-xl">
-            <span className="text-sm">Save login details (email/username)</span>
+          <label className="flex items-center justify-between p-3 bg-transparent5 border border-white/10 rounded-xl">
+            <span className="text-xs">Save login details (email/username)</span>
             <input
               type="checkbox"
               checked={saveDetails}
@@ -328,19 +329,20 @@ export default function CreatorLoginDetails() {
                   setSavedUsername('');
                 }
               }}
+              className="scale-90"
             />
           </label>
 
           {/* Password saving disabled for security — rely on browser autofill */}
 
-          <div className="p-4 bg-transparent5 border border-white/10 rounded-xl">
-            <div className="text-xs text-white/60">Saved email</div>
-            <div className="text-sm break-all">{savedIdentifier || '-'}</div>
-            <div className="mt-3 text-xs text-white/60">Saved username</div>
-            <div className="text-sm break-all">{savedUsername || '-'}</div>
+          <div className="p-3 bg-transparent5 border border-white/10 rounded-xl">
+            <div className="text-[10px] text-white/60">Saved email</div>
+            <div className="text-xs break-all">{savedIdentifier || '-'}</div>
+            <div className="mt-2 text-[10px] text-white/60">Saved username</div>
+            <div className="text-xs break-all">{savedUsername || '-'}</div>
 
             <button
-              className="mt-4 w-full bg-transparent10 border border-white/10 rounded-xl py-2 text-sm"
+              className="mt-3 w-full bg-transparent10 border border-white/10 rounded-xl py-1.5 text-xs"
               onClick={() => {
                 window.localStorage.removeItem('creator_saved_identifier');
                 window.localStorage.removeItem('creator_saved_username');
@@ -354,7 +356,7 @@ export default function CreatorLoginDetails() {
 
             {user && (
               <button
-                className="mt-3 w-full bg-[#E6B36A] text-black rounded-xl py-2 text-sm font-semibold"
+                className="mt-2 w-full bg-[#E6B36A] text-black rounded-xl py-1.5 text-xs font-semibold"
                 onClick={() => {
                   const nextEmail = user.email;
                   const nextUsername = user.username;
@@ -365,15 +367,13 @@ export default function CreatorLoginDetails() {
                   window.localStorage.setItem('creator_save_login_details', 'true');
                   setSaveDetails(true);
                 }}
-              >
-                Save my current account
-              </button>
+              >Save my current account</button>
             )}
           </div>
 
           {user && (
             <button
-              className="w-full bg-transparent10 border border-white/10 rounded-xl py-2 text-sm"
+              className="w-full bg-transparent10 border border-white/10 rounded-xl py-1.5 text-xs"
               onClick={async () => {
                 await signOut();
                 setPassword('');
@@ -381,9 +381,7 @@ export default function CreatorLoginDetails() {
                 setMode('signin');
                 navigate('/creator/login-details', { replace: true });
               }}
-            >
-              Sign out
-            </button>
+            >Sign out</button>
           )}
         </div>
       </div>
