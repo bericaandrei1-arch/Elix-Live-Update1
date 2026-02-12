@@ -781,9 +781,9 @@ export default function ElixCameraLayout({
       {/* BOTTOM SECTION */}
       {/* ══════════════════════════════════════════ */}
       {!showEffectsPanel && !showCapCutPanel && !showStickerPicker && (
-        <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-auto" style={{ paddingBottom: 'max(1.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-auto" style={{ paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))' }}>
           {/* Duration Selector - Tap to cycle */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-5">
             <button
               onClick={() => {
                 const idx = durations.indexOf(selectedDuration);
