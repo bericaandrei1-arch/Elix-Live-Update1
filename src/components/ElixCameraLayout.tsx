@@ -834,7 +834,11 @@ export default function ElixCameraLayout({
               onClick={onGalleryOpen}
               className="w-8 h-8 rounded-lg overflow-hidden border border-[#D6A088]/35 hover:scale-110 active:scale-90 hover:border-[#D6A088] transition-all"
             >
-              <img src="/gifts/gift-1.png" alt="Gallery" className="w-full h-full object-cover object-top" style={{ objectPosition: 'center 20%' }} />
+              <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-[#D6A088] rounded-sm relative overflow-hidden">
+                  <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-[#D6A088] rounded-full"></div>
+                </div>
+              </div>
             </button>
 
             <div className="flex items-center gap-5">
