@@ -632,7 +632,7 @@ export default function Upload() {
         /* CAMERA MODE */
         <>
           {/* Container Principal - Limitat la mărimea unui telefon (500px) */}
-          <div className="relative z-10 w-full max-w-[500px] mx-auto h-[100dvh] mb-0 pointer-events-none bg-black shadow-2xl overflow-hidden">
+          <div className="relative z-10 w-full h-[100dvh] mb-0 pointer-events-none bg-black shadow-2xl overflow-hidden">
               
               {/* Camera Preview Layer */}
               <video 
