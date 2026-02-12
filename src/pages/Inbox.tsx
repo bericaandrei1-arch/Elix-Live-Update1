@@ -128,24 +128,24 @@ export default function Inbox() {
         <div className="flex gap-4 mt-4">
           <button
             onClick={() => setActiveTab('notifications')}
-            className={`flex-1 py-3 rounded-lg font-semibold transition ${
+            className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition ${
               activeTab === 'notifications'
                 ? 'bg-[#E6B36A] text-black'
                 : 'text-white'
             }`}
           >
-            <Bell className="w-5 h-5 inline mr-2" />
+            <Bell className="w-4 h-4 inline mr-1.5" />
             Notifications
           </button>
           <button
             onClick={() => setActiveTab('messages')}
-            className={`flex-1 py-3 rounded-lg font-semibold transition ${
+            className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition ${
               activeTab === 'messages'
                 ? 'bg-[#E6B36A] text-black'
                 : 'text-white'
             }`}
           >
-            <Mail className="w-5 h-5 inline mr-2" />
+            <Mail className="w-4 h-4 inline mr-1.5" />
             Messages
           </button>
         </div>
