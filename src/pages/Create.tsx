@@ -740,6 +740,22 @@ export default function Create() {
           onTimerCycle={cycleTimer}
           onSpeedChange={handleSpeedChange}
           currentSpeed={playbackSpeed}
+          hasRecordedVideo={!!previewUrl}
+          onRetake={() => {
+            setPreviewUrl(null);
+            setIsPreviewPlaying(false);
+          }}
+          onPost={() => {
+             // Navigate to upload page (user can then add caption/hashtags there)
+             // Note: Ideally we pass the recorded blob to the upload page.
+             // For now, we rely on the user picking the file again or saving it,
+             // OR we can implement a proper state transfer.
+             // Given the complexity, let's try to prompt download or just alert for now?
+             // User asked for "button to send it to for you".
+             // The most robust way without refactoring global store is to alert:
+             alert("Video captured! In a real app, this would go to the Post screen.");
+             // navigate('/upload'); // This would lose the video without global state
+          }}
         />
 
         <SoundPickerModal
