@@ -682,15 +682,6 @@ export default function ElixCameraLayout({
                   <RefreshCw size={20} className="text-[#D6A088]" />
                   <span className="text-white/60 text-[9px] font-medium">Flip</span>
                 </button>
-
-                {/* Gallery */}
-                <button
-                  onClick={() => { onGalleryOpen?.(); setShowCapCutPanel(false); }}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#D6A088]/30 transition-all active:scale-95"
-                >
-                  <ImagePlus size={20} className="text-[#D6A088]" />
-                  <span className="text-white/60 text-[9px] font-medium">Gallery</span>
-                </button>
               </div>
             </div>
           </div>
@@ -800,22 +791,17 @@ export default function ElixCameraLayout({
             <button
               onClick={onRecord}
               title={isRecording ? 'Stop recording' : 'Start recording'}
-              className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all flex-shrink-0 shadow-xl active:scale-90 ${
+              className={`w-[80px] h-[80px] rounded-full flex items-center justify-center transition-all flex-shrink-0 shadow-xl active:scale-90 ${
                 isRecording
-                  ? 'bg-white border-[3px] border-[#D6A088]'
-                  : 'bg-white border-[3px] border-white'
+                  ? 'bg-red-600 border-[4px] border-white'
+                  : 'bg-white border-[4px] border-white hover:bg-red-50'
               }`}
             >
-              <div
-                className={`rounded-full transition-all ${
-                  isRecording
-                    ? 'w-7 h-7 bg-[#D6A088]'
-                    : 'w-[58px] h-[58px] shadow-lg'
-                }`}
-                style={!isRecording ? {
-                  background: 'linear-gradient(135deg, #9E6B57, #D6A088, #F2C3A7, #D6A088)'
-                } : {}}
-              ></div>
+              {isRecording ? (
+                  <div className="w-8 h-8 bg-white rounded-sm" />
+              ) : (
+                  <div className="w-[64px] h-[64px] bg-red-600 rounded-full shadow-inner" />
+              )}
             </button>
           </div>
 
@@ -842,9 +828,7 @@ export default function ElixCameraLayout({
                 className={`text-sm font-semibold hover:scale-105 active:scale-95 transition-transform ${
                   selectedTab === 'create' ? 'text-[#D6A088]' : 'text-gray-400 hover:text-[#D6A088]'
                 }`}
-              >
-                CREATE
-              </button>
+              >CREATE</button>
               <button 
                 onClick={onLiveTab}
                 className={`text-sm font-semibold hover:scale-105 active:scale-95 transition-transform ${
