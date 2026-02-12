@@ -189,27 +189,27 @@ export default function ReportModal({ isOpen, onClose, videoId, contentType, con
                 <button
                   key={reason.id}
                   onClick={() => setSelectedReason(reason.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`w-full text-left p-1.5 rounded-md border transition-all ${
                     selectedReason === reason.id
                       ? 'border-[#FE2C55] bg-[#FE2C55]/10'
                       : 'border-white/10 hover:border-white/20 hover:bg-transparent5'
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <div className={`p-1.5 rounded-lg bg-transparent10 ${reason.color}`}>
-                      <IconComponent className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1 rounded bg-transparent10 ${reason.color}`}>
+                      <IconComponent className="w-3 h-3" />
                     </div>
-                    <div className="flex-1">
-                      <h5 className="text-white text-sm font-medium mb-0.5">{reason.title}</h5>
-                      <p className="text-white/60 text-xs">{reason.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="text-white text-xs font-medium mb-0 truncate">{reason.title}</h5>
+                      <p className="text-white/50 text-[10px] truncate">{reason.description}</p>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    <div className={`w-3 h-3 rounded-full border flex items-center justify-center flex-shrink-0 ${
                       selectedReason === reason.id
                         ? 'border-[#FE2C55] bg-[#FE2C55]'
                         : 'border-white/30'
                     }`}>
                       {selectedReason === reason.id && (
-                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
