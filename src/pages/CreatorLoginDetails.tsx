@@ -298,9 +298,9 @@ export default function CreatorLoginDetails() {
           </form>
         )}
 
-        <div className="space-y-2">
-          <label className="flex items-center justify-between p-2 bg-transparent5 border border-white/10 rounded-lg">
-            <span className="text-[10px]">Remember me</span>
+        <div className="space-y-1.5 max-w-[90%] mx-auto">
+          <label className="flex items-center justify-between p-1.5 bg-transparent5 border border-white/10 rounded-md">
+            <span className="text-[9px]">Remember me</span>
             <input
               type="checkbox"
               checked={rememberMe}
@@ -309,12 +309,12 @@ export default function CreatorLoginDetails() {
                 setRememberMe(next);
                 window.localStorage.setItem('auth_remember_me', next ? 'true' : 'false');
               }}
-              className="scale-75"
+              className="scale-[0.6]"
             />
           </label>
 
-          <label className="flex items-center justify-between p-2 bg-transparent5 border border-white/10 rounded-lg">
-            <span className="text-[10px]">Save login details (email/username)</span>
+          <label className="flex items-center justify-between p-1.5 bg-transparent5 border border-white/10 rounded-md">
+            <span className="text-[9px]">Save login details</span>
             <input
               type="checkbox"
               checked={saveDetails}
@@ -329,20 +329,20 @@ export default function CreatorLoginDetails() {
                   setSavedUsername('');
                 }
               }}
-              className="scale-75"
+              className="scale-[0.6]"
             />
           </label>
 
           {/* Password saving disabled for security — rely on browser autofill */}
 
-          <div className="p-2 bg-transparent5 border border-white/10 rounded-lg">
-            <div className="text-[9px] text-white/60">Saved email</div>
-            <div className="text-[10px] break-all">{savedIdentifier || '-'}</div>
-            <div className="mt-1.5 text-[9px] text-white/60">Saved username</div>
-            <div className="text-[10px] break-all">{savedUsername || '-'}</div>
+          <div className="p-1.5 bg-transparent5 border border-white/10 rounded-md">
+            <div className="text-[8px] text-white/60">Saved email</div>
+            <div className="text-[9px] break-all">{savedIdentifier || '-'}</div>
+            <div className="mt-1 text-[8px] text-white/60">Saved username</div>
+            <div className="text-[9px] break-all">{savedUsername || '-'}</div>
 
             <button
-              className="mt-2 w-full bg-transparent10 border border-white/10 rounded-lg py-1 text-[10px]"
+              className="mt-1.5 w-full bg-transparent10 border border-white/10 rounded-md py-0.5 text-[9px]"
               onClick={() => {
                 window.localStorage.removeItem('creator_saved_identifier');
                 window.localStorage.removeItem('creator_saved_username');
@@ -351,12 +351,12 @@ export default function CreatorLoginDetails() {
                 setSavedUsername('');
               }}
             >
-              Clear saved details
+              Clear
             </button>
 
             {user && (
               <button
-                className="mt-2 w-full bg-[#E6B36A] text-black rounded-lg py-1 text-[10px] font-semibold"
+                className="mt-1.5 w-full bg-[#E6B36A] text-black rounded-md py-0.5 text-[9px] font-semibold"
                 onClick={() => {
                   const nextEmail = user.email;
                   const nextUsername = user.username;
@@ -367,13 +367,13 @@ export default function CreatorLoginDetails() {
                   window.localStorage.setItem('creator_save_login_details', 'true');
                   setSaveDetails(true);
                 }}
-              >Save my current account</button>
+              >Save</button>
             )}
           </div>
 
           {user && (
             <button
-              className="w-full bg-transparent10 border border-white/10 rounded-lg py-1 text-[10px]"
+              className="w-full bg-transparent10 border border-white/10 rounded-md py-1 text-[9px]"
               onClick={async () => {
                 await signOut();
                 setPassword('');
