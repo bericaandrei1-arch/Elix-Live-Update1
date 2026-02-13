@@ -19,17 +19,18 @@ export default function CreatorLoginDetails() {
 
   const [email, setEmail] = useState(() => {
     // If user is logged in, default to their email
-    const storedUser = window.localStorage.getItem('sb-kvk-auth-token'); // Check if auth exists
-    // Note: accessing store state directly here is tricky, so we rely on 'user' from store in useEffect
     return window.localStorage.getItem('creator_saved_identifier') || '';
   });
 
   // Sync email state with user email on mount if logged in and no local email set
   useEffect(() => {
     if (user && !email) {
+      // Don't auto-set it, let user type freely. Or set it once only.
+      // Actually if we want to allow typing "another" email, we shouldn't force reset it
+      // unless it is completely empty.
       setEmail(user.email);
     }
-  }, [user]);
+  }, [user]); // We removed 'email' dependency so it doesn't loop or reset when user clears it manually
   const [username, setUsername] = useState(() => window.localStorage.getItem('creator_saved_username') || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
