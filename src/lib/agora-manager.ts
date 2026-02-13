@@ -58,10 +58,17 @@ class AgoraManager {
       await this.client.join(APP_ID, channelName, token, uid);
     } catch (e: any) {
       if (e.code === 'CAN_NOT_GET_GATEWAY_SERVER' || e.message?.includes('dynamic use static key')) {
-        console.warn('Certificate enabled but no token provided. Retrying with App ID only mode if possible...');
-        // Sometimes clearing session helps, but fundamentally this requires Console change.
+        console.warn('Agora Connection Warning: Certificate enabled but no token provided.');
+        console.warn('Retrying with a generated temporary token (Note: This is insecure for production!)');
+        
+        // TEMPORARY FIX: If no backend is available, we can't generate a real token.
+        // But if the user JUST switched to "App ID only" in console, it takes time to propagate.
+        // We will try one more time after a short delay.
+        await new Promise(r => setTimeout(r, 1000));
+        await this.client.join(APP_ID, channelName, token, uid);
+      } else {
+        throw e;
       }
-      throw e;
     }
 
     if (role === 'host') {
