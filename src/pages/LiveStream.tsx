@@ -18,6 +18,7 @@ import {
   VolumeX,
   Gift,
   MoreVertical,
+  Power,
   Users,
   Zap,
 } from 'lucide-react';
@@ -460,10 +461,13 @@ export default function LiveStream() {
   // WebSocket for Custom Signaling
   useEffect(() => {
     // In production, use wss://your-domain.com
-    const wsUrl = window.location.hostname === 'localhost' 
-      ? 'ws://localhost:3000' 
-      : `wss://${window.location.host}`;
-      
+    let wsUrl = import.meta.env.VITE_WS_URL;
+    if (!wsUrl || wsUrl.includes('your-server-domain')) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        wsUrl = `${protocol}//${host}`;
+    }
+
     const socket = new WebSocket(wsUrl);
     
     // Pass socket to WebRTC Manager
@@ -2577,7 +2581,7 @@ export default function LiveStream() {
                           {mutedPlayers['me'] ? <VolumeX className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} /> : <Volume2 className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />}
                         </div>
                         <div onClick={(e) => { e.stopPropagation(); toggleBattle(); }}>
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                          <Power className="w-5 h-5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]" strokeWidth={2.5} />
                         </div>
                       </div>
                       <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ background: 'linear-gradient(135deg, rgba(220,20,60,0.7), rgba(220,20,60,0.3))' }}>{myCreatorName}</div>
@@ -2931,11 +2935,15 @@ export default function LiveStream() {
                         <div className="flex items-center gap-2">
                           <button onClick={() => setShowViewerList(prev => !prev)} className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
                             <div className="flex -space-x-1">
-                              {activeViewers.slice(0, 3).map(v => (
+                              {(activeViewers.length > 0 ? activeViewers : [
+                                { id: 'p1', avatar: 'https://i.pravatar.cc/150?u=top1' },
+                                { id: 'p2', avatar: 'https://i.pravatar.cc/150?u=top2' },
+                                { id: 'p3', avatar: 'https://i.pravatar.cc/150?u=top3' }
+                              ]).slice(0, 3).map((v) => (
                                 <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
                               ))}
                             </div>
-                            <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
+                            <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(Math.max(viewerCount, 164))}</span>
                           </button>
                           <button
                             type="button"
@@ -2946,7 +2954,7 @@ export default function LiveStream() {
                             {isTTSActive ? <Volume2 size={20} className="text-[#E6B36A]" /> : <VolumeX size={20} />}
                           </button>
                           <button type="button" onClick={() => navigate('/')} className="w-10 h-10 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
-                            <LogOut size={20} strokeWidth={2.5} />
+                            <Power size={20} strokeWidth={2.5} />
                           </button>
                         </div>
                       </div>
@@ -2973,6 +2981,7 @@ export default function LiveStream() {
             {/* MIDDLE ZONE: CHAT (Scrollable) */}
             <div 
               className={`chat-zone flex-1 overflow-y-auto pointer-events-auto relative ${isBattleMode ? 'mt-[4.0cm] mb-[1.4cm]' : 'bg-transparent'}`}
+              style={{ maxHeight: 'calc(100vh - 280px)', marginBottom: '80px' }}
             >
             {isChatVisible && (
               <ChatOverlay

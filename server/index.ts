@@ -74,7 +74,15 @@ if (!fs.existsSync(indexPath)) {
   console.error('Available files:', fs.existsSync(distPath) ? fs.readdirSync(distPath).join(', ') : 'dist folder missing');
 }
 
-app.use(express.static(distPath));
+app.use(express.static(distPath, {
+  setHeaders: (res, path) => {
+    if (path.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Fallback for SPA - all non-API routes serve index.html
 app.get(/^(?!\/api).+/, (_req, res) => {

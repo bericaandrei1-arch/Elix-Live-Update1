@@ -50,8 +50,22 @@ class WebSocketService {
 
     this.roomId = roomId;
     this.token = token;
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
-    this.ws = new WebSocket(`${wsUrl}/live/${roomId}?token=${encodeURIComponent(token)}`);
+    
+    // Auto-detect WebSocket URL based on current window location if VITE_WS_URL is missing
+    let wsUrl = import.meta.env.VITE_WS_URL;
+    if (!wsUrl || wsUrl.includes('your-server-domain')) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}`;
+    }
+    
+    // Remove trailing slash if present
+    if (wsUrl.endsWith('/')) {
+        wsUrl = wsUrl.slice(0, -1);
+    }
+    
+    console.log('[WebSocket] Connecting to:', wsUrl);
+    this.ws = new WebSocket(`${wsUrl}/live?room=${roomId}&token=${encodeURIComponent(token)}`);
 
     this.ws.onopen = () => {
       console.log('[WebSocket] Connected to room:', roomId);
