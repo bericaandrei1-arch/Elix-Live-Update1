@@ -299,9 +299,10 @@ export default function CreatorLoginDetails() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type="email"
-                  value={user.email}
-                  disabled
-                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white/60 placeholder-white/20 outline-none cursor-not-allowed opacity-50"
+                  value={email || user.email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-[#E6B36A]/50 transition-all"
+                  placeholder="name@example.com"
                 />
               </div>
             </div>
@@ -339,7 +340,11 @@ export default function CreatorLoginDetails() {
                     setSaveDetails(next);
                     window.localStorage.setItem('creator_save_login_details', next ? 'true' : 'false');
                     if (next) {
-                        saveCurrentAccount(user.email, user.username, user.avatar);
+                        const emailToSave = email || user.email;
+                        // Use default username if saving another email
+                        const usernameToSave = emailToSave === user.email ? user.username : emailToSave.split('@')[0];
+                        
+                        saveCurrentAccount(emailToSave, usernameToSave, emailToSave === user.email ? user.avatar : undefined);
                         if (password) {
                             // Only if user explicitly typed it
                              window.localStorage.setItem('creator_saved_password', password);
