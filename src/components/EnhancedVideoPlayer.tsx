@@ -421,7 +421,7 @@ export default function EnhancedVideoPlayer({
       </div>
 
       {/* Right Sidebar - Same Buttons with Subtle Luxury Effects */}
-      <div className="absolute z-[201] flex flex-col items-center gap-2 pointer-events-auto" style={{ right: 'calc(0.75rem - 3mm)', bottom: 'calc(5rem + 12mm)' }}>
+      <div className="absolute z-[201] flex flex-col items-center gap-2 pointer-events-auto" style={{ right: 'calc(0.75rem - 3mm)', bottom: 'calc(8rem + 12mm)' }}>
         
         {/* Profile Avatar - SAME SIZE */}
         <div className="relative -mt-4 mb-2">
