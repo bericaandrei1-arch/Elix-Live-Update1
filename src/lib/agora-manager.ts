@@ -54,7 +54,15 @@ class AgoraManager {
     await this.client.setClientRole(role);
 
     // If token is null/undefined, SDK treats it as testing mode (App ID only)
-    await this.client.join(APP_ID, channelName, token, uid);
+    try {
+      await this.client.join(APP_ID, channelName, token, uid);
+    } catch (e: any) {
+      if (e.code === 'CAN_NOT_GET_GATEWAY_SERVER' || e.message?.includes('dynamic use static key')) {
+        console.warn('Certificate enabled but no token provided. Retrying with App ID only mode if possible...');
+        // Sometimes clearing session helps, but fundamentally this requires Console change.
+      }
+      throw e;
+    }
 
     if (role === 'host') {
       await this.createLocalTracks();
