@@ -479,6 +479,10 @@ export default function LiveStream() {
     if (user) {
         initAgora();
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [isBroadcast, streamId, user?.id]); // ── Closing the main useEffect hook properly ──
 
   // ── Apply Portrait Constraints (9:16) to minimize cropping ──
