@@ -2301,11 +2301,10 @@ export default function LiveStream() {
             {isBroadcast ? (
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
                 autoPlay
                 playsInline
                 muted
-                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
               />
             ) : (
               <video
