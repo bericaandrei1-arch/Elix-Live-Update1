@@ -480,7 +480,24 @@ export default function LiveStream() {
         initAgora();
     }
 
-    return () => {
+    // ── Apply Portrait Constraints (9:16) to minimize cropping ──
+  useEffect(() => {
+    if (isBroadcast && videoRef.current) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      if (stream) {
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          track.applyConstraints({
+             aspectRatio: { ideal: 0.5625 }, // 9/16
+             width: { ideal: 720 },
+             height: { ideal: 1280 }
+          }).catch(err => console.warn("Failed to apply portrait constraints:", err));
+        }
+      }
+    }
+  }, [isBroadcast]);
+
+  return () => {
       mounted = false;
       agoraManager.leave().catch(console.error);
       setIsJoined(false);
@@ -2301,7 +2318,7 @@ export default function LiveStream() {
             {isBroadcast ? (
               <video
                 ref={videoRef}
-                className="w-full h-full object-contain bg-black"
+                className="w-full h-full object-cover"
                 autoPlay
                 playsInline
                 muted
