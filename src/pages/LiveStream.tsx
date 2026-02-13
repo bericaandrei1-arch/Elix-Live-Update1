@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { agoraManager } from '../lib/agora-manager';
+
+import { webrtcManager } from '../lib/webrtc-manager';
 import {
-  Send,
-  Search,
-  Heart,
   Flame,
+  Heart,
   MessageCircle,
   Share2,
   RefreshCw,
+  Search,
+  Send,
   Mic,
   MicOff,
   Settings2,
@@ -385,6 +386,8 @@ export default function LiveStream() {
   const player4VideoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
+
+
   // Agora State
   const [isJoined, setIsJoined] = useState(false);
   const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
@@ -422,68 +425,149 @@ export default function LiveStream() {
   const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
   const user = useAuthStore((s) => s.user);
 
-  // Initialize Agora when component mounts
+  const [isTTSActive, setIsTTSActive] = useState(false);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Initialize Speech Synthesis
   useEffect(() => {
-    let mounted = true;
-
-    const initAgora = async () => {
-      try {
-        if (!agoraManager.client) return;
-
-        // Event Listeners
-        agoraManager.client.removeAllListeners(); // Clear previous listeners
-        
-        agoraManager.client.on('user-published', async (user, mediaType) => {
-          await agoraManager.client.subscribe(user, mediaType);
-          if (mediaType === 'video') {
-            setRemoteUsers((prev) => {
-              if (prev.find((u) => u.uid === user.uid)) return prev;
-              return [...prev, user];
-            });
-          }
-          if (mediaType === 'audio') {
-            user.audioTrack?.play();
-          }
-        });
-
-        agoraManager.client.on('user-unpublished', (user, mediaType) => {
-          if (mediaType === 'video') {
-             setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
-          }
-        });
-
-        // Determine Role & Channel
-        // For broadcast, channel name is user's ID or unique ID. For viewer, it's the streamId from URL.
-        const channelName = isBroadcast ? `live_${user?.id || 'host'}` : (streamId || 'test_channel');
-        
-        // If broadcasting, use user ID as UID. If viewing, random ID or user ID.
-        // UID must be number for simple implementation, or string if Agora App Config allows.
-        // We use random int for safety.
-        const uid = Math.floor(Math.random() * 1000000);
-        const role = isBroadcast ? 'host' : 'audience';
-
-        // Join
-        await agoraManager.joinChannel(channelName, uid, role);
-        if (mounted) setIsJoined(true);
-
-        // If Host, play local video
-        if (role === 'host' && agoraManager.localVideoTrack && videoRef.current) {
-          agoraManager.localVideoTrack.play(videoRef.current);
-        }
-
-      } catch (err) {
-        console.error('Agora Init Failed:', err);
-      }
-    };
-
-    if (user) {
-        initAgora();
-    }
+    speechRef.current = new SpeechSynthesisUtterance();
+    // speechRef.current.voice = window.speechSynthesis.getVoices()[0]; // Optional: set voice
     
     return () => {
-      mounted = false;
+      window.speechSynthesis.cancel();
     };
-  }, [isBroadcast, streamId, user?.id]); // ── Closing the main useEffect hook properly ──
+  }, []);
+
+  const speakMessage = useCallback((text: string) => {
+    if (!isTTSActive || !speechRef.current) return;
+    
+    window.speechSynthesis.cancel(); // Stop current
+    speechRef.current.text = text;
+    window.speechSynthesis.speak(speechRef.current);
+  }, [isTTSActive]);
+
+  // Hook into chat messages for TTS
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    
+    // Only speak real user messages or important system messages
+    if (!lastMsg.isSystem || lastMsg.isGift) {
+       speakMessage(`${lastMsg.username} says: ${lastMsg.text}`);
+    }
+  }, [messages, speakMessage]);
+
+  // WebSocket for Custom Signaling
+  useEffect(() => {
+    // In production, use wss://your-domain.com
+    const wsUrl = window.location.hostname === 'localhost' 
+      ? 'ws://localhost:3000' 
+      : `wss://${window.location.host}`;
+      
+    const socket = new WebSocket(wsUrl);
+    
+    // Pass socket to WebRTC Manager
+    const userId = user?.id || `guest_${Math.floor(Math.random()*1000)}`;
+    webrtcManager.setSocket(socket, userId);
+
+    socket.onopen = () => {
+        console.log('✅ WS Connected');
+        socket.send(JSON.stringify({
+            event: 'join_room', // Matches server/index.ts
+            roomId: effectiveStreamId,
+            username: user?.email || 'User' + Math.floor(Math.random()*1000),
+            userId: userId
+        }));
+    };
+
+    socket.onmessage = async (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            const { event: type, data } = msg;
+
+            // Handle WebRTC Signaling
+            if (['webrtc_offer', 'webrtc_answer', 'webrtc_ice_candidate'].includes(type)) {
+                await webrtcManager.handleSignal(type, data);
+            }
+            
+            // Handle User Joined (Mesh P2P: Initiate connection)
+            if (type === 'user_joined') {
+                if (data.userId !== userId) {
+                   console.log(`User joined: ${data.username}, connecting...`);
+                   await webrtcManager.connectToPeer(data.userId);
+                }
+            }
+            
+            // Handle Chat
+            if (type === 'chat_message') {
+                 // Add to chat state (need to ensure setMessages format matches)
+                 setMessages(prev => [...prev, {
+                     id: Date.now().toString(),
+                     user: data.username,
+                     text: data.message,
+                     level: 1, // placeholder
+                     isSubscriber: false,
+                     isModerator: false
+                 }]);
+            }
+
+        } catch (e) {
+            console.error('WS Error', e);
+        }
+    };
+
+    return () => {
+        socket.close();
+    };
+  }, [effectiveStreamId, user?.id]);
+
+  // Placeholder for new streaming logic (Twilio + WS + Redis)
+  useEffect(() => {
+    // START LOCAL STREAM
+    const startStream = async () => {
+        try {
+            const stream = await webrtcManager.startLocalStream();
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.play().catch(e => console.error("Play error", e));
+            }
+        } catch (e) {
+            console.error("Failed to start local stream", e);
+        }
+    };
+
+    if (isBroadcast) {
+        startStream();
+    }
+
+    // Subscribe to track events to show remote users
+    const handleTrack = ({ userId, streams }: { userId: string, streams: MediaStream[] }) => {
+        setRemoteUsers(prev => {
+            if (prev.find(u => u.uid === userId)) return prev;
+            return [...prev, {
+                uid: userId,
+                videoTrack: {
+                    play: (element: HTMLVideoElement) => {
+                        element.srcObject = streams[0];
+                        element.play().catch(console.error);
+                    }
+                } as any,
+                audioTrack: {
+                    play: () => {}
+                } as any
+            }];
+        });
+    };
+
+    webrtcManager.on('track', handleTrack);
+
+    return () => {
+        webrtcManager.stopLocalStream();
+        webrtcManager.off('track', handleTrack);
+    };
+  }, [isBroadcast]);
+
+
 
   // ── Apply Portrait Constraints (9:16) to minimize cropping ──
   useEffect(() => {
@@ -502,31 +586,9 @@ export default function LiveStream() {
     }
   }, [isBroadcast]);
 
-  // Clean up
-  useEffect(() => {
-    let mounted = true;
-    return () => {
-      mounted = false;
-      agoraManager.leave().catch(console.error);
-      setIsJoined(false);
-      setRemoteUsers([]);
-    };
-  }, [isBroadcast, streamId, user?.id]);
 
-  // Update remote video playback when users change
-  useEffect(() => {
-    if (remoteUsers.length > 0) {
-      // For MVP, just show the first remote user in the "opponent" slot or main slot if viewer
-      const firstRemote = remoteUsers[0];
-      if (firstRemote && firstRemote.videoTrack) {
-        // If viewer, show in main videoRef. If host (battle), show in opponentVideoRef
-        const targetRef = isBroadcast ? opponentVideoRef.current : videoRef.current;
-        if (targetRef) {
-           firstRemote.videoTrack.play(targetRef);
-        }
-      }
-    }
-  }, [remoteUsers, isBroadcast]);
+
+
 
   const formatStreamName = (id: string) =>
     id
@@ -833,6 +895,15 @@ export default function LiveStream() {
     }
   }, [isBattleMode, battleTime, battleWinner, battleCountdown, myScore, opponentScore, player3Score, player4Score, determine4PlayerWinner]);
 
+  // Connect to peers when battle starts (Mesh P2P)
+  useEffect(() => {
+    if (isBattleMode && isBroadcast) {
+       // Example: Connect to opponent if ID known
+       // In a real app, you'd get the opponent ID from the battle invite/match API
+       // webrtcManager.connectToPeer('opponent_user_id');
+    }
+  }, [isBattleMode, isBroadcast]);
+
   const toggleBattle = useCallback(() => {
     if (isBattleMode) {
       setIsBattleMode(false);
@@ -1055,7 +1126,7 @@ export default function LiveStream() {
   const toggleMic = async () => {
     try {
       const next = !isMicMuted;
-      await agoraManager.toggleAudio(!next);
+      // await agoraManager.toggleAudio(!next);
       setIsMicMuted(next);
     } catch (e) {
       console.error('Toggle mic failed', e);
@@ -1070,8 +1141,8 @@ export default function LiveStream() {
   };
 
   const handleEndStream = async () => {
-    // 1. Leave Agora
-    await agoraManager.leave();
+    // 1. Leave Streaming Service
+    // await agoraManager.leave();
     
     // 2. Update Supabase
     if (isBroadcast && user?.id) {
@@ -1473,6 +1544,12 @@ export default function LiveStream() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play().catch(() => {});
+          
+          // Apply scaling logic
+          // Back camera ('environment') -> contain (fit screen, no crop, maybe black bars)
+          // Front camera ('user') -> cover (fill screen, crop is okay)
+          videoRef.current.style.objectFit = cameraFacing === 'environment' ? 'contain' : 'cover';
+          videoRef.current.style.backgroundColor = 'black';
         }
       } catch {
         setCameraError('Camera access denied');
@@ -2859,6 +2936,14 @@ export default function LiveStream() {
                               ))}
                             </div>
                             <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsTTSActive(prev => !prev)}
+                            className={`w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all rounded-full ${isTTSActive ? 'bg-[#E6B36A]/20 border border-[#E6B36A]' : 'text-white'}`}
+                            title={isTTSActive ? "Disable TTS" : "Enable TTS"}
+                          >
+                            {isTTSActive ? <Volume2 size={20} className="text-[#E6B36A]" /> : <VolumeX size={20} />}
                           </button>
                           <button type="button" onClick={() => navigate('/')} className="w-10 h-10 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
                             <LogOut size={20} strokeWidth={2.5} />

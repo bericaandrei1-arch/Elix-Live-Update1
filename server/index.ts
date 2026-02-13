@@ -6,6 +6,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import Redis from 'ioredis';
 import { createCheckoutSession, createPaymentIntent } from './routes/checkout';
 import { handleStripeWebhook } from './routes/webhook';
 import {
@@ -76,7 +77,7 @@ if (!fs.existsSync(indexPath)) {
 app.use(express.static(distPath));
 
 // Fallback for SPA - all non-API routes serve index.html
-app.get('{*path}', (_req, res) => {
+app.get(/^(?!\/api).+/, (_req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
@@ -90,21 +91,66 @@ const wss = new WebSocketServer({ server });
 
 console.log(`WebSocket server attached to HTTP server on port ${PORT}`);
 
+// --- Redis Setup ---
+const redisUrl = process.env.REDIS_URL;
+let redis: Redis | null = null;
+let redisSub: Redis | null = null;
+
+if (redisUrl) {
+    redis = new Redis(redisUrl);
+    redisSub = new Redis(redisUrl);
+
+    redis.on('connect', () => console.log('✅ Redis Publisher connected'));
+    redisSub.on('connect', () => console.log('✅ Redis Subscriber connected'));
+    redis.on('error', (err) => console.error('❌ Redis connection error:', err));
+
+    // Subscribe to global messages channel
+    redisSub.subscribe('global_messages', (err) => {
+        if (err) console.error('Failed to subscribe to Redis channel:', err);
+    });
+
+    redisSub.on('message', (channel, message) => {
+      // ... logic
+      if (channel === 'global_messages') {
+        try {
+          const parsed = JSON.parse(message);
+          const { roomId, event, data, senderUserId, originServerId } = parsed;
+          
+          // If this message originated from THIS server, ignore it (already broadcasted locally)
+          if (originServerId === SERVER_ID) return;
+
+          const room = rooms.get(roomId);
+          if (room) {
+            room.forEach(client => {
+              if (client.userId !== senderUserId && client.ws.readyState === WebSocket.OPEN) {
+                 client.ws.send(JSON.stringify({ event, data, timestamp: new Date().toISOString() }));
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error handling Redis message:', e);
+        }
+      }
+    });
+} else {
+    console.log('⚠️ REDIS_URL not set, running in single-server mode (no Redis)');
+}
+
 // --- WebSocket Logic (Copied from websocket-server.ts) ---
 
-const supabaseAdmin: ReturnType<typeof createClient> | null = null;
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
 try {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (supabaseUrl && supabaseServiceRoleKey) {
-    nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     console.log('Supabase client initialized successfully');
   } else {
     console.log('npm run dev environment variables not set, running without authentication');
   }
 } catch (e) {
   console.error("Supabase init failed, running without authentication:", e);
-  nhost = null;
+  supabaseAdmin = null;
 }
 
 interface Client {
@@ -190,11 +236,12 @@ wss.on('connection', async (ws: WebSocket, req) => {
       user_count: rooms.get(roomId)!.size,
     });
 
-    // Broadcast user joined
-    broadcastToRoom(roomId, 'user_joined', {
-      user_id: client.userId,
-      username: client.username,
-    }, client);
+  // Broadcast user joined
+  broadcastToRoom(roomId, 'user_joined', {
+    user_id: client.userId,
+    username: client.username,
+    userId: client.userId // Ensure consistency for frontend
+  }, client);
 
     // Update viewer count
     await updateViewerCount(roomId);
@@ -273,11 +320,12 @@ wss.on('connection', async (ws: WebSocket, req) => {
     if (room) {
       room.delete(client);
 
-      // Broadcast user left
-      broadcastToRoom(client.roomId, 'user_left', {
-        user_id: client.userId,
-        username: client.username,
-      });
+  // Broadcast user left
+  broadcastToRoom(client.roomId, 'user_left', {
+    user_id: client.userId,
+    username: client.username,
+    userId: client.userId
+  });
 
       // Update viewer count
       await updateViewerCount(client.roomId);
@@ -379,6 +427,43 @@ async function handleMessage(client: Client, event: string, data: any) {
       break;
     }
 
+    // --- WebRTC Signaling ---
+    case 'webrtc_offer':
+    case 'webrtc_answer':
+    case 'webrtc_ice_candidate': {
+      // Relay signaling messages to the target user (or room for Mesh)
+      // data: { targetUserId: string, sdp?: any, candidate?: any }
+      
+      const targetUserId = data.targetUserId;
+      if (targetUserId) {
+        // Find client by userId (Inefficient O(N), but fine for MVP)
+        // In production, map userId -> ws
+        let targetClient: Client | undefined;
+        for (const c of clients.values()) {
+          if (c.userId === targetUserId) {
+            targetClient = c;
+            break;
+          }
+        }
+
+        if (targetClient) {
+           sendToClient(targetClient, event, {
+             ...data,
+             senderUserId: client.userId,
+             senderUsername: client.username
+           });
+        }
+      } else {
+        // If no target, broadcast to room (Mesh - everyone connects to everyone)
+        broadcastToRoom(client.roomId, event, {
+           ...data,
+           senderUserId: client.userId,
+           senderUsername: client.username
+        }, client);
+      }
+      break;
+    }
+
     default:
       console.log('Unknown event:', event);
   }
@@ -401,28 +486,62 @@ function sendToClient(client: Client, event: string, data: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function broadcastToRoom(roomId: string, event: string, data: any, exclude?: Client) {
+  // 1. Publish to Redis for cross-server scaling (only if Redis is active)
+  const senderUserId = exclude?.userId;
+  if (redis) {
+    const message = JSON.stringify({
+      roomId,
+      event,
+      data,
+      senderUserId,
+      originServerId: SERVER_ID
+    });
+    
+    redis.publish('global_messages', message);
+  }
+
+  // 2. Also send locally immediately (optimization or fallback)
+  // Or we can rely solely on Redis subscription to handle it (simpler logic).
+  // Let's rely on Redis for consistency, BUT for "user_joined" it's better to be fast.
+  // Actually, if we rely on Redis subscription loop, we handle it there.
+  // BUT the current implementation of `redisSub.on('message')` handles local broadcasting.
+  // So we don't need to do anything else here if we want full scaling!
+  // However, for single-server dev, Redis might not be running or might add delay.
+  // Let's keep local broadcast for now as a fallback/optimization, and make sure Redis handler doesn't double-send.
+  // Wait, Redis handler checks `client.userId !== senderUserId`.
+  // If we broadcast locally here, we should exclude `senderUserId`.
+  // If Redis handler ALSO broadcasts, we get duplicates.
+  // FIX: Let's make `broadcastToRoom` ONLY publish to Redis in scalable mode.
+  // But for this MVP, let's do BOTH but filtering is tricky without unique msg IDs.
+  // SIMPLEST: `broadcastToRoom` sends to local clients (excluding sender).
+  // AND publishes to Redis.
+  // Redis listener sends to local clients (excluding sender).
+  // This causes duplicates for local clients (once from direct, once from Redis).
+  // SOLUTION: Redis listener should only send to clients if the message originated from ANOTHER server.
+  // We can add `serverId` to the message.
+  
+  // For this MVP, let's just use Redis for everything if connected, or local if not.
+  // But we initialized Redis.
+  // Let's stick to the previous implementation which was local-only, and just ADD Redis publish.
+  // The Redis subscriber should NOT broadcast if the server ID matches.
+  // But we didn't implement server IDs.
+  
+  // Let's just stick to local broadcast for now to ensure it works, and Redis is just "ready".
+  // To make it truly scalable, we would remove the local loop below and rely on Redis, 
+  // OR add a server ID check.
+  
   const room = rooms.get(roomId);
   if (!room) return;
 
-  let message: string;
-  try {
-    message = JSON.stringify({
+  const msgStr = JSON.stringify({
       event,
       data,
       timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Failed to serialize message:', error);
-    return;
-  }
+  });
 
   room.forEach(client => {
     if (client !== exclude && client.ws.readyState === WebSocket.OPEN) {
-      try {
-        client.ws.send(message);
-      } catch (error) {
-        console.error('Failed to send to client:', error);
-      }
+      client.ws.send(msgStr);
     }
   });
 }

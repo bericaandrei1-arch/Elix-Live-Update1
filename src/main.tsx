@@ -16,7 +16,11 @@ import './index.css'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
+      {/* 
+        Using import.meta.env.BASE_URL ensures the router understands the subpath 
+        when deployed to GitHub Pages (e.g. /elix-star-live-web/)
+      */}
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <App />
       </BrowserRouter>
     </ErrorBoundary>
