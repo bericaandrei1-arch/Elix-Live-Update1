@@ -97,14 +97,14 @@ try {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (supabaseUrl && supabaseServiceRoleKey) {
-    nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
+    // nhost = createClient(supabaseUrl, supabaseServiceRoleKey);
     console.log('Supabase client initialized successfully');
   } else {
     console.log('npm run dev environment variables not set, running without authentication');
   }
 } catch (e) {
   console.error("Supabase init failed, running without authentication:", e);
-  nhost = null;
+  // nhost = null;
 }
 
 interface Client {
