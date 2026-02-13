@@ -504,6 +504,7 @@ export default function LiveStream() {
 
   // Clean up
   useEffect(() => {
+    let mounted = true;
     return () => {
       mounted = false;
       agoraManager.leave().catch(console.error);
