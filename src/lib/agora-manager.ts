@@ -7,7 +7,8 @@ import AgoraRTC, {
 } from 'agora-rtc-sdk-ng';
 
 // Use environment variables for configuration
-const APP_ID = import.meta.env.VITE_AGORA_APP_ID;
+const APP_ID = import.meta.env.VITE_AGORA_APP_ID?.trim();
+console.log('[AgoraManager] Using App ID:', APP_ID); // Debug log to verify loaded ID
 // In a real production app, token should be fetched from backend. 
 // For this integration, we will support both direct token (if provided via props/API) or null (for testing mode with AppCertificate disabled).
 // NOTE: If your project has App Certificate enabled in Agora Console, you MUST use a token.
