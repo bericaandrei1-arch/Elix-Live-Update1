@@ -45,6 +45,12 @@ class AgoraManager {
   ) {
     if (!APP_ID) throw new Error('Agora App ID missing');
 
+    // If already joined/connected to this channel, do nothing or rejoin
+    if (this.client.connectionState === 'CONNECTED' || this.client.connectionState === 'CONNECTING') {
+      console.warn('Agora client is already connected. Leaving first...');
+      await this.leave();
+    }
+
     await this.client.setClientRole(role);
 
     // If token is null/undefined, SDK treats it as testing mode (App ID only)
@@ -68,7 +74,14 @@ class AgoraManager {
 
   async publish() {
     if (this.localAudioTrack && this.localVideoTrack) {
-      await this.client.publish([this.localAudioTrack, this.localVideoTrack]);
+      // Check if already publishing to avoid "INVALID_OPERATION"
+      const localTracks = [this.localAudioTrack, this.localVideoTrack];
+      try {
+        await this.client.publish(localTracks);
+      } catch (err) {
+        // Ignore "already publishing" errors
+        console.warn('Publish failed (likely already published):', err);
+      }
     }
   }
 
@@ -81,12 +94,21 @@ class AgoraManager {
       this.localVideoTrack.close();
       this.localVideoTrack = null;
     }
-    await this.client.unpublish();
+    // Only unpublish if client is connected/connected
+    if (this.client.connectionState === 'CONNECTED') {
+       try {
+         await this.client.unpublish();
+       } catch (err) {
+         console.warn('Unpublish failed:', err);
+       }
+    }
   }
 
   async leave() {
     await this.unpublish();
-    await this.client.leave();
+    if (this.client.connectionState !== 'DISCONNECTED') {
+       await this.client.leave();
+    }
   }
 }
 
