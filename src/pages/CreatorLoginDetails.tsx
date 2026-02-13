@@ -225,26 +225,26 @@ export default function CreatorLoginDetails() {
 
         {/* Saved Accounts Switcher (Visible always if there are saved accounts) */}
         {savedAccounts.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-3 pl-1">Switch Accounts</h3>
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 px-1">
+          <div className="mb-6">
+            <h3 className="text-[9px] text-white/40 uppercase tracking-widest font-bold mb-2 pl-1">Switch Accounts</h3>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 px-1">
               {savedAccounts.map((acc) => {
                 const isActive = user?.email === acc.identifier;
                 return (
                   <div 
                     key={acc.identifier}
                     onClick={() => !isActive && switchAccount(acc.identifier)}
-                    className={`flex-shrink-0 w-20 flex flex-col items-center gap-2 group cursor-pointer ${isActive ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
+                    className={`flex-shrink-0 w-14 flex flex-col items-center gap-1.5 group cursor-pointer ${isActive ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
                   >
-                    <div className={`relative w-14 h-14 rounded-full p-[2px] ${isActive ? 'bg-gradient-to-tr from-[#E6B36A] to-yellow-400' : 'bg-white/10 group-hover:bg-white/30'} transition-all`}>
+                    <div className={`relative w-10 h-10 rounded-full p-[1.5px] ${isActive ? 'bg-gradient-to-tr from-[#E6B36A] to-yellow-400' : 'bg-white/10 group-hover:bg-white/30'} transition-all`}>
                       <img 
                         src={acc.avatar || `https://ui-avatars.com/api/?name=${acc.username}&background=random`} 
                         alt={acc.username}
                         className="w-full h-full rounded-full object-cover bg-[#121212]"
                       />
                       {isActive && (
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#E6B36A] rounded-full border-2 border-black flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 bg-black rounded-full" />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#E6B36A] rounded-full border-[1.5px] border-black flex items-center justify-center">
+                          <div className="w-1 h-1 bg-black rounded-full" />
                         </div>
                       )}
                       {!isActive && (
@@ -253,14 +253,14 @@ export default function CreatorLoginDetails() {
                             e.stopPropagation();
                             removeAccount(acc.identifier);
                           }}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500/80 rounded-full text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500/80 rounded-full text-white text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           ×
                         </button>
                       )}
                     </div>
                     <div className="text-center w-full">
-                      <p className={`text-[10px] font-medium truncate w-full ${isActive ? 'text-[#E6B36A]' : 'text-white'}`}>
+                      <p className={`text-[9px] font-medium truncate w-full ${isActive ? 'text-[#E6B36A]' : 'text-white'}`}>
                         {acc.username}
                       </p>
                     </div>
@@ -276,13 +276,13 @@ export default function CreatorLoginDetails() {
                    setPassword('');
                    // Focus email input or scroll to form
                 }}
-                className="flex-shrink-0 w-20 flex flex-col items-center gap-2 group cursor-pointer opacity-60 hover:opacity-100"
+                className="flex-shrink-0 w-14 flex flex-col items-center gap-1.5 group cursor-pointer opacity-60 hover:opacity-100"
               >
-                <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                  <span className="text-2xl text-white/50 font-light">+</span>
+                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                  <span className="text-lg text-white/50 font-light">+</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] font-medium text-white/50">Add</p>
+                  <p className="text-[9px] font-medium text-white/50">Add</p>
                 </div>
               </div>
             </div>

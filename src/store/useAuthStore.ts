@@ -172,7 +172,11 @@ export const useAuthStore = create<AuthStore>()(
 
     signOut: async () => {
       if (supabaseConfig.hasValidConfig) {
-        await supabase.auth.signOut();
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          console.warn('Supabase signOut failed (network error?), clearing local session anyway.', error);
+        }
       }
       set({
         session: null,

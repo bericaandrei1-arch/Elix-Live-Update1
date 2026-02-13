@@ -9,7 +9,7 @@ import { trackEvent } from '../lib/analytics';
 interface Video {
   id: string;
   thumbnail_url: string;
-  views_count: number;
+  views: number;
   is_private: boolean;
 }
 
@@ -85,7 +85,7 @@ export default function Profile() {
     if (!displayUserId) return;
 
     try {
-      let query = supabase.from('videos').select('id, thumbnail_url, views_count, is_private');
+      let query = supabase.from('videos').select('id, thumbnail_url, views, is_private');
 
       if (activeTab === 'videos') {
         query = query.eq('user_id', displayUserId).eq('is_private', false);
@@ -458,7 +458,7 @@ export default function Profile() {
                       </div>
                     )}
                     <span className="absolute bottom-1 left-1 flex items-center text-xs font-bold text-white drop-shadow-md">
-                        <Play size={10} className="mr-1" fill="white" /> {formatNumber(video.views_count)}
+                        <Play size={10} className="mr-1" fill="white" /> {formatNumber(video.views)}
                     </span>
                  </button>
              ))}
