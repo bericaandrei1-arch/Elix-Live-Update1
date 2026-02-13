@@ -49,6 +49,8 @@ class AgoraManager {
     if (this.client.connectionState === 'CONNECTED' || this.client.connectionState === 'CONNECTING') {
       console.warn('Agora client is already connected. Leaving first...');
       await this.leave();
+      // Wait for state to settle
+      await new Promise(r => setTimeout(r, 500));
     }
 
     await this.client.setClientRole(role);
@@ -57,14 +59,14 @@ class AgoraManager {
     try {
       await this.client.join(APP_ID, channelName, token, uid);
     } catch (e: any) {
-      if (e.code === 'CAN_NOT_GET_GATEWAY_SERVER' || e.message?.includes('dynamic use static key')) {
-        console.warn('Agora Connection Warning: Certificate enabled but no token provided.');
+      if (e.code === 'CAN_NOT_GET_GATEWAY_SERVER' || e.message?.includes('dynamic use static key') || e.message?.includes('invalid vendor key')) {
+        console.warn('Agora Connection Warning: Certificate enabled or invalid key.');
         console.warn('Retrying with a generated temporary token (Note: This is insecure for production!)');
         
         // TEMPORARY FIX: If no backend is available, we can't generate a real token.
         // But if the user JUST switched to "App ID only" in console, it takes time to propagate.
         // We will try one more time after a short delay.
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 2000));
         await this.client.join(APP_ID, channelName, token, uid);
       } else {
         throw e;
