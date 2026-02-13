@@ -479,8 +479,9 @@ export default function LiveStream() {
     if (user) {
         initAgora();
     }
+  }, [isBroadcast, streamId, user?.id]); // ── Closing the main useEffect hook properly ──
 
-    // ── Apply Portrait Constraints (9:16) to minimize cropping ──
+  // ── Apply Portrait Constraints (9:16) to minimize cropping ──
   useEffect(() => {
     if (isBroadcast && videoRef.current) {
       const stream = videoRef.current.srcObject as MediaStream;
