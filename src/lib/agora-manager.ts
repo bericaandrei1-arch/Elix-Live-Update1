@@ -63,6 +63,19 @@ class AgoraManager {
   }
 
   async createLocalTracks() {
+    // Check if tracks already exist to prevent duplicate track creation
+    if (this.localAudioTrack || this.localVideoTrack) {
+        // Close existing tracks first
+        if (this.localAudioTrack) {
+            this.localAudioTrack.close();
+            this.localAudioTrack = null;
+        }
+        if (this.localVideoTrack) {
+            this.localVideoTrack.close();
+            this.localVideoTrack = null;
+        }
+    }
+
     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks(
       { encoderConfig: 'music_standard' },
       { encoderConfig: '720p_1' }
@@ -74,8 +87,14 @@ class AgoraManager {
 
   async publish() {
     if (this.localAudioTrack && this.localVideoTrack) {
-      // Check if already publishing to avoid "INVALID_OPERATION"
       const localTracks = [this.localAudioTrack, this.localVideoTrack];
+      
+      // Ensure we are connected before publishing
+      if (this.client.connectionState !== 'CONNECTED') {
+          console.warn('Cannot publish: Client not connected');
+          return;
+      }
+
       try {
         await this.client.publish(localTracks);
       } catch (err) {
