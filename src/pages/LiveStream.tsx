@@ -497,7 +497,9 @@ export default function LiveStream() {
     }
   }, [isBroadcast]);
 
-  return () => {
+  // Clean up
+  useEffect(() => {
+    return () => {
       mounted = false;
       agoraManager.leave().catch(console.error);
       setIsJoined(false);
@@ -2269,9 +2271,9 @@ export default function LiveStream() {
       <div className="relative w-full h-screen bg-black overflow-hidden border-none">
         <div className="h-full w-full relative">
         {/* BACKGROUND: VIDEO AREA (Unified frame) */}
-        <div className="absolute inset-0 z-0 bg-black overflow-hidden">
-          <div className="video-zone relative w-full h-full">
-            <div ref={stageRef} className="relative w-full h-full">
+        <div className="absolute inset-0 z-0 bg-transparent overflow-hidden">
+          <div className="video-zone relative w-full h-full bg-transparent">
+            <div ref={stageRef} className="relative w-full h-full bg-transparent">
             {/* FLOATING HEARTS */}
             {floatingHearts.map((h) => (
               <div
@@ -2322,6 +2324,7 @@ export default function LiveStream() {
                 autoPlay
                 playsInline
                 muted
+                style={{ backgroundColor: 'transparent' }}
               />
             ) : (
               <video
