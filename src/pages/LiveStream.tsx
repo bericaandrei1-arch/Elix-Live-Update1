@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { agoraManager } from '../lib/agora-manager';
 import {
   Send,
   Search,
@@ -384,11 +383,6 @@ export default function LiveStream() {
   const player3VideoRef = useRef<HTMLVideoElement>(null);
   const player4VideoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-
-  // Agora State
-  const [isJoined, setIsJoined] = useState(false);
-  const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
-
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const setPromo = useLivePromoStore((s) => s.setPromo);
   const updateUser = useAuthStore((s) => s.updateUser);
@@ -421,88 +415,6 @@ export default function LiveStream() {
   const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 500) + 50);
   const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
   const user = useAuthStore((s) => s.user);
-
-  // Initialize Agora when component mounts
-  useEffect(() => {
-    let mounted = true;
-
-    const initAgora = async () => {
-      try {
-        if (!agoraManager.client) return;
-
-        // Event Listeners
-        agoraManager.client.removeAllListeners(); // Clear previous listeners
-        
-        agoraManager.client.on('user-published', async (user, mediaType) => {
-          await agoraManager.client.subscribe(user, mediaType);
-          if (mediaType === 'video') {
-            setRemoteUsers((prev) => {
-              if (prev.find((u) => u.uid === user.uid)) return prev;
-              return [...prev, user];
-            });
-          }
-          if (mediaType === 'audio') {
-            user.audioTrack?.play();
-          }
-        });
-
-        agoraManager.client.on('user-unpublished', (user, mediaType) => {
-          if (mediaType === 'video') {
-             setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
-          }
-        });
-
-        // Determine Role & Channel
-        // For broadcast, channel name is user's ID or unique ID. For viewer, it's the streamId from URL.
-        const channelName = isBroadcast ? `live_${user?.id || 'host'}` : (streamId || 'test_channel');
-        
-        // If broadcasting, use user ID as UID. If viewing, random ID or user ID.
-        // UID must be number for simple implementation, or string if Agora App Config allows.
-        // We use random int for safety.
-        const uid = Math.floor(Math.random() * 1000000);
-        const role = isBroadcast ? 'host' : 'audience';
-
-        // Join
-        await agoraManager.joinChannel(channelName, uid, role);
-        if (mounted) setIsJoined(true);
-
-        // If Host, play local video
-        if (role === 'host' && agoraManager.localVideoTrack && videoRef.current) {
-          agoraManager.localVideoTrack.play(videoRef.current);
-        }
-
-      } catch (err) {
-        console.error('Agora Init Failed:', err);
-      }
-    };
-
-    if (user) {
-        initAgora();
-    }
-
-    return () => {
-      mounted = false;
-      agoraManager.leave().catch(console.error);
-      setIsJoined(false);
-      setRemoteUsers([]);
-    };
-  }, [isBroadcast, streamId, user?.id]);
-
-  // Update remote video playback when users change
-  useEffect(() => {
-    if (remoteUsers.length > 0) {
-      // For MVP, just show the first remote user in the "opponent" slot or main slot if viewer
-      const firstRemote = remoteUsers[0];
-      if (firstRemote && firstRemote.videoTrack) {
-        // If viewer, show in main videoRef. If host (battle), show in opponentVideoRef
-        const targetRef = isBroadcast ? opponentVideoRef.current : videoRef.current;
-        if (targetRef) {
-           firstRemote.videoTrack.play(targetRef);
-        }
-      }
-    }
-  }, [remoteUsers, isBroadcast]);
-
   const formatStreamName = (id: string) =>
     id
       .split(/[-_]/g)
@@ -1026,40 +938,6 @@ export default function LiveStream() {
     return String(count);
   };
 
-  // Mute/Unmute Mic
-  const toggleMic = async () => {
-    try {
-      const next = !isMicMuted;
-      await agoraManager.toggleAudio(!next);
-      setIsMicMuted(next);
-    } catch (e) {
-      console.error('Toggle mic failed', e);
-    }
-  };
-
-  // Switch Camera (Not fully supported in web SDK like native, but we can try to get other device)
-  // For MVP, just log
-  const flipCamera = () => {
-    console.log('Switch camera requested (Web SDK limitation: usually requires re-creating track with different deviceId)');
-    setCameraFacing(prev => prev === 'user' ? 'environment' : 'user');
-  };
-
-  const handleEndStream = async () => {
-    // 1. Leave Agora
-    await agoraManager.leave();
-    
-    // 2. Update Supabase
-    if (isBroadcast && user?.id) {
-       await supabase
-         .from('live_streams')
-         .update({ is_live: false })
-         .eq('user_id', user.id);
-    }
-
-    // 3. Navigate away
-    navigate('/live');
-  };
-
   const activeViewersRef = useRef<SimulatedViewer[]>([]);
   const spawnHeartAt = useCallback((x: number, y: number, colorOverride?: string, likerName?: string, likerAvatar?: string) => {
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -1085,11 +963,11 @@ export default function LiveStream() {
     }, 500);
   }, []);
 
-  const spawnHeartFromClient = (clientX: number, clientY: number, colorOverride?: string) => {
+  const spawnHeartFromClient = (clientX: number, clientY: number, colorOverride?: string, likerName?: string, likerAvatar?: string) => {
     const stage = stageRef.current;
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
-    spawnHeartAt(clientX - rect.left, clientY - rect.top, colorOverride);
+    spawnHeartAt(clientX - rect.left, clientY - rect.top, colorOverride, likerName, likerAvatar);
   };
 
   const spawnHeartAtSide = useCallback((target: 'me' | 'opponent') => {
@@ -2014,6 +1892,18 @@ export default function LiveStream() {
     }
   };
 
+  const toggleMic = () => {
+    const next = !isMicMuted;
+    setIsMicMuted(next);
+    const stream = cameraStreamRef.current;
+    if (stream) stream.getAudioTracks().forEach((t) => (t.enabled = !next));
+  };
+
+  const flipCamera = async () => {
+    if (!isBroadcast) return;
+    setCameraFacing((prev) => (prev === 'user' ? 'environment' : 'user'));
+  };
+
   const resetComboTimer = () => {
       if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
       comboTimerRef.current = setTimeout(() => {
@@ -2188,18 +2078,44 @@ export default function LiveStream() {
       navigate('/');
   };
 
-  const handleScreenTap = () => {
+  const handleScreenTap = (e?: React.MouseEvent | React.TouchEvent) => {
+    // 1. Spawn visual heart at tap location
+    if (e) {
+      let clientX, clientY;
+      // Handle both mouse and touch events
+      if ('touches' in e && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if ('clientX' in e) {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+
+      if (clientX !== undefined && clientY !== undefined) {
+        spawnHeartFromClient(clientX, clientY, undefined, myCreatorName, myAvatar);
+      }
+    } else {
+      // Fallback for keyboard or other triggers
+      spawnHeartAtSide('me');
+    }
+
+    // 2. Add like (always)
+    addLiveLikes(1);
+
+    // 3. Battle logic
     if (isBattleMode) {
       if (isBroadcast) return;
-      addLiveLikes(1);
       awardBattlePoints(giftTarget, 3);
       return;
     }
+    
+    // 4. Double tap combo logic (optional - keeping it but ensuring it doesn't block single tap hearts)
     const now = Date.now();
     const last = lastScreenTapRef.current;
     lastScreenTapRef.current = now;
-    if (now - last > 320) return;
-    handleComboClick();
+    if (now - last < 320) {
+       handleComboClick();
+    }
   };
 
   const openMiniProfile = (username: string, coins?: number) => {

@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
+    /*
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.svg'],
@@ -64,6 +65,7 @@ export default defineConfig(({ mode }) => ({
         ]
       }
     }),
+    */
     tsconfigPaths()
   ],
 }))
