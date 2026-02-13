@@ -2305,6 +2305,7 @@ export default function LiveStream() {
                 autoPlay
                 playsInline
                 muted
+                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
               />
             ) : (
               <video
