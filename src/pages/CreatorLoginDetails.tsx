@@ -17,7 +17,19 @@ export default function CreatorLoginDetails() {
     setMode('signin');
   }, []);
 
-  const [email, setEmail] = useState(() => window.localStorage.getItem('creator_saved_identifier') || '');
+  const [email, setEmail] = useState(() => {
+    // If user is logged in, default to their email
+    const storedUser = window.localStorage.getItem('sb-kvk-auth-token'); // Check if auth exists
+    // Note: accessing store state directly here is tricky, so we rely on 'user' from store in useEffect
+    return window.localStorage.getItem('creator_saved_identifier') || '';
+  });
+
+  // Sync email state with user email on mount if logged in and no local email set
+  useEffect(() => {
+    if (user && !email) {
+      setEmail(user.email);
+    }
+  }, [user]);
   const [username, setUsername] = useState(() => window.localStorage.getItem('creator_saved_username') || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -299,7 +311,7 @@ export default function CreatorLoginDetails() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#E6B36A] transition-colors" />
                 <input
                   type="email"
-                  value={email || user.email}
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#121212] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-[#E6B36A]/50 transition-all"
                   placeholder="name@example.com"
@@ -340,7 +352,7 @@ export default function CreatorLoginDetails() {
                     setSaveDetails(next);
                     window.localStorage.setItem('creator_save_login_details', next ? 'true' : 'false');
                     if (next) {
-                        const emailToSave = email || user.email;
+                        const emailToSave = email;
                         // Use default username if saving another email
                         const usernameToSave = emailToSave === user.email ? user.username : emailToSave.split('@')[0];
                         
