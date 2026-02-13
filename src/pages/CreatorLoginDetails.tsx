@@ -53,11 +53,130 @@ export default function CreatorLoginDetails() {
     // ... existing effect ...
   }, []);
 
-  // ... saveCurrentAccount ...
-  // ... removeAccount ...
-  // ... persistSavedPassword ...
+  const saveCurrentAccount = (nextEmail: string, nextUsername: string, nextAvatar?: string) => {
+    // 1. Enable save preference
+    window.localStorage.setItem('creator_save_login_details', 'true');
+    setSaveDetails(true);
 
-  // Function to switch account
+    // 2. Add to saved accounts list (avoid duplicates)
+    setSavedAccounts(prev => {
+      // Remove existing entry for this email if present
+      const filtered = prev.filter(acc => acc.identifier !== nextEmail);
+      // Add new entry to the top
+      const newAccounts = [{ identifier: nextEmail, username: nextUsername, avatar: nextAvatar }, ...filtered];
+      // Limit to 5 accounts
+      const limited = newAccounts.slice(0, 5);
+      
+      window.localStorage.setItem('creator_saved_accounts', JSON.stringify(limited));
+      
+      // Also update legacy single fields for backward compat
+      window.localStorage.setItem('creator_saved_identifier', nextEmail);
+      window.localStorage.setItem('creator_saved_username', nextUsername);
+      
+      return limited;
+    });
+  };
+  const removeAccount = (identifierToRemove: string) => {
+    setSavedAccounts(prev => {
+      const newAccounts = prev.filter(acc => acc.identifier !== identifierToRemove);
+      window.localStorage.setItem('creator_saved_accounts', JSON.stringify(newAccounts));
+      
+      // If we removed the "legacy" one, clear legacy fields
+      if (window.localStorage.getItem('creator_saved_identifier') === identifierToRemove) {
+         window.localStorage.removeItem('creator_saved_identifier');
+         window.localStorage.removeItem('creator_saved_username');
+      }
+      return newAccounts;
+    });
+  };
+
+
+  const persistSavedPassword = (_nextPassword: string) => {
+    // SECURITY: Never persist passwords to localStorage
+    // Clean up any legacy stored password
+    window.localStorage.removeItem('creator_saved_password');
+    window.localStorage.removeItem('creator_save_password');
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setShowResend(false);
+    setIsSubmitting(true);
+
+    const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
+
+    try {
+      if (mode === 'signup') {
+        if (password.length < 6) {
+          setError('Parola trebuie să aibă minim 6 caractere.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setError('Parolele nu coincid.');
+          return;
+        }
+        const res = await signUpWithPassword(trimmedEmail, password, trimmedUsername || undefined);
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
+        if (res.needsEmailConfirmation) {
+          setInfo('Check your inbox and confirm your email to finish creating your account.');
+          setShowResend(true);
+          saveCurrentAccount(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
+          return;
+        }
+        saveCurrentAccount(trimmedEmail, trimmedUsername || trimmedEmail.split('@')[0]);
+        persistSavedPassword(password);
+        navigate('/profile', { replace: true });
+        return;
+      }
+
+      const res = await signInWithPassword(trimmedEmail, password);
+      if (res.error) {
+        const msg = res.error;
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          setError('Email neconfirmat. Verifică inbox-ul și confirmă contul, apoi încearcă din nou.');
+          setShowResend(true);
+          return;
+        }
+        setError(msg);
+        if (/confirm|verification|verify|email/i.test(msg)) {
+          setShowResend(true);
+        }
+        return;
+      }
+      saveCurrentAccount(trimmedEmail, trimmedUsername || savedUsername || trimmedEmail.split('@')[0]);
+      persistSavedPassword(password);
+      navigate('/profile', { replace: true });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onResend = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Introdu email-ul mai întâi.');
+      return;
+    }
+    setError(null);
+    setInfo(null);
+    setIsResending(true);
+    try {
+      const res = await resendSignupConfirmation(trimmedEmail);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setInfo('Email de confirmare trimis din nou. Verifică Inbox și Spam.');
+    } finally {
+      setIsResending(false);
+    }
+  };
   const switchAccount = async (targetEmail: string, targetPassword?: string) => {
     setIsSwitching(true);
     try {
@@ -93,9 +212,6 @@ export default function CreatorLoginDetails() {
       setIsSwitching(false);
     }
   };
-
-  // ... onSubmit ...
-  // ... onResend ...
 
   return (
     <div className="min-h-screen bg-black text-white p-4 flex justify-center">
