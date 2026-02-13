@@ -66,17 +66,27 @@ const indexPath = join(distPath, 'index.html');
 
 // Log dist path on startup for debugging
 console.log(`Serving static files from: ${distPath}`);
+console.log(`Index path: ${indexPath}`);
 
 import fs from 'fs';
 if (!fs.existsSync(indexPath)) {
   console.error(`ERROR: index.html not found at ${indexPath}`);
   console.error('Available files:', fs.existsSync(distPath) ? fs.readdirSync(distPath).join(', ') : 'dist folder missing');
+} else {
+  console.log('index.html found successfully');
 }
 
 app.use(express.static(distPath));
 
+// Explicit root handler to ensure index.html is served
+app.get('/', (_req, res) => {
+    console.log('Serving root index.html');
+    res.sendFile(indexPath);
+});
+
 // Fallback for SPA - all non-API routes serve index.html
-app.get('{*path}', (_req, res) => {
+app.get('*', (req, res) => {
+  console.log(`Serving fallback for ${req.url}`);
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
