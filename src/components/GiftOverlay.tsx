@@ -26,10 +26,12 @@ export function GiftOverlay({ videoSrc, onEnded, isBattleMode: _isBattleMode }: 
             // Video started playing
           })
           .catch((error) => {
+            if (error.name === 'AbortError') return;
             console.warn("Auto-play was prevented:", error);
             if (videoRef.current) {
                 videoRef.current.muted = true;
                 videoRef.current.play().catch(e => {
+                    if (e.name === 'AbortError') return;
                     console.error("Muted play also failed", e);
                     onEnded();
                 });
