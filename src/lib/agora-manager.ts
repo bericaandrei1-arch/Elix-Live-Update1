@@ -35,6 +35,7 @@ class AgoraManager {
     if (!APP_ID) {
       console.error('Agora App ID is missing in .env');
     }
+    // Set explicit area code to GLOBAL to avoid regional routing issues which can cause "invalid vendor key"
     this.client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
   }
 
