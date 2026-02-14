@@ -2925,7 +2925,7 @@ export default function LiveStream() {
                   <span className="text-green-500 text-xs font-bold">Rematch</span>
                 </button>
               )}
-              <button type="button" onClick={() => { if (!isBattleMode) toggleBattle(); else setIsBattleInviteOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
+              <button type="button" onClick={() => { if (!isBattleMode) startRealBattle(); else setIsBattleInviteOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
                 <Users size={20} className="text-[#4DA6FF]" />
               </button>
               <button type="button" onClick={() => { setGiftTarget('me'); setShowGiftPanel(true); }} className="w-10 h-10 rounded-full bg-[#E6B36A]/20 backdrop-blur-md border border-[#E6B36A]/40 flex items-center justify-center shadow-lg">
