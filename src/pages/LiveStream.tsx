@@ -2255,6 +2255,38 @@ export default function LiveStream() {
             
             {/* Base Video Layer */}
         {!isBattleMode && (
+          <>
+          {/* Top MVP Circles (Top Left) */}
+          <div className="absolute top-24 left-4 z-[250] flex flex-col gap-3 pointer-events-none">
+            {['gold', 'silver', 'bronze'].map((rank, i) => {
+              const colors = {
+                gold: 'border-[#FFD700] shadow-[0_0_10px_#FFD700]',
+                silver: 'border-[#C0C0C0] shadow-[0_0_10px_#C0C0C0]',
+                bronze: 'border-[#CD7F32] shadow-[0_0_10px_#CD7F32]'
+              };
+              // Mock data for MVP users (replace with real data later)
+              const user = i < activeViewers.length ? activeViewers[i] : null;
+              
+              if (!user) return null;
+
+              return (
+                <div key={i} className="flex items-center gap-2 animate-fade-in">
+                  <div className={`relative w-8 h-8 rounded-full border-2 ${colors[rank as keyof typeof colors]} p-0.5 bg-black/40`}>
+                    <img 
+                      src={user.avatar} 
+                      alt={user.displayName}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-black/80 flex items-center justify-center border border-white/20">
+                      <span className="text-[8px] font-bold text-white">{i + 1}</span>
+                    </div>
+                  </div>
+                  <span className="text-white/80 text-[10px] font-bold drop-shadow-md">{user.displayName}</span>
+                </div>
+              );
+            })}
+          </div>
+
           <div
             className="relative w-full h-full"
             onPointerDown={(e) => {
@@ -2316,6 +2348,7 @@ export default function LiveStream() {
               </div>
             )}
           </div>
+          </>
         )}
 
         {/* Battle Split Screen Overlay - Shows ONLY when in battle mode */}
@@ -2648,7 +2681,7 @@ export default function LiveStream() {
     </div>
   </div>
 
-        <div className="relative z-10 h-full pointer-events-none">
+  <div className="relative z-10 h-full pointer-events-none">
           {/* Full-screen Gift Overlay Animation */}
           <GiftOverlay 
             videoSrc={currentGift} 
