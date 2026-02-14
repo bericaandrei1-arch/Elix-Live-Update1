@@ -34,10 +34,11 @@ export default function LiveDiscover() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const mapped: LiveCreator[] = (data as LiveStreamRow[]).map((stream) => ({
-          id: stream.stream_key,
+        const mapped: LiveCreator[] = (data as any[]).map((stream) => ({
+          id: stream.stream_key || stream.id,
           name: stream.title || 'Unknown User',
           viewers: stream.viewer_count || 0,
+          thumbnail: stream.thumbnail_url
         }));
         setCreators(mapped);
       } else {

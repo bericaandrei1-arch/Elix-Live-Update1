@@ -52,7 +52,7 @@ export function useWebRTC({ roomId, isBroadcaster }: WebRTCConfig) {
 
     // Connect to WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}?room=${roomId}&token=${user.accessToken || 'guest'}`;
+    const wsUrl = `${protocol}//${window.location.host}?room=${roomId}&userId=${user.id}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

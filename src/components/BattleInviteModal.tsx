@@ -16,19 +16,18 @@ interface LiveStream {
 interface BattleInviteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  hostStreamId: string;
+  onInvite: (userId: string) => Promise<void>;
   hostUserId: string;
 }
 
 export default function BattleInviteModal({
   isOpen,
   onClose,
-  hostStreamId,
+  onInvite,
   hostUserId,
 }: BattleInviteModalProps) {
   const [liveStreams, setLiveStreams] = useState<LiveStream[]>([]);
   const [selectedStream, setSelectedStream] = useState<LiveStream | null>(null);
-  const [timeLimit, setTimeLimit] = useState(180); // 3 minutes default
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,13 +42,22 @@ export default function BattleInviteModal({
       const { data, error } = await supabase
         .from('live_streams')
         .select('*, creator:profiles!user_id(username, avatar_url)')
-        .eq('status', 'live')
+        .eq('is_live', true)
         .neq('user_id', hostUserId)
         .order('viewer_count', { ascending: false })
         .limit(20);
 
       if (error) throw error;
-      setLiveStreams(data || []);
+      
+      // Map data to match interface
+      const mapped = (data || []).map((s: any) => ({
+        ...s,
+        id: s.id, // live_stream id
+        user_id: s.user_id,
+        creator: s.creator
+      }));
+      
+      setLiveStreams(mapped);
     } catch (error) {
       console.error('Failed to load streams:', error);
     }
@@ -60,43 +68,9 @@ export default function BattleInviteModal({
 
     setLoading(true);
     try {
-      const { data: battle, error } = await supabase
-        .from('battles')
-        .insert({
-          host_stream_id: hostStreamId,
-          challenger_stream_id: selectedStream.id,
-          status: 'pending',
-          time_limit_seconds: timeLimit,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Send WebSocket notification to challenger
-      websocket.send('battle_invite', {
-        battle_id: battle.id,
-        host_stream_id: hostStreamId,
-        challenger_stream_id: selectedStream.id,
-        challenger_user_id: selectedStream.user_id,
-        time_limit: timeLimit,
-      });
-
-      // Create notification
-      await supabase.rpc('create_notification', {
-        p_user_id: selectedStream.user_id,
-        p_type: 'battle_invite',
-        p_actor_id: hostUserId,
-        p_target_type: 'live_stream',
-        p_target_id: battle.id,
-        p_title: 'challenged you to a battle!',
-        p_body: `${timeLimit / 60} minute battle`,
-        p_action_url: `/live/${selectedStream.id}?battle=${battle.id}`,
-      });
-
+      await onInvite(selectedStream.user_id);
       trackEvent('battle_invite_sent', {
-        battle_id: battle.id,
-        challenger_stream_id: selectedStream.id,
+        target_user_id: selectedStream.user_id,
       });
 
       alert('Battle invitation sent!');
@@ -128,28 +102,7 @@ export default function BattleInviteModal({
           </button>
         </div>
 
-        {/* Time Limit Selector */}
-        <div className="px-4 py-4 border-b border-white/10">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-5 h-5 text-white/60" />
-            <span className="text-sm font-semibold">Battle Duration</span>
-          </div>
-          <div className="flex gap-2">
-            {[60, 120, 180, 300].map(seconds => (
-              <button
-                key={seconds}
-                onClick={() => setTimeLimit(seconds)}
-                className={`flex-1 py-2 rounded-lg font-semibold transition ${
-                  timeLimit === seconds
-                    ? 'bg-[#E6B36A] text-black'
-                    : 'bg-transparent text-white hover:brightness-125'
-                }`}
-              >
-                {seconds / 60}m
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {/* Live Streams List */}
         <div className="flex-1 overflow-y-auto px-4 py-4">

@@ -30,6 +30,8 @@ import { clearCachedCameraStream, getCachedCameraStream } from '../lib/cameraStr
 import { supabase } from '../lib/supabase';
 import { LevelBadge } from '../components/LevelBadge';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { useBattleManager } from '../hooks/useBattleManager';
+import BattleInviteModal from '../components/BattleInviteModal';
 
 type LiveMessage = {
   id: string;
@@ -449,6 +451,44 @@ export default function LiveStream() {
     isBroadcaster: isBroadcast,
   });
 
+  // Battle Manager Hook (Real DB Logic)
+  const { 
+    currentBattle, 
+    participants, 
+    battleTimeRemaining: realBattleTime, 
+    startBattle: startRealBattle, 
+    inviteUser: inviteRealUser 
+  } = useBattleManager(effectiveStreamId || '');
+
+  // Sync Real Battle State to UI
+  useEffect(() => {
+    if (currentBattle) {
+      setIsBattleMode(currentBattle.status === 'active');
+      setBattleTime(realBattleTime);
+      
+      // Map participants to slots
+      const newSlots = [...battleSlots];
+      participants.forEach((p, i) => {
+        // Skip host (me)
+        if (p.user_id === user?.id) return;
+        
+        // Find empty slot or existing slot for this user
+        // Simplified: Just show the first challenger in slot 0
+        if (p.role === 'challenger') {
+           newSlots[0] = {
+             status: (p.status === 'ready' || p.status === 'accepted') ? 'accepted' : (p.status === 'invited' ? 'invited' : 'empty'),
+             name: p.username || 'Opponent',
+             avatar: p.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
+             score: p.score
+           };
+        }
+      });
+      setBattleSlots(newSlots);
+    }
+  }, [currentBattle, participants, realBattleTime]);
+
+  const [isBattleInviteOpen, setIsBattleInviteOpen] = useState(false);
+
   // Attach local stream to video element
   useEffect(() => {
     if (localStream && videoRef.current) {
@@ -552,7 +592,6 @@ export default function LiveStream() {
     }
   }, [showGiftPanel, user?.id]);
 
-  const [isFindCreatorsOpen, setIsFindCreatorsOpen] = useState(false);
   const [creatorQuery, setCreatorQuery] = useState('');
 
   const creators = [
@@ -566,7 +605,7 @@ export default function LiveStream() {
   const filteredCreators = creators.filter((c) => c.name.toLowerCase().includes(creatorQuery.trim().toLowerCase()));
 
   // Battle Player Slots (P1 = creator, P2-P4 = invited players)
-  type BattleSlot = { name: string; status: 'empty' | 'invited' | 'accepted'; avatar: string };
+  type BattleSlot = { name: string; status: 'empty' | 'invited' | 'accepted'; avatar: string; score?: number };
   const [battleSlots, setBattleSlots] = useState<BattleSlot[]>([
     { name: '', status: 'empty', avatar: '' },
     { name: '', status: 'empty', avatar: '' },
@@ -782,7 +821,7 @@ export default function LiveStream() {
     battleScoreTapWindowRef.current = { windowStart: 0, count: 0 };
     battleTripleTapRef.current = { target: null, lastTapAt: 0, count: 0 };
     // Open invite panel
-    setIsFindCreatorsOpen(true);
+    setIsBattleInviteOpen(true);
   }, [isBattleMode]);
 
   // No auto-start - user must press Match to begin
@@ -2438,7 +2477,7 @@ export default function LiveStream() {
                           <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
                         </div>
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsBattleInviteOpen(true); }}>
                           <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
                             <span className="text-white/30 text-2xl">+</span>
                           </div>
@@ -2487,7 +2526,7 @@ export default function LiveStream() {
                             <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
                           </div>
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsBattleInviteOpen(true); }}>
                             <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
                               <span className="text-white/30 text-2xl">+</span>
                             </div>
@@ -2531,7 +2570,7 @@ export default function LiveStream() {
                             <span className="text-[#E6B36A] text-[10px] font-bold">Waiting...</span>
                           </div>
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsFindCreatorsOpen(true); }}>
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-900/80 pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsBattleInviteOpen(true); }}>
                             <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
                               <span className="text-white/30 text-2xl">+</span>
                             </div>
@@ -2886,7 +2925,7 @@ export default function LiveStream() {
                   <span className="text-green-500 text-xs font-bold">Rematch</span>
                 </button>
               )}
-              <button type="button" onClick={() => { if (!isBattleMode) toggleBattle(); else setIsFindCreatorsOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
+              <button type="button" onClick={() => { if (!isBattleMode) toggleBattle(); else setIsBattleInviteOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
                 <Users size={20} className="text-[#4DA6FF]" />
               </button>
               <button type="button" onClick={() => { setGiftTarget('me'); setShowGiftPanel(true); }} className="w-10 h-10 rounded-full bg-[#E6B36A]/20 backdrop-blur-md border border-[#E6B36A]/40 flex items-center justify-center shadow-lg">
@@ -2901,163 +2940,7 @@ export default function LiveStream() {
         </div>
       </div>
 
-      {/* MODALS & OVERLAYS */}
-      {isFindCreatorsOpen && (
-        <>
-          <div
-            className="absolute inset-0 z-[499] bg-black/40 pointer-events-auto"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsFindCreatorsOpen(false);
-              setCreatorQuery('');
-            }}
-            role="button"
-            tabIndex={-1}
-            title="Close find creators"
-          />
-          <div
-            className="absolute bottom-[82px] z-[500] rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 overflow-hidden pointer-events-auto"
-            style={{ width: 'auto', right: '8px' }}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-            }}
-            role="button"
-            tabIndex={-1}
-          >
-            {/* Search */}
-            <div className="px-3 py-2">
-              <div className="flex items-center gap-2 px-2 h-7 rounded-md bg-black/50 border border-white/10">
-                <Search className="w-3 h-3 text-[#E6B36A]/80" strokeWidth={2} />
-                <input
-                  value={creatorQuery}
-                  onChange={(e) => setCreatorQuery(e.target.value)}
-                  placeholder="Search"
-                  className="flex-1 bg-transparent outline-none text-white text-[11px] w-[100px]"
-                />
-              </div>
-            </div>
-            <div className="h-px bg-white/10" />
 
-            {/* Invited Players Status */}
-            {anySlotFilled && (
-              <>
-                <div className="px-3 py-2">
-                  <p className="text-white/50 text-[9px] font-bold uppercase tracking-wider mb-1.5">Joining</p>
-                  <div className="flex gap-2">
-                    {battleSlots.map((slot, i) => (
-                      <div key={i} className="flex flex-col items-center gap-0.5">
-                        {slot.status === 'empty' ? (
-                          <div className="w-7 h-7 rounded-full border border-dashed border-white/20 flex items-center justify-center">
-                            <span className="text-white/30 text-[10px]">+</span>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            <img src={slot.avatar} alt={slot.name} className="w-7 h-7 rounded-full object-cover border" style={{ borderColor: slot.status === 'accepted' ? '#00C853' : '#E6B36A' }} />
-                            {slot.status === 'invited' && (
-                              <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
-                                <div className="w-3 h-3 border border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
-                              </div>
-                            )}
-                            {slot.status === 'accepted' && (
-                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center border border-black">
-                                <span className="text-white text-[6px] font-bold">✓</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <span className="text-white/60 text-[7px] truncate max-w-[35px]">
-                          {slot.status === 'empty' ? `P${i + 2}` : slot.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="h-px bg-white/10" />
-              </>
-            )}
-
-            {/* Creator list */}
-            <div className="max-h-[200px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-              {filteredCreators.map((c) => {
-                const slotStatus = battleSlots.find(s => s.name === c.name)?.status;
-                const isInvited = slotStatus === 'invited';
-                const isAccepted = slotStatus === 'accepted';
-                const allFull = battleSlots.every(s => s.status !== 'empty');
-
-                return (
-                  <div
-                    key={c.id}
-                    className="px-3 py-1.5 flex items-center justify-between hover:bg-white/5"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <img
-                        src={`https://i.pravatar.cc/150?u=${encodeURIComponent(c.name)}`}
-                        alt={c.name}
-                        className="w-6 h-6 rounded-full object-cover"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-white text-[11px] font-semibold truncate max-w-[80px]">{c.name}</p>
-                        <p className="text-white/50 text-[8px]">{c.followers}</p>
-                      </div>
-                    </div>
-
-                    {isAccepted ? (
-                      <span className="text-green-400 text-[9px] font-bold">Joined ✓</span>
-                    ) : isInvited ? (
-                      <span className="text-[#E6B36A] text-[9px] font-bold flex items-center gap-1">
-                        <div className="w-2.5 h-2.5 border border-[#E6B36A] border-t-transparent rounded-full animate-spin" />
-                        Sent
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => inviteCreatorToSlot(c.name)}
-                        disabled={allFull}
-                        className={`px-2 py-0.5 text-[9px] font-bold rounded ${allFull ? 'bg-white/10 text-white/30' : 'bg-[#E6B36A] text-black active:scale-95 transition-transform'}`}
-                      >
-                        Invite
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-
-              {filteredCreators.length === 0 && (
-                <div className="px-3 py-4 text-center text-white/50 text-[10px]">No creators found</div>
-              )}
-            </div>
-
-            {/* Status bar & Start Button */}
-            {battleSlots.some(s => s.status !== 'empty') && (
-              <>
-                <div className="h-px bg-white/10" />
-                <div className="px-3 py-2 flex flex-col gap-2">
-                  <div className="text-center">
-                    <span className="text-white/50 text-[9px] font-bold">
-                      {battleSlots.filter(s => s.status === 'accepted').length} accepted · {battleSlots.filter(s => s.status === 'invited').length} waiting
-                    </span>
-                  </div>
-                  
-                  {battleSlots.some(s => s.status === 'accepted') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBattleCountdown(3);
-                        setIsFindCreatorsOpen(false);
-                      }}
-                      className="w-full py-2 bg-green-600 hover:bg-green-500 text-white text-[11px] font-black rounded-lg shadow-lg active:scale-95 transition-all uppercase tracking-widest"
-                    >
-                      Start Match
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </>
-      )}
 
       <AnimatePresence>
         {miniProfile && (
