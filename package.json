@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build --mode production",
     "build:gh": "tsc -b && vite build --config vite.config.gh-pages.ts",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -45,7 +45,6 @@
     "@stripe/stripe-js": "^8.7.0",
     "@supabase/supabase-js": "^2.91.1",
     "agora-rtc-react": "^2.5.1",
-    "agora-rtc-sdk-ng": "^4.24.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",

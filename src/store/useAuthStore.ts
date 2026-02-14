@@ -63,7 +63,7 @@ function mapUserToUser(supabaseUser: SupabaseUser | null): User | null {
     username: usernameFromMeta ?? fallbackUsername,
     name: fullNameFromMeta ?? usernameFromMeta ?? fallbackUsername,
     email,
-    avatar: avatarFromMeta ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(usernameFromMeta ?? fallbackUsername)}&background=random`,
+    avatar: avatarFromMeta ?? '',
     level,
     isVerified: !!supabaseUser.email_confirmed_at,
     followers: 0,
@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthStore>()(
           options: {
             data: {
               username: username || email.split('@')[0],
-              avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(username || '')}&background=random`,
+              avatar_url: '',
               full_name: username,
             },
           },

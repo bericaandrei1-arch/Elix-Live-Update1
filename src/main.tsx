@@ -5,12 +5,25 @@ import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
 
-// Debug: catch any unhandled errors that cause white screen
+// Debug: Log unhandled errors but don't crash the UI unless critical
 window.addEventListener('error', (e) => {
-  document.body.innerHTML = `<div style="padding:20px;color:red;font-family:monospace;background:#111;min-height:100vh"><h2>⚠️ App Crash</h2><pre>${e.message}\n\n${e.filename}:${e.lineno}</pre></div>`;
+  console.error('Global Error:', e.message, e.filename, e.lineno);
+  // Only replace body if it's a catastrophic error that stops React from rendering
+  if (e.message.includes('Minified React error')) {
+    document.body.innerHTML = `<div style="padding:20px;color:red;font-family:monospace;background:#111;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center">
+      <div>
+        <h2 style="margin-bottom:10px">⚠️ Application Error</h2>
+        <p style="color:#888;margin-bottom:20px">Something went wrong. Please reload.</p>
+        <button onclick="window.location.reload()" style="padding:10px 20px;background:#fff;color:#000;border:none;border-radius:20px;cursor:pointer;font-weight:bold">Reload App</button>
+      </div>
+    </div>`;
+  }
 });
+
 window.addEventListener('unhandledrejection', (e) => {
-  document.body.innerHTML = `<div style="padding:20px;color:orange;font-family:monospace;background:#111;min-height:100vh"><h2>⚠️ Async Crash</h2><pre>${e.reason}</pre></div>`;
+  console.warn('Unhandled Promise Rejection:', e.reason);
+  // Don't crash the UI for async errors (like failed analytics or non-critical fetches)
+  e.preventDefault(); 
 });
 
 try {

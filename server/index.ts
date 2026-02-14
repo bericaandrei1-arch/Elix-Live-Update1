@@ -262,6 +262,15 @@ wss.on('connection', async (ws: WebSocket, req) => {
         return;
       }
 
+      // --- WebRTC Signaling ---
+      if (['offer', 'answer', 'candidate'].includes(event)) {
+          // Relay WebRTC signaling messages to other peers in the room
+          if (client) {
+             broadcastToRoom(client.roomId, event, eventData, client);
+          }
+          return;
+      }
+
       if (!client) {
         console.error('Message from unauthenticated client');
         return;

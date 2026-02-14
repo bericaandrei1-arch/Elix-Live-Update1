@@ -77,8 +77,7 @@ function LiveStreamCard({ stream, onOpen }: { stream: LiveStreamData; onOpen: ()
 }
 
 function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) {
-  const previewSrc =
-    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+  const previewSrc = '';
 
   return (
     <button
@@ -88,13 +87,12 @@ function PromoCard({ promo, onOpen }: { promo: LivePromo; onOpen: () => void }) 
     >
       {promo.type === 'battle' ? (
         <div className="absolute inset-0 flex">
-          <video className="w-1/2 h-full object-cover" src={previewSrc} autoPlay loop muted playsInline />
-          <video className="w-1/2 h-full object-cover" src={previewSrc} autoPlay loop muted playsInline />
+          <div className="w-1/2 h-full bg-[#111]" />
+          <div className="w-1/2 h-full bg-[#111]" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
         </div>
       ) : (
-        <div className="absolute inset-0">
-          <video className="w-full h-full object-cover" src={previewSrc} autoPlay loop muted playsInline />
+        <div className="absolute inset-0 bg-[#111]">
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
         </div>
       )}

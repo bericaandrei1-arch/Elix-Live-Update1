@@ -127,21 +127,9 @@ export const useVideoStore = create<VideoStore>()(
       fetchVideos: async () => {
         set({ loading: true });
         try {
-          const feedResult = await fetchForYouFeed(1, 50);
-
-          if (feedResult.videos && feedResult.videos.length > 0) {
-            const mappedVideos: Video[] = feedResult.videos;
-            const likedIds = mappedVideos.filter(v => v.isLiked).map(v => v.id);
-
-            const fetchedIds = new Set(mappedVideos.map((v) => v.id));
-            const existing = get().videos;
-            const toPrepend = existing.filter((v) => !fetchedIds.has(v.id));
-            const merged = toPrepend.length ? [...toPrepend, ...mappedVideos] : mappedVideos;
-
-            set({ videos: merged, likedVideos: likedIds, loading: false });
-            return;
-          }
-
+          // If we are in the browser, always re-fetch fresh data from DB first
+          // This ensures newly uploaded videos appear immediately
+          
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let data: any[] = [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,36 +158,50 @@ export const useVideoStore = create<VideoStore>()(
 
           if (err) throw err;
 
+          // 3. Fetch real engagement state (likes + following)
           let likedIds: string[] = [];
+          let followingIds: string[] = [];
+          
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+              // Fetch likes
               const { data: likes } = await supabase.from('likes').select('video_id').eq('user_id', user.id);
               likedIds = likes?.map((r: { video_id: string }) => r.video_id) ?? [];
+              
+              // Fetch following
+              const { data: following } = await supabase.from('followers').select('following_id').eq('follower_id', user.id);
+              followingIds = following?.map((r: { following_id: string }) => r.following_id) ?? [];
             }
           } catch {
             // ignore
           }
+          
           const likedSet = new Set(likedIds);
+          const followingSet = new Set(followingIds);
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedVideos: Video[] = data.map((v: any) => {
             const u = v.user;
             const uid = u?.user_id ?? u?.id ?? v.user_id ?? 'unknown';
             const uname = u?.username ?? 'user';
+            
+            // Map real follow status
+            const isFollowing = followingSet.has(uid);
+            
             return {
               id: v.id,
               url: v.url,
-              thumbnail: v.thumbnail_url || 'https://picsum.photos/400/600',
+              thumbnail: v.thumbnail_url || '',
               duration: '0:15',
               user: {
                 id: uid,
                 username: uname,
                 name: u?.display_name ?? uname,
-                avatar: u?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(uname)}`,
+                avatar: u?.avatar_url ?? '',
                 level: 1,
                 isVerified: !!u?.is_creator,
-                followers: 0,
+                followers: 0, // In feed we don't fetch count yet to save perf, but status is real
                 following: 0
               },
               description: v.caption || '',
@@ -210,19 +212,14 @@ export const useVideoStore = create<VideoStore>()(
               location: 'For You',
               isLiked: likedSet.has(v.id),
               isSaved: false,
-              isFollowing: false,
+              isFollowing: isFollowing,
               comments: [],
               quality: 'auto',
               privacy: 'public'
             };
           });
 
-          const fetchedIds = new Set(mappedVideos.map((v) => v.id));
-          const existing = get().videos;
-          const toPrepend = existing.filter((v) => !fetchedIds.has(v.id));
-          const merged = toPrepend.length ? [...toPrepend, ...mappedVideos] : mappedVideos;
-
-          set({ videos: merged, likedVideos: likedIds, loading: false });
+          set({ videos: mappedVideos, likedVideos: likedIds, followingUsers: followingIds, loading: false });
         } catch (err) {
           console.error('Error fetching videos:', err);
           set({ loading: false });
@@ -427,7 +424,7 @@ export const useVideoStore = create<VideoStore>()(
           id: tempId,
           userId: user.id,
           username: user.user_metadata.username || 'user',
-          avatar: user.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${user.email}`,
+          avatar: user.user_metadata.avatar_url || '',
           time: 'just now',
           likes: 0,
           isLiked: false

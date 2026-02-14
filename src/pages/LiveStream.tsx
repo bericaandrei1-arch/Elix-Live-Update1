@@ -29,6 +29,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { clearCachedCameraStream, getCachedCameraStream } from '../lib/cameraStream';
 import { supabase } from '../lib/supabase';
 import { LevelBadge } from '../components/LevelBadge';
+import { useWebRTC } from '../hooks/useWebRTC';
 
 type LiveMessage = {
   id: string;
@@ -412,7 +413,7 @@ export default function LiveStream() {
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(true);
   const [isLiveSettingsOpen, setIsLiveSettingsOpen] = useState(false);
-  const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 500) + 50);
+  const [viewerCount, setViewerCount] = useState(import.meta.env.DEV ? Math.floor(Math.random() * 500) + 50 : 1);
   const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
   const user = useAuthStore((s) => s.user);
   const formatStreamName = (id: string) =>
@@ -442,6 +443,20 @@ export default function LiveStream() {
   const [_faceARCanvasEl, setFaceARCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const [_battleGiftIconFailed, _setBattleGiftIconFailed] = useState(false);
 
+  // WebRTC Hook
+  const { localStream, remoteStreams, isConnected } = useWebRTC({
+    roomId: streamId || 'default',
+    isBroadcaster: isBroadcast,
+  });
+
+  // Attach local stream to video element
+  useEffect(() => {
+    if (localStream && videoRef.current) {
+      videoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  // Attach face AR canvas to video element if needed
   useEffect(() => {
     if (videoRef.current) setFaceARVideoEl(videoRef.current);
     if (faceARCanvasRef.current) setFaceARCanvasEl(faceARCanvasRef.current);
@@ -695,14 +710,16 @@ export default function LiveStream() {
         return prev - 1;
       });
       // Simulate opponent scores (outside setBattleTime updater)
-      if (Math.random() > 0.7) {
-        setOpponentScore(s => s + Math.floor(Math.random() * 50));
-      }
-      if (Math.random() > 0.7) {
-        setPlayer3Score(s => s + Math.floor(Math.random() * 40));
-      }
-      if (Math.random() > 0.7) {
-        setPlayer4Score(s => s + Math.floor(Math.random() * 45));
+      if (import.meta.env.DEV) {
+        if (Math.random() > 0.7) {
+            setOpponentScore(s => s + Math.floor(Math.random() * 50));
+        }
+        if (Math.random() > 0.7) {
+            setPlayer3Score(s => s + Math.floor(Math.random() * 40));
+        }
+        if (Math.random() > 0.7) {
+            setPlayer4Score(s => s + Math.floor(Math.random() * 45));
+        }
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -1088,6 +1105,9 @@ export default function LiveStream() {
       if (speedChallengeTimerRef.current) clearInterval(speedChallengeTimerRef.current);
       return;
     }
+
+    if (!import.meta.env.DEV) return; // Disable simulation in production
+
     speedChallengeTimerRef.current = setInterval(() => {
       // Opponent taps randomly 3-8 times per second
       if (battleSlots[0].status === 'accepted') {

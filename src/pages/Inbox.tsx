@@ -59,7 +59,7 @@ export default function Inbox() {
     if (!currentUserId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: convs, error } = await supabase
         .from('conversations')
         .select('*')
         .or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`)
@@ -67,7 +67,44 @@ export default function Inbox() {
         .limit(50);
 
       if (error) throw error;
-      setConversations(data || []);
+      
+      if (!convs || convs.length === 0) {
+        setConversations([]);
+        return;
+      }
+
+      // Extract other user IDs
+      const otherUserIds = convs.map(c => 
+        c.participant_1 === currentUserId ? c.participant_2 : c.participant_1
+      );
+
+      // Fetch profiles for these users
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, username, avatar_url, display_name')
+        .in('user_id', otherUserIds);
+
+      // Create a map for easy lookup
+      const profileMap = new Map();
+      profiles?.forEach(p => {
+        profileMap.set(p.user_id, {
+            username: p.display_name || p.username || 'User',
+            avatar_url: p.avatar_url
+        });
+      });
+
+      // Merge data
+      const enrichedConvs = convs.map(c => {
+        const otherId = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
+        const profile = profileMap.get(otherId);
+        return {
+            ...c,
+            otherUser: profile || { username: 'User', avatar_url: null },
+            lastMessage: c.last_message // Map snake_case to camelCase property
+        };
+      });
+
+      setConversations(enrichedConvs);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     }
@@ -173,9 +210,9 @@ export default function Inbox() {
                   <div className="flex items-center gap-2 mb-1">
                     {notif.actor && (
                       <img
-                        src={notif.actor.avatar_url || `https://ui-avatars.com/api/?name=${notif.actor.username}`}
+                        src={notif.actor.avatar_url || ''}
                         alt={notif.actor.username}
-                        className="w-8 h-8 object-cover"
+                        className="w-8 h-8 object-cover bg-gray-700 rounded-full"
                       />
                     )}
                     <span className="font-semibold">{notif.actor?.username || 'System'}</span>
@@ -201,9 +238,9 @@ export default function Inbox() {
                 className="flex items-center gap-3 p-4 rounded-lg cursor-pointer hover:brightness-125 transition"
               >
                 <img
-                  src={conv.otherUser?.avatar_url || `https://ui-avatars.com/api/?name=User`}
+                  src={conv.otherUser?.avatar_url || ''}
                   alt="User"
-                  className="w-12 h-12 object-cover"
+                  className="w-12 h-12 object-cover bg-gray-700 rounded-full"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">{conv.otherUser?.username || 'User'}</p>

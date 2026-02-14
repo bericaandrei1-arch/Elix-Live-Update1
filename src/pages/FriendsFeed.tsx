@@ -24,28 +24,94 @@ export default function FriendsFeed() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // 1. Fetch potential friends
+        const { data: usersData, error } = await supabase
           .from('profiles')
           .select('user_id, username, display_name, avatar_url')
           .neq('user_id', user?.id || '')
           .limit(50);
 
-        if (!error && data) {
-          setSuggestedUsers(data.map((p: { user_id: string; username?: string; display_name?: string; avatar_url?: string }) => ({
+        if (error) throw error;
+        
+        // 2. Check who we are already following
+        let followingMap: Record<string, boolean> = {};
+        if (user?.id && usersData && usersData.length > 0) {
+            const targetIds = usersData.map((u: any) => u.user_id);
+            const { data: followData } = await supabase
+                .from('followers')
+                .select('following_id')
+                .eq('follower_id', user.id)
+                .in('following_id', targetIds);
+            
+            if (followData) {
+                followData.forEach((f: any) => {
+                    followingMap[f.following_id] = true;
+                });
+            }
+        }
+        setFollowing(followingMap);
+
+        if (usersData) {
+          setSuggestedUsers(usersData.map((p: { user_id: string; username?: string; display_name?: string; avatar_url?: string }) => ({
             id: p.user_id,
             username: p.username || 'user',
             name: p.display_name || p.username || 'User',
             avatar_url: p.avatar_url,
           })));
         }
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.error("Error fetching friends:", err);
       } finally {
         setLoading(false);
       }
     };
     fetchUsers();
   }, [user?.id]);
+
+  const handleToggleFollow = async (targetUserId: string) => {
+      if (!user?.id) return;
+      const isCurrentlyFollowing = !!following[targetUserId];
+
+      // Optimistic update
+      setFollowing(prev => ({ ...prev, [targetUserId]: !isCurrentlyFollowing }));
+
+      try {
+          if (isCurrentlyFollowing) {
+              // Unfollow
+              await supabase
+                  .from('followers')
+                  .delete()
+                  .eq('follower_id', user.id)
+                  .eq('following_id', targetUserId);
+          } else {
+              // Follow
+              await supabase
+                  .from('followers')
+                  .insert({ follower_id: user.id, following_id: targetUserId });
+              
+              // Insert notification manually to ensure Inbox visibility
+              try {
+                const { data: currentUser } = await supabase.auth.getUser();
+                const username = currentUser.user?.user_metadata?.username || 'Someone';
+                
+                await supabase.from('notifications').insert({
+                    user_id: targetUserId,
+                    type: 'follow',
+                    actor_id: user.id,
+                    title: 'New Follower',
+                    body: `${username} started following you`,
+                    is_read: false
+                });
+              } catch (err) {
+                 console.error("Failed to send notification", err);
+              }
+          }
+      } catch (error) {
+          console.error("Toggle follow failed:", error);
+          // Revert on error
+          setFollowing(prev => ({ ...prev, [targetUserId]: isCurrentlyFollowing }));
+      }
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -104,7 +170,7 @@ export default function FriendsFeed() {
                   >
                     <div className="w-11 h-11 bg-gray-700 rounded-full overflow-hidden">
                       <img
-                        src={u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=random`}
+                        src={u.avatar_url || ''}
                         alt={u.username}
                         className="w-full h-full object-cover"
                       />
@@ -122,7 +188,7 @@ export default function FriendsFeed() {
                         ? 'bg-transparent border-transparent text-white'
                         : 'bg-[#E6B36A] border-[#E6B36A] text-black'
                     }`}
-                    onClick={() => setFollowing((prev) => ({ ...prev, [u.id]: !isFollowing }))}
+                    onClick={() => handleToggleFollow(u.id)}
                   >
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>

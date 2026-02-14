@@ -3,7 +3,7 @@ import { Gift, Coins } from 'lucide-react';
 import { IS_STORE_BUILD } from '@/config/build';
 import { BuyCoinsModal } from './BuyCoinsModal';
 
-import { GIFTS as BASE_GIFTS } from './GiftPanel';
+import { GIFTS as BASE_GIFTS } from '../lib/giftsCatalog';
 import { fetchGiftPriceMap } from '../lib/giftsCatalog';
 
 export const GIFTS = BASE_GIFTS;

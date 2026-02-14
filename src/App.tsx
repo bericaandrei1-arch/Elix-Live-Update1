@@ -6,6 +6,7 @@ import { cn } from './lib/utils';
 import { useDeepLinks } from './lib/deepLinks';
 import { analytics } from './lib/analytics';
 import { notificationService } from './lib/notifications';
+import { supabaseConfig } from './lib/supabase';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
 
@@ -78,7 +79,13 @@ function App() {
   useDeepLinks();
 
   useEffect(() => {
-    checkUser();
+    // Only verify auth if config is valid to avoid crash
+    if (supabaseConfig.hasValidConfig) {
+      checkUser();
+    } else {
+      console.warn('Skipping auth check: Invalid Supabase config');
+      useAuthStore.setState({ isLoading: false });
+    }
     
     // Failsafe: if loading takes too long (e.g. supabase hanging), force stop loading
     const timer = setTimeout(() => {
@@ -96,6 +103,28 @@ function App() {
 
     return () => clearTimeout(timer);
   }, [checkUser]);
+
+  // If Supabase is not configured, show a helpful screen instead of crashing
+  if (!supabaseConfig.hasValidConfig) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mb-6">
+          <div className="w-10 h-10 border-4 border-yellow-500 rounded-full animate-pulse" />
+        </div>
+        <h1 className="text-3xl font-bold mb-4 text-yellow-500">Configuration Missing</h1>
+        <p className="max-w-md text-white/70 mb-8">
+          The application is missing the required Supabase configuration. 
+          Please check your environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY).
+        </p>
+        <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-left w-full max-w-lg overflow-x-auto">
+          <pre className="text-xs text-green-400 font-mono">
+            VITE_SUPABASE_URL={supabaseConfig.url ? 'Configured ✅' : 'Missing ❌'}{'\n'}
+            VITE_SUPABASE_ANON_KEY={supabaseConfig.anonKey ? 'Configured ✅' : 'Missing ❌'}
+          </pre>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     // Set analytics user ID when user logs in
