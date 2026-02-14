@@ -1406,9 +1406,7 @@ export default function LiveStream() {
   }, [isMicMuted]);
 
   // ═══════════════════════════════════════════════════════════
-  // ULTRA-REALISTIC VIEWER SIMULATION ENGINE (100 viewers)
-  // Phases: burst → growth → plateau → natural churn
-  // No repetition, natural timing, realistic behavior
+  // REALTIME PRESENCE (Real Users)
   // ═══════════════════════════════════════════════════════════
   const [activeViewers, setActiveViewers] = useState<SimulatedViewer[]>([]);
   useEffect(() => { activeViewersRef.current = activeViewers; }, [activeViewers]);
@@ -1416,165 +1414,71 @@ export default function LiveStream() {
   const viewerTimersRef = useRef<NodeJS.Timeout[]>([]);
   const chatTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const availablePoolRef = useRef<Omit<SimulatedViewer, 'joinedAt' | 'isActive'>[]>([]);
-  const simulationPhaseRef = useRef<'burst' | 'growth' | 'plateau' | 'churn'>('burst');
-
+  
+  // Realtime Presence Subscription
   useEffect(() => {
-    // Shuffle the entire 100-viewer pool
-    const shuffled = [...VIEWER_POOL].sort(() => Math.random() - 0.5);
-    availablePoolRef.current = [...shuffled];
-    const allIntervals: NodeJS.Timeout[] = [];
+    if (!effectiveStreamId || !user) return;
 
-    // Clear previous timers
-    viewerTimersRef.current.forEach(t => clearTimeout(t));
-    viewerTimersRef.current = [];
+    // In DEV mode, if we want to simulate viewers, we can keep the simulation logic.
+    // But for "Production" behavior requested by user, we use real presence.
+    // If the user wants to test alone, they won't see viewers unless we fake them or they open a 2nd tab.
+    
+    // For now, let's implement HYBRID: Real Presence + Empty Pool in Prod (so only real users show up)
+    
+    const channel = supabase.channel(`room_presence:${effectiveStreamId}`, {
+      config: { presence: { key: user.id } },
+    });
 
-    const addViewer = (viewer: Omit<SimulatedViewer, 'joinedAt' | 'isActive'>, showJoinMsg: boolean, showGreeting: boolean) => {
-      const newViewer: SimulatedViewer = { ...viewer, joinedAt: Date.now(), isActive: true };
-      setActiveViewers(prev => {
-        if (prev.some(v => v.id === viewer.id)) return prev;
-        return [...prev, newViewer];
-      });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const users = Object.values(state).flat() as any[];
+        
+        const realViewers: SimulatedViewer[] = users
+          .filter(u => u.user_id !== user.id) // Exclude self
+          .map(u => ({
+            id: u.user_id,
+            username: u.username || 'Guest',
+            displayName: u.display_name || u.username || 'Guest',
+            level: u.level || 1,
+            avatar: u.avatar_url || `https://i.pravatar.cc/150?u=${u.user_id}`,
+            country: u.country || '🏳️',
+            joinedAt: Date.now(),
+            isActive: true,
+            chatFrequency: 0,
+            supportDays: 0,
+            lastVisitDaysAgo: 0
+          }));
 
-      if (showJoinMsg) {
-        // "username joined the live 🇺🇸" system message
-        setMessages(prev => [...prev.slice(-30), {
-          id: `join_${Date.now()}_${viewer.id}`,
-          username: viewer.displayName,
-          text: `joined ${viewer.country}`,
-          level: viewer.level,
-          avatar: viewer.avatar,
-          isSystem: true,
-        }]);
-      }
-
-      // Some viewers say hello when they join (15% chance if showGreeting)
-      if (showGreeting && Math.random() < 0.15) {
-        const greetDelay = 2000 + Math.random() * 6000; // 2-8s after joining
-        const gt = setTimeout(() => {
-          const msg = getRandomChatMessage(viewer, true);
-          setMessages(prev => [...prev.slice(-30), {
-            id: `greet_${Date.now()}_${viewer.id}`,
-            username: viewer.displayName,
-            text: msg,
-            level: viewer.level,
-            avatar: viewer.avatar,
-          }]);
-        }, greetDelay);
-        viewerTimersRef.current.push(gt);
-      }
-
-      setViewerCount(prev => prev + 1);
-    };
-
-    const removeRandomViewer = () => {
-      setActiveViewers(prev => {
-        if (prev.length <= 8) return prev; // Keep minimum 8 viewers always
-        // Prefer removing viewers who've been here longest or have high chatFrequency (less engaged)
-        const candidates = prev.filter(v => Date.now() - v.joinedAt > 45000); // Only those here > 45s
-        if (candidates.length === 0) return prev;
-        // Higher chatFrequency = less engaged = more likely to leave
-        const weights = candidates.map(c => c.chatFrequency);
-        const totalW = weights.reduce((a, b) => a + b, 0);
-        let r = Math.random() * totalW;
-        let leaving = candidates[0];
-        for (let i = 0; i < candidates.length; i++) {
-          r -= weights[i];
-          if (r <= 0) { leaving = candidates[i]; break; }
+        setActiveViewers(realViewers);
+        setViewerCount(realViewers.length);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            username: user.username || 'User',
+            display_name: user.name || user.username,
+            avatar_url: user.avatar,
+            level: user.level,
+            online_at: new Date().toISOString(),
+          });
         }
-        // Return viewer to available pool so they can rejoin later
-        availablePoolRef.current.push({
-          id: leaving.id, username: leaving.username, displayName: leaving.displayName,
-          level: leaving.level, avatar: leaving.avatar, country: leaving.country, chatFrequency: leaving.chatFrequency,
-          supportDays: leaving.supportDays, lastVisitDaysAgo: leaving.lastVisitDaysAgo,
-        });
-        // Clear their chat timer
-        const chatTimer = chatTimersRef.current.get(leaving.id);
-        if (chatTimer) { clearTimeout(chatTimer); chatTimersRef.current.delete(leaving.id); }
-        setViewerCount(p => Math.max(10, p - 1));
-        return prev.filter(v => v.id !== leaving.id);
       });
-    };
-
-    const getNextViewer = (): Omit<SimulatedViewer, 'joinedAt' | 'isActive'> | null => {
-      if (availablePoolRef.current.length === 0) return null;
-      return availablePoolRef.current.shift()!;
-    };
-
-    // ─── PHASE 1: BURST (0-25s) ─── 8-15 viewers join quickly
-    simulationPhaseRef.current = 'burst';
-    const burstCount = 8 + Math.floor(Math.random() * 8); // 8-15
-    for (let i = 0; i < burstCount; i++) {
-      const viewer = getNextViewer();
-      if (!viewer) break;
-      const delay = 800 + Math.random() * 22000; // spread over 0.8-22s
-      const timer = setTimeout(() => {
-        addViewer(viewer, true, true);
-      }, delay);
-      viewerTimersRef.current.push(timer);
-    }
-
-    // ─── PHASE 2: GROWTH (25s-2min) ─── steady stream of new viewers
-    const growthStart = setTimeout(() => {
-      simulationPhaseRef.current = 'growth';
-      let growthAdded = 0;
-      const maxGrowth = 25 + Math.floor(Math.random() * 15); // 25-40 more
-      const growthInterval = setInterval(() => {
-        if (growthAdded >= maxGrowth) { clearInterval(growthInterval); return; }
-        const viewer = getNextViewer();
-        if (!viewer) { clearInterval(growthInterval); return; }
-        addViewer(viewer, Math.random() < 0.6, true);
-        growthAdded++;
-      }, 2000 + Math.random() * 4000); // every 2-6 seconds
-      allIntervals.push(growthInterval);
-    }, 25000);
-    viewerTimersRef.current.push(growthStart as unknown as NodeJS.Timeout);
-
-    // ─── PHASE 3: PLATEAU (2min+) ─── balance of joining/leaving
-    const plateauStart = setTimeout(() => {
-      simulationPhaseRef.current = 'plateau';
-      
-      const joinInterval = setInterval(() => {
-        const viewer = getNextViewer();
-        if (!viewer) return;
-        addViewer(viewer, Math.random() < 0.5, true);
-      }, 8000 + Math.random() * 12000);
-      allIntervals.push(joinInterval);
-
-      const leaveInterval = setInterval(() => {
-        if (Math.random() < 0.6) removeRandomViewer();
-      }, 15000 + Math.random() * 25000);
-      allIntervals.push(leaveInterval);
-    }, 120000);
-    viewerTimersRef.current.push(plateauStart as unknown as NodeJS.Timeout);
-
-    // ─── NATURAL CHURN ─── after 4 min, gentle rotate
-    const churnStart = setTimeout(() => {
-      simulationPhaseRef.current = 'churn';
-      const churnInterval = setInterval(() => {
-        removeRandomViewer();
-        if (Math.random() < 0.4) removeRandomViewer();
-        setTimeout(() => {
-          const v1 = getNextViewer();
-          if (v1) addViewer(v1, Math.random() < 0.4, true);
-          if (Math.random() < 0.4) {
-            setTimeout(() => {
-              const v2 = getNextViewer();
-              if (v2) addViewer(v2, Math.random() < 0.3, true);
-            }, 3000 + Math.random() * 5000);
-          }
-        }, 2000 + Math.random() * 5000);
-      }, 20000 + Math.random() * 30000);
-      allIntervals.push(churnInterval);
-    }, 240000);
-    viewerTimersRef.current.push(churnStart as unknown as NodeJS.Timeout);
 
     return () => {
-      viewerTimersRef.current.forEach(t => clearTimeout(t));
-      allIntervals.forEach(t => clearInterval(t));
-      chatTimersRef.current.forEach(t => clearTimeout(t));
-      chatTimersRef.current.clear();
+      supabase.removeChannel(channel);
     };
+  }, [effectiveStreamId, user]);
+
+  // Disable Fake Simulation in Production (or entirely if requested "remove demo logic")
+  // We will comment out or remove the fake simulation effect below.
+  /*
+  useEffect(() => {
+    // ... (Fake simulation logic removed)
   }, []);
+  */
+
 
   // ─── CHAT SIMULATION ENGINE ───
   // Each viewer chats independently at their own natural pace
@@ -2754,18 +2658,27 @@ export default function LiveStream() {
                       <div className="pointer-events-auto flex items-center gap-2 mt-5">
                         <div className="flex items-center gap-1.5">
                           <div className="flex items-center -space-x-1">
-                            {(activeViewers.length > 0 ? activeViewers.slice(0, 3) : VIEWER_POOL.slice(0, 3)).map((v, i) => {
-                              const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
-                              const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+                            {[...activeViewers, ...Array(3)].slice(0, 3).map((v, i) => {
                               const borderColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-                              return (
-                                <div key={v.id} className="relative flex flex-col items-center" style={{ zIndex: 3 - i }}>
-                                  <div className={`relative w-7 h-7 rounded-full border-[1.5px] p-0.5 ${i === 0 ? 'bg-[#FFD700]/20' : 'bg-black/40'}`} style={{ borderColor: borderColors[i] || 'transparent' }}>
-                                    <img src={v.avatar} alt={v.username} className="w-full h-full rounded-full object-cover" />
-                                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-black border border-white/20 flex items-center justify-center" style={{ borderColor: borderColors[i] }}>
-                                      <span className="text-[6px] font-bold text-white">{i + 1}</span>
+                              
+                              if (!v) {
+                                return (
+                                  <div key={`empty-${i}`} className={`w-6 h-6 rounded-full border border-white/10 bg-black/40 p-px relative ${i === 0 ? 'z-10' : 'z-0'}`} style={{ borderColor: borderColors[i] }}>
+                                    <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center">
+                                      <Users size={8} className="text-white/20" />
                                     </div>
-                                    <span className="absolute bottom-0 inset-x-0 flex items-center justify-center text-white text-[5px] font-black leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{formatCoinsShort(donated)}</span>
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-black flex items-center justify-center text-[5px] font-bold text-white border border-white/10" style={{ borderColor: borderColors[i] }}>
+                                      {i + 1}
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div key={v.id} className={`w-6 h-6 rounded-full border border-black p-px relative ${i === 0 ? 'z-10' : 'z-0'}`} style={{ borderColor: borderColors[i] }}>
+                                  <img src={v.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-black flex items-center justify-center text-[5px] font-bold text-white border border-white/10" style={{ borderColor: borderColors[i] }}>
+                                    {i + 1}
                                   </div>
                                 </div>
                               );

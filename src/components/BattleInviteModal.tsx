@@ -54,12 +54,13 @@ export default function BattleInviteModal({
         ...s,
         id: s.id, // live_stream id
         user_id: s.user_id,
-        creator: s.creator
+        creator: s.creator || { username: 'Unknown', avatar_url: null }
       }));
       
       setLiveStreams(mapped);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load streams:', error);
+      // alert('Debug: Failed to load streams. Check console.');
     }
   };
 
@@ -106,9 +107,14 @@ export default function BattleInviteModal({
 
         {/* Live Streams List */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-5 h-5 text-white/60" />
-            <span className="text-sm font-semibold">Select Opponent</span>
+          <div className="flex items-center gap-2 mb-3 justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-white/60" />
+              <span className="text-sm font-semibold">Select Opponent</span>
+            </div>
+            <button onClick={loadLiveStreams} className="text-xs text-[#E6B36A] hover:underline">
+              Refresh
+            </button>
           </div>
 
           {liveStreams.length === 0 && (
