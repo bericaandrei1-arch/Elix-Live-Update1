@@ -2757,10 +2757,14 @@ export default function LiveStream() {
                             {(activeViewers.length > 0 ? activeViewers.slice(0, 3) : VIEWER_POOL.slice(0, 3)).map((v, i) => {
                               const poolViewer = VIEWER_POOL.find(pv => pv.id === v.id);
                               const donated = poolViewer ? poolViewer.supportDays * (50 + Math.floor((poolViewer.level || 1) * 15)) : 0;
+                              const borderColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
                               return (
                                 <div key={v.id} className="relative flex flex-col items-center" style={{ zIndex: 3 - i }}>
-                                  <div className="relative w-7 h-7">
-                                    <img src={v.avatar} alt={v.username} className="w-7 h-7 rounded-full border-[1.5px] border-black object-cover" />
+                                  <div className={`relative w-7 h-7 rounded-full border-[1.5px] p-0.5 ${i === 0 ? 'bg-[#FFD700]/20' : 'bg-black/40'}`} style={{ borderColor: borderColors[i] || 'transparent' }}>
+                                    <img src={v.avatar} alt={v.username} className="w-full h-full rounded-full object-cover" />
+                                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-black border border-white/20 flex items-center justify-center" style={{ borderColor: borderColors[i] }}>
+                                      <span className="text-[6px] font-bold text-white">{i + 1}</span>
+                                    </div>
                                     <span className="absolute bottom-0 inset-x-0 flex items-center justify-center text-white text-[5px] font-black leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{formatCoinsShort(donated)}</span>
                                   </div>
                                 </div>
@@ -2836,9 +2840,17 @@ export default function LiveStream() {
                         <div className="flex items-center gap-2">
                           <button onClick={() => setShowViewerList(prev => !prev)} className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
                             <div className="flex -space-x-1">
-                              {activeViewers.slice(0, 3).map(v => (
-                                <img key={v.id} src={v.avatar} alt="" className="w-5 h-5 rounded-full border border-black object-cover" />
-                              ))}
+                              {activeViewers.slice(0, 3).map((v, i) => {
+                                const borderColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+                                return (
+                                  <div key={v.id} className={`w-5 h-5 rounded-full border border-black p-px relative ${i === 0 ? 'z-10' : 'z-0'}`} style={{ borderColor: borderColors[i] }}>
+                                    <img src={v.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-black flex items-center justify-center text-[4px] font-bold text-white border border-white/10" style={{ borderColor: borderColors[i] }}>
+                                      {i + 1}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                             <span className="text-white text-[9px] font-bold tabular-nums">{formatCountShort(viewerCount)}</span>
                           </button>
