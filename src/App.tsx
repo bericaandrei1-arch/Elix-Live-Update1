@@ -169,6 +169,7 @@ function App() {
   }
 
   // Redirect to login if not authenticated and trying to access protected route
+  // The user wants the site to be "private", meaning all access requires login first
   if (!isAuthenticated && !isPublicRoute) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
