@@ -568,10 +568,10 @@ export const GIFTS: GiftUiItem[] = [
  ];
 
 export async function fetchGiftPriceMap(): Promise<Map<string, number>> {
-  const rows = await fetchGiftCatalog();
+  // Use GIFTS constant instead of fetching from DB for now to simplify
   const map = new Map<string, number>();
-  for (const row of rows) {
-    map.set(row.gift_id, row.coin_cost);
+  for (const gift of GIFTS) {
+    map.set(gift.id, gift.coins);
   }
   return map;
 }

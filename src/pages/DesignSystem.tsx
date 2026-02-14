@@ -1,6 +1,6 @@
 import React from 'react';
 import { LevelBadge } from '../components/LevelBadge';
-import { GIFTS } from '../components/GiftPanel';
+import { GIFTS } from '../lib/giftsCatalog';
 
 function Swatch({ name, value }: { name: string; value: string }) {
   return (
