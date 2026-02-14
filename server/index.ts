@@ -28,7 +28,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const server = createServer(app);
-const PORT = process.env.PORT || 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
 // Middleware
 app.use(cors());
@@ -44,8 +44,10 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime() });
 });
 
-// API Routes
-app.post('/api/create-checkout-session', createCheckoutSession);
+// Explicitly bind to 0.0.0.0 for Docker/Railway
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
 app.post('/api/create-payment-intent', createPaymentIntent);
 app.post('/api/analytics', handleAnalytics);
 app.post('/api/block-user', handleBlockUser);
@@ -85,7 +87,7 @@ app.get('/', (_req, res) => {
 });
 
 // Fallback for SPA - all non-API routes serve index.html
-app.get('*', (req, res) => {
+app.get(/(.*)/, (req, res) => {
   console.log(`Serving fallback for ${req.url}`);
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
@@ -445,11 +447,6 @@ async function updateViewerCount(roomId: string) {
     console.error('Failed to update viewer count:', error);
   }
 }
-
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
