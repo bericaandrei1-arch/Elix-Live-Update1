@@ -39,28 +39,53 @@ export default function BattleInviteModal({
 
   const loadLiveStreams = async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch live streams
+      const { data: streams, error: streamError } = await supabase
         .from('live_streams')
-        .select('*, creator:profiles!user_id(username, avatar_url)')
+        .select('id, user_id, title, thumbnail_url, viewer_count')
         .eq('is_live', true)
         .neq('user_id', hostUserId)
         .order('viewer_count', { ascending: false })
         .limit(20);
 
-      if (error) throw error;
-      
-      // Map data to match interface
-      const mapped = (data || []).map((s: any) => ({
-        ...s,
-        id: s.id, // live_stream id
-        user_id: s.user_id,
-        creator: s.creator || { username: 'Unknown', avatar_url: null }
-      }));
+      if (streamError) throw streamError;
+
+      if (!streams || streams.length === 0) {
+        setLiveStreams([]);
+        return;
+      }
+
+      // 2. Fetch creators for these streams manually (safe way)
+      const userIds = [...new Set(streams.map(s => s.user_id))];
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, username, avatar_url')
+        .in('user_id', userIds);
+
+      if (profileError) console.error('Error fetching creator profiles:', profileError);
+
+      const profileMap = new Map();
+      (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
+
+      // 3. Map data
+      const mapped = streams.map((s: any) => {
+        const creator = profileMap.get(s.user_id);
+        return {
+          id: s.id,
+          user_id: s.user_id,
+          title: s.title,
+          thumbnail_url: s.thumbnail_url,
+          viewer_count: s.viewer_count,
+          creator: {
+            username: creator?.username || 'Unknown',
+            avatar_url: creator?.avatar_url || null
+          }
+        };
+      });
       
       setLiveStreams(mapped);
     } catch (error: any) {
       console.error('Failed to load streams:', error);
-      // alert('Debug: Failed to load streams. Check console.');
     }
   };
 
