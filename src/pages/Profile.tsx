@@ -48,7 +48,7 @@ export default function Profile() {
   
   const displayName = profileData?.display_name || profileData?.username || 'User';
   const displayUsername = profileData?.username || 'user';
-  const displayAvatar = profileData?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+  const displayAvatar = profileData?.avatar_url || '';
 
   useEffect(() => {
     if (displayUserId) {
@@ -132,6 +132,64 @@ export default function Profile() {
     setIsFollowing(!!data);
   };
 
+  const handleMessage = async () => {
+    if (!user?.id || !displayUserId) return;
+    
+    try {
+      // 1. Check for existing conversation
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${user.id},participant_2.eq.${displayUserId}),and(participant_1.eq.${displayUserId},participant_2.eq.${user.id})`)
+        .single();
+
+      if (existing) {
+        navigate(`/inbox/${existing.id}`);
+        return;
+      }
+
+      // 2. Create new conversation
+      // Sort IDs to maintain consistency if we want to enforce uniqueness effectively
+      // But for now we just try to insert one way.
+      // Ideally schema should enforce p1 < p2 but we just rely on logic here.
+      const [p1, p2] = [user.id, displayUserId].sort();
+      
+      const { data: newConv, error } = await supabase
+        .from('conversations')
+        .insert({
+            participant_1: p1,
+            participant_2: p2,
+            last_message: 'Started a conversation',
+            last_message_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+          // If race condition or unique violation, try finding again
+          const { data: retry } = await supabase
+            .from('conversations')
+            .select('id')
+            .or(`and(participant_1.eq.${user.id},participant_2.eq.${displayUserId}),and(participant_1.eq.${displayUserId},participant_2.eq.${user.id})`)
+            .single();
+          
+          if (retry) {
+              navigate(`/inbox/${retry.id}`);
+              return;
+          }
+          throw error;
+      }
+
+      if (newConv) {
+        navigate(`/inbox/${newConv.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      // Fallback
+      navigate('/inbox');
+    }
+  };
+
   const toggleFollow = async () => {
     if (!user?.id || !displayUserId || isOwnProfile) return;
 
@@ -149,6 +207,22 @@ export default function Profile() {
           .insert({ follower_id: user.id, following_id: displayUserId });
         setIsFollowing(true);
         trackEvent('user_follow', { target_user_id: displayUserId });
+        
+        // Manual notification insert
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const username = (user as any)?.user_metadata?.username || 'Someone';
+            await supabase.from('notifications').insert({
+                user_id: displayUserId,
+                type: 'follow',
+                actor_id: user.id,
+                title: 'New Follower',
+                body: `${username} started following you`,
+                is_read: false
+            });
+        } catch (e) {
+            console.error('Failed to send notification:', e);
+        }
       }
     } catch (error) {
       console.error('Failed to toggle follow:', error);
@@ -370,7 +444,7 @@ export default function Profile() {
                       {isFollowing ? 'Following' : 'Follow'}
                     </button>
                     <button
-                      onClick={() => navigate(`/inbox`)}
+                      onClick={handleMessage}
                       className="px-6 py-2 bg-gray-800 rounded text-sm font-semibold hover:bg-gray-700 transition"
                     >
                       Message
@@ -448,7 +522,7 @@ export default function Profile() {
                    className="aspect-[3/4] bg-gray-800 relative group text-left"
                  >
                     <img 
-                        src={video.thumbnail_url || '/placeholder-video.png'} 
+                        src={video.thumbnail_url || ''} 
                         alt="Video Thumbnail" 
                         className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" 
                     />
