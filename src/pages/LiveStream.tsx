@@ -406,7 +406,8 @@ export default function LiveStream() {
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [coinBalance, setCoinBalance] = useState(0);
   const [inputValue, setInputValue] = useState('');
-  const isBroadcast = streamId === 'broadcast';
+  const user = useAuthStore((s) => s.user);
+  const isBroadcast = streamId === 'broadcast' || (user?.id && streamId === user.id);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [showCoinModal, setShowCoinModal] = useState(false);
@@ -417,7 +418,6 @@ export default function LiveStream() {
   const [isLiveSettingsOpen, setIsLiveSettingsOpen] = useState(false);
   const [viewerCount, setViewerCount] = useState(import.meta.env.DEV ? Math.floor(Math.random() * 500) + 50 : 1);
   const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
-  const user = useAuthStore((s) => s.user);
   const formatStreamName = (id: string) =>
     id
       .split(/[-_]/g)
@@ -556,7 +556,7 @@ export default function LiveStream() {
   }, [updateUser, user?.id]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !isBroadcast) return;
     const key = effectiveStreamId;
     if (!key) return;
 
@@ -574,7 +574,17 @@ export default function LiveStream() {
         console.warn('Live status update failed:', error.message);
       }
     })();
-  }, [creatorName, effectiveStreamId, user?.id]);
+
+    return () => {
+      // Set offline when leaving
+      supabase.from('live_streams')
+        .update({ is_live: false })
+        .eq('stream_key', key)
+        .then(({ error }) => {
+          if (error) console.warn('Offline status update failed:', error.message);
+        });
+    };
+  }, [creatorName, effectiveStreamId, user?.id, isBroadcast]);
 
   // Refresh coins when gift panel opens to ensure balance is up to date
   useEffect(() => {
@@ -2883,7 +2893,7 @@ export default function LiveStream() {
                   <span className="text-green-500 text-xs font-bold">Rematch</span>
                 </button>
               )}
-              <button type="button" onClick={() => { if (!isBattleMode) startRealBattle(); else setIsBattleInviteOpen(true); }} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
+              <button type="button" onClick={() => setIsBattleInviteOpen(true)} className="w-10 h-10 rounded-full bg-[#4DA6FF]/20 backdrop-blur-md border border-[#4DA6FF]/40 flex items-center justify-center shadow-lg">
                 <Users size={20} className="text-[#4DA6FF]" />
               </button>
               <button type="button" onClick={() => { setGiftTarget('me'); setShowGiftPanel(true); }} className="w-10 h-10 rounded-full bg-[#E6B36A]/20 backdrop-blur-md border border-[#E6B36A]/40 flex items-center justify-center shadow-lg">
@@ -3351,6 +3361,18 @@ export default function LiveStream() {
           </div>
         </div>
       </div>
+      {/* Battle Invite Modal */}
+      <BattleInviteModal
+        isOpen={isBattleInviteOpen}
+        onClose={() => setIsBattleInviteOpen(false)}
+        onInvite={async (targetUserId) => {
+          if (!currentBattle) {
+            await startRealBattle();
+          }
+          await inviteRealUser(targetUserId);
+        }}
+        hostUserId={user?.id || ''}
+      />
     </div>
   );
 }

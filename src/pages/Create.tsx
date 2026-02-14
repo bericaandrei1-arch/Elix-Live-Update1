@@ -7,6 +7,7 @@ import {
   CameraOff,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 import { setCachedCameraStream } from '../lib/cameraStream';
 import { SOUND_TRACKS, type SoundTrack } from '../lib/soundLibrary';
 import ElixCameraLayout from '../components/ElixCameraLayout';
@@ -173,6 +174,7 @@ function SoundPickerModal({
 
 export default function Create() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const [mode, setMode] = useState<CreateMode>('create');
   const [isSoundOpen, setIsSoundOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -595,7 +597,8 @@ export default function Create() {
       }
 
       keepStreamOnUnmountRef.current = true;
-      navigate('/live/broadcast');
+      // Navigate to a unique URL for the current user to prevent overwriting 'broadcast'
+      navigate(`/live/${user?.id || 'broadcast'}`);
     } catch {
       setCameraError('Camera access denied');
     }
