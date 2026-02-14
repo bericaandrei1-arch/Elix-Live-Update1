@@ -37,7 +37,7 @@ function useInView<T extends Element>(options?: IntersectionObserverInit) {
   return { ref, inView };
 }
 
-export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }: GiftPanelProps) {
+export function GiftPanel({ onSelectGift, userCoins, onRechargeSuccess }: GiftPanelProps) {
   const [activeTab, setActiveTab] = useState<'exclusive' | 'small' | 'big'>('big');
   const [_activeGiftId, setActiveGiftId] = useState<string | null>(null);
   const [poppedGiftId, setPoppedGiftId] = useState<string | null>(null);
@@ -288,4 +288,4 @@ export function EnhancedGiftPanel({ onSelectGift, userCoins, onRechargeSuccess }
 }
 
 // Keep original for backward compatibility
-export { EnhancedGiftPanel as GiftPanel };
+export { GiftPanel as EnhancedGiftPanel };
