@@ -126,19 +126,32 @@ export const useAuthStore = create<AuthStore>()(
         return { error: 'Authentication is not configured. Missing Supabase credentials.', needsEmailConfirmation: false };
       }
       try {
+        // Ensure username is unique enough to avoid DB collisions if trigger is not updated
+        const baseUsername = username || email.split('@')[0];
+        // Append random 4 digits to username to drastically reduce collision probability
+        // This is a safety measure since the user reported DB errors saving users
+        const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
+        const finalUsername = `${baseUsername}_${uniqueSuffix}`;
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              username: username || email.split('@')[0],
+              username: finalUsername,
               avatar_url: '',
-              full_name: username,
+              full_name: username, // Keep original name as full name
             },
           },
         });
         if (error) {
-          return { error: error.message, needsEmailConfirmation: false };
+          console.error('Signup error:', error);
+          // Customize error message for better UX
+          let msg = error.message;
+          if (msg.includes('Database error saving user')) {
+            msg = 'Unable to create account. Please try a different email or username.';
+          }
+          return { error: msg, needsEmailConfirmation: false };
         }
         if (data.user && data.session) {
           set({ supabaseUser: data.user, session: data.session, user: mapUserToUser(data.user), isAuthenticated: true, isLoading: false, authMode: 'supabase' });
