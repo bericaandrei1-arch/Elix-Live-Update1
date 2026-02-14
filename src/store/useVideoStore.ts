@@ -134,29 +134,41 @@ export const useVideoStore = create<VideoStore>()(
           let data: any[] = [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let err: any = null;
-          const baseSelect = `*, user:users ( id, username, display_name, avatar_url, is_creator )`;
-          const profileSelect = `*, user:profiles!user_id ( user_id, username, display_name, avatar_url, is_creator )`;
 
-          // 1. Try fetching all public videos sorted by creation time (newest first)
+          // FIX: Do NOT use foreign key embedding for profiles/users if the relationship is missing or ambiguous.
+          // Instead, fetch videos first, then fetch user profiles manually.
+          
+          // 1. Fetch videos
           let res = await supabase
             .from('videos')
-            .select(baseSelect)
+            .select('*')
             .eq('is_private', false)
             .order('created_at', { ascending: false });
 
-          // 2. Fallback for profile relation
-          if (res.error && (res.error.message?.includes('users') || res.error.message?.includes('relation'))) {
-            res = await supabase
-                .from('videos')
-                .select(profileSelect)
-                .eq('is_private', false)
-                .order('created_at', { ascending: false });
+          if (res.error) {
+             console.error('Error fetching videos table:', res.error);
+             set({ loading: false });
+             return;
           }
+          
+          const rawVideos = res.data || [];
+          const userIds = [...new Set(rawVideos.map((v: any) => v.user_id))];
 
-          data = res.data || [];
-          err = res.error;
-
-          if (err) throw err;
+          // 2. Fetch profiles for these users
+          const { data: profiles, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id, username, display_name, avatar_url, is_creator')
+            .in('user_id', userIds);
+            
+          if (profileError) {
+             console.error('Error fetching profiles:', profileError);
+          }
+          
+          // Map profiles by ID for easy lookup
+          const profileMap = new Map();
+          (profiles || []).forEach((p: any) => {
+             profileMap.set(p.user_id, p);
+          });
 
           // 3. Fetch real engagement state (likes + following)
           let likedIds: string[] = [];
@@ -181,10 +193,10 @@ export const useVideoStore = create<VideoStore>()(
           const followingSet = new Set(followingIds);
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mappedVideos: Video[] = data.map((v: any) => {
-            const u = v.user;
-            const uid = u?.user_id ?? u?.id ?? v.user_id ?? 'unknown';
-            const uname = u?.username ?? 'user';
+          const mappedVideos: Video[] = rawVideos.map((v: any) => {
+            const uid = v.user_id;
+            const profile = profileMap.get(uid);
+            const uname = profile?.username || 'user';
             
             // Map real follow status
             const isFollowing = followingSet.has(uid);
@@ -197,16 +209,16 @@ export const useVideoStore = create<VideoStore>()(
               user: {
                 id: uid,
                 username: uname,
-                name: u?.display_name ?? uname,
-                avatar: u?.avatar_url ?? '',
+                name: profile?.display_name || uname,
+                avatar: profile?.avatar_url || '',
                 level: 1,
-                isVerified: !!u?.is_creator,
+                isVerified: !!profile?.is_creator,
                 followers: 0, // In feed we don't fetch count yet to save perf, but status is real
                 following: 0
               },
               description: v.caption || '',
               hashtags: [],
-              music: { id: 'original', title: 'Original Sound', artist: u?.display_name ?? uname, duration: '0:15' },
+              music: { id: 'original', title: 'Original Sound', artist: profile?.display_name || uname, duration: '0:15' },
               stats: { views: v.views || 0, likes: v.likes || 0, comments: v.comments_count || 0, shares: v.shares_count || 0, saves: 0 },
               createdAt: v.created_at,
               location: 'For You',
